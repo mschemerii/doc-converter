@@ -6,6 +6,7 @@ import subprocess
 from pathlib import Path
 import tempfile
 import time
+import shutil
 
 def convert_using_windows_com(doc_path, output_path):
     """Convert a .doc file to .docx using Microsoft Word COM interface on Windows"""
@@ -61,10 +62,75 @@ def write_applescript(doc_path, output_path):
     temp_file.close()
     return temp_file.name
 
+def convert_using_libreoffice(doc_path, output_path):
+    """Convert a .doc file to .docx using LibreOffice (Linux)"""
+    # First try unoconv
+    try:
+        subprocess.run(
+            ['unoconv', '-f', 'docx', '-o', output_path, doc_path],
+            check=True,
+            capture_output=True,
+            text=True
+        )
+        return
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        pass
+
+    # Fallback to soffice if unoconv is not available
+    try:
+        # Try to find soffice executable
+        soffice_paths = [
+            '/usr/bin/soffice',
+            '/usr/lib/libreoffice/program/soffice',
+            '/opt/libreoffice*/program/soffice'
+        ]
+        
+        soffice_path = None
+        for path in soffice_paths:
+            if '*' in path:
+                # Handle wildcard paths
+                import glob
+                matches = glob.glob(path)
+                if matches:
+                    soffice_path = matches[0]
+                    break
+            elif os.path.exists(path):
+                soffice_path = path
+                break
+        
+        if not soffice_path:
+            raise FileNotFoundError("LibreOffice not found")
+        
+        # Create a temporary directory for conversion
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Copy input file to temp directory
+            temp_input = os.path.join(temp_dir, os.path.basename(doc_path))
+            shutil.copy2(doc_path, temp_input)
+            
+            # Convert using LibreOffice
+            subprocess.run(
+                [soffice_path, '--headless', '--convert-to', 'docx', '--outdir', temp_dir, temp_input],
+                check=True,
+                capture_output=True,
+                text=True
+            )
+            
+            # Move the converted file to the target location
+            temp_output = os.path.join(temp_dir, os.path.basename(temp_input).rsplit('.', 1)[0] + '.docx')
+            if os.path.exists(temp_output):
+                shutil.move(temp_output, output_path)
+            else:
+                raise Exception("Conversion failed: Output file not created")
+    
+    except subprocess.CalledProcessError as e:
+        raise Exception(f"LibreOffice conversion failed: {e.stderr}")
+    except Exception as e:
+        raise Exception(f"Conversion failed: {str(e)}")
+
 def convert_doc_to_docx(doc_path):
     """
-    Convert a .doc file to .docx using Microsoft Word
-    Supports both Windows and macOS
+    Convert a .doc file to .docx using available methods
+    Supports Windows, macOS, and Linux
     """
     # Convert path to absolute path
     doc_path = os.path.abspath(doc_path)
@@ -99,8 +165,8 @@ def convert_doc_to_docx(doc_path):
             finally:
                 # Clean up the temporary script file
                 os.unlink(script_path)
-        else:
-            raise Exception(f"Unsupported operating system: {system}")
+        else:  # Linux
+            convert_using_libreoffice(doc_path, output_path)
         
         # Wait briefly and check if the output file was created
         time.sleep(1)
@@ -110,7 +176,7 @@ def convert_doc_to_docx(doc_path):
         return output_path
             
     except subprocess.CalledProcessError as e:
-        raise Exception(f"Word conversion failed: {e.stderr}")
+        raise Exception(f"Conversion failed: {e.stderr}")
     except Exception as e:
         raise Exception(f"Conversion failed: {str(e)}")
 

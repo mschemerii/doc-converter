@@ -8,16 +8,19 @@ A comprehensive Python-based utility for converting, modifying, and preparing do
 - Modify table properties in documents
 - Add empty rows after content rows in tables
 - Create multiple document copies with specific modifications
-- Platform-specific support for Windows and macOS
+- Platform-specific support for Windows, macOS, and Linux
 - Automatic virtual environment management
 
 ## Prerequisites
 
 - Python 3.x
-- Microsoft Word (for .doc to .docx conversion)
-- Operating System: Windows or macOS
+- Microsoft Word (for .doc to .docx conversion on Windows/macOS)
+- LibreOffice (for .doc to .docx conversion on Linux)
+- Operating System: Windows, macOS, or Linux
 
 ## Installation
+
+### Windows and macOS
 
 1. Create a new directory for the utility:
 ```bash
@@ -44,12 +47,42 @@ The script will automatically:
 - Process your document
 - Deactivate the virtual environment when done
 
+### Linux
+
+#### Ubuntu/Debian
+```bash
+# Install system dependencies
+sudo apt-get update
+sudo apt-get install python3-venv libreoffice unoconv
+
+# Set up the project
+git clone <repository-url>
+cd doc-converter
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+#### Oracle Linux 7/8/9
+```bash
+# Install system dependencies
+sudo yum update
+sudo yum install python3 python3-pip python3-virtualenv libreoffice unoconv
+
+# Set up the project
+git clone <repository-url>
+cd doc-converter
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
 ## Components
 
 ### 1. doc_to_docx_converter.py
-Converts .doc files to .docx format using Microsoft Word:
-- Uses AppleScript on macOS
-- Uses COM interface on Windows
+Converts .doc files to .docx format:
+- Uses Microsoft Word on Windows/macOS
+- Uses LibreOffice on Linux
 - Maintains document formatting
 - Handles file path conversion
 
@@ -105,6 +138,10 @@ macOS-specific:
 - pyobjc-framework-CoreServices >= 9.2
 - pyobjc-framework-ScriptingBridge >= 9.2
 
+Linux-specific:
+- libreoffice
+- unoconv
+
 ## Usage Examples
 
 1. Basic document processing:
@@ -130,10 +167,33 @@ The utility includes comprehensive error handling for:
 
 ## Limitations
 
-- Requires Microsoft Word installation
-- Platform-specific implementation (Windows/macOS)
+- Requires Microsoft Word installation (Windows/macOS)
+- Requires LibreOffice installation (Linux)
+- Platform-specific implementation (Windows/macOS/Linux)
 - Assumes specific document structure for section removal
 - Relies on exact text matching for section identification
+
+## Known Linux Issues and Solutions
+
+1. **LibreOffice Headless Mode**
+   If you encounter issues with LibreOffice conversion, ensure the LibreOffice service is not running:
+   ```bash
+   # Kill any running LibreOffice processes
+   killall soffice.bin
+   ```
+
+2. **unoconv Connection Issues**
+   If unoconv fails to connect, try starting the LibreOffice listener:
+   ```bash
+   # Start LibreOffice in listening mode
+   soffice --headless --accept="socket,host=127.0.0.1,port=2002;urp;" --nofirststartwizard &
+   ```
+
+3. **Permission Issues**
+   Ensure proper file permissions:
+   ```bash
+   chmod +x *.py
+   ```
 
 ## Contributing
 

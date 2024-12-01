@@ -184,8 +184,46 @@ def deactivate_venv():
         
         print("\nVirtual environment deactivated.")
 
+def check_linux_dependencies():
+    """Check if required Linux dependencies are installed"""
+    system = platform.system()
+    if system != 'Linux':
+        return True
+
+    missing_deps = []
+    
+    # Check for LibreOffice
+    if not any(os.path.exists(path) for path in [
+        '/usr/bin/soffice',
+        '/usr/lib/libreoffice/program/soffice'
+    ]):
+        missing_deps.append('libreoffice')
+    
+    # Check for unoconv
+    try:
+        subprocess.run(['unoconv', '--version'], capture_output=True, check=True)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        missing_deps.append('unoconv')
+    
+    if missing_deps:
+        print("Missing required Linux dependencies:", ', '.join(missing_deps))
+        print("\nPlease install them using your package manager:")
+        print("\nFor Ubuntu/Debian:")
+        print("sudo apt-get update")
+        print(f"sudo apt-get install {' '.join(missing_deps)}")
+        print("\nFor Oracle Linux/RHEL:")
+        print("sudo yum update")
+        print(f"sudo yum install {' '.join(missing_deps)}")
+        return False
+    
+    return True
+
 def process_document(doc_path):
     """Process a .doc file through all conversion and modification steps"""
+    # Check platform-specific dependencies
+    if not check_linux_dependencies():
+        sys.exit(1)
+    
     if not os.path.exists(doc_path):
         print(f"Error: File not found: {doc_path}")
         return False
