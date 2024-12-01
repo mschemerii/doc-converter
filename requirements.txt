@@ -1,6 +1,5 @@
 # Core dependencies
 python-docx>=0.8.11
-unoconv>=0.9.0; platform_system == "Linux"
 
 # Windows-specific dependencies
 pywin32>=306; platform_system == "Windows"
@@ -10,5 +9,5 @@ pyobjc-framework-Cocoa>=9.2; platform_system == "Darwin"
 pyobjc-framework-CoreServices>=9.2; platform_system == "Darwin"
 pyobjc-framework-ScriptingBridge>=9.2; platform_system == "Darwin"
 
-# Optional alternative conversion methods
-python-uno>=1.8.0; platform_system == "Linux"  # For LibreOffice integration
+# Linux-specific dependencies (Oracle Linux 7/8/9, Ubuntu LTS)
+pypandoc>=1.11; platform_system == "Linux"  # Python interface for Pandoc

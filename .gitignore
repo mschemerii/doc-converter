@@ -26,3 +26,6 @@ Thumbs.db
 
 # Generated documents
 *.docx
+
+# workspace files
+*.code-workspace

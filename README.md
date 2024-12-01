@@ -15,8 +15,8 @@ A comprehensive Python-based utility for converting, modifying, and preparing do
 
 - Python 3.x
 - Microsoft Word (for .doc to .docx conversion on Windows/macOS)
-- LibreOffice (for .doc to .docx conversion on Linux)
-- Operating System: Windows, macOS, or Linux
+- Pandoc (for .doc to .docx conversion on Linux)
+- Operating System: Windows, macOS, or Linux (Oracle Linux 7/8/9, Ubuntu LTS)
 
 ## Installation
 
@@ -53,7 +53,7 @@ The script will automatically:
 ```bash
 # Install system dependencies
 sudo apt-get update
-sudo apt-get install python3-venv libreoffice unoconv
+sudo apt-get install pandoc
 
 # Set up the project
 git clone <repository-url>
@@ -67,7 +67,7 @@ pip install -r requirements.txt
 ```bash
 # Install system dependencies
 sudo yum update
-sudo yum install python3 python3-pip python3-virtualenv libreoffice unoconv
+sudo yum install pandoc
 
 # Set up the project
 git clone <repository-url>
@@ -77,12 +77,19 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+## Linux Conversion Notes
+
+On Linux systems, the document conversion relies on Pandoc:
+- Ensure Pandoc is installed before running the script
+- Conversion may have limitations compared to Microsoft Word
+- Some complex formatting might not be perfectly preserved
+
 ## Components
 
 ### 1. doc_to_docx_converter.py
 Converts .doc files to .docx format:
 - Uses Microsoft Word on Windows/macOS
-- Uses LibreOffice on Linux
+- Uses Pandoc on Linux
 - Maintains document formatting
 - Handles file path conversion
 
@@ -139,8 +146,7 @@ macOS-specific:
 - pyobjc-framework-ScriptingBridge >= 9.2
 
 Linux-specific:
-- libreoffice
-- unoconv
+- pandoc
 
 ## Usage Examples
 
@@ -168,28 +174,22 @@ The utility includes comprehensive error handling for:
 ## Limitations
 
 - Requires Microsoft Word installation (Windows/macOS)
-- Requires LibreOffice installation (Linux)
+- Requires Pandoc installation (Linux)
 - Platform-specific implementation (Windows/macOS/Linux)
 - Assumes specific document structure for section removal
 - Relies on exact text matching for section identification
 
 ## Known Linux Issues and Solutions
 
-1. **LibreOffice Headless Mode**
-   If you encounter issues with LibreOffice conversion, ensure the LibreOffice service is not running:
+1. **Pandoc Conversion Issues**
+   If you encounter issues with Pandoc conversion, ensure the latest version is installed:
    ```bash
-   # Kill any running LibreOffice processes
-   killall soffice.bin
+   # Update Pandoc to the latest version
+   sudo apt-get update
+   sudo apt-get install pandoc
    ```
 
-2. **unoconv Connection Issues**
-   If unoconv fails to connect, try starting the LibreOffice listener:
-   ```bash
-   # Start LibreOffice in listening mode
-   soffice --headless --accept="socket,host=127.0.0.1,port=2002;urp;" --nofirststartwizard &
-   ```
-
-3. **Permission Issues**
+2. **Permission Issues**
    Ensure proper file permissions:
    ```bash
    chmod +x *.py
