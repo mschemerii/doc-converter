@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# Executable GUI for Doc Converter
+# Last updated: 2023-03-08 14:30:00
+
 import os
 import sys
 import tkinter as tk
