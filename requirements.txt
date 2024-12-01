@@ -1,0 +1,10 @@
+# Core dependencies
+python-docx>=0.8.11
+
+# Windows-specific dependencies
+pywin32>=306; platform_system == "Windows"
+
+# macOS-specific dependencies
+pyobjc-framework-Cocoa>=9.2; platform_system == "Darwin"
+pyobjc-framework-CoreServices>=9.2; platform_system == "Darwin"
+pyobjc-framework-ScriptingBridge>=9.2; platform_system == "Darwin"
