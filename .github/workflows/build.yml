@@ -51,30 +51,22 @@ jobs:
         name: doc_converter-macos
         path: dist/doc_converter
 
-  build-oracle-linux-7:
+  build-oracle-linux-8:
     runs-on: ubuntu-20.04
     container: 
-      image: oraclelinux:7
+      image: oraclelinux:8
       options: --privileged
     steps:
     - name: Prepare environment
       run: |
-        yum update -y
-        yum install -y oracle-epel-release-el7
-        yum install -y oracle-release-el7
-        yum-config-manager --enable ol7_optional_latest
-        yum-config-manager --enable ol7_developer_EPEL
+        dnf update -y
+        dnf install -y epel-release
+        dnf install -y python3 python3-pip python3-devel gcc gcc-c++ make wget
         
-        # Install compatibility and specific library versions
-        yum install -y glibc-2.17 libstdc++-4.8.5
-        
-        # Install development tools and dependencies
-        yum install -y git python3 python3-pip python3-devel gcc gcc-c++ make wget
-        
-        # Install Node.js manually to ensure library compatibility
-        wget https://nodejs.org/dist/v14.21.3/node-v14.21.3-linux-x64.tar.xz
-        tar -xJ -f node-v14.21.3-linux-x64.tar.xz -C /usr/local --strip-components=1
-        rm node-v14.21.3-linux-x64.tar.xz
+        # Install Node.js manually
+        wget https://nodejs.org/dist/v16.20.0/node-v16.20.0-linux-x64.tar.xz
+        tar -xJ -f node-v16.20.0-linux-x64.tar.xz -C /usr/local --strip-components=1
+        rm node-v16.20.0-linux-x64.tar.xz
     
     - name: Checkout code
       uses: actions/checkout@v2
@@ -97,31 +89,8 @@ jobs:
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: doc_converter-ol7
-        path: doc-converter/dist/doc_converter
-
-  build-oracle-linux-8:
-    runs-on: ubuntu-latest
-    container: oraclelinux:8
-    steps:
-    - uses: actions/checkout@v4
-    - name: Install Python and dependencies
-      run: |
-        dnf update -y
-        dnf install -y python39 python39-pip gcc python39-devel
-    - name: Install project dependencies
-      run: |
-        python3.9 -m pip install --upgrade pip
-        pip3.9 install -r requirements.txt
-        pip3.9 install pyinstaller
-    - name: Build executable
-      run: |
-        pyinstaller --name doc_converter --onefile doc_converter_gui.py
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
         name: doc_converter-ol8
-        path: dist/doc_converter
+        path: doc-converter/dist/doc_converter
 
   build-oracle-linux-9:
     runs-on: ubuntu-latest
@@ -169,7 +138,7 @@ jobs:
         path: dist/doc_converter
 
   create-release:
-    needs: [build-windows, build-macos, build-oracle-linux-7, build-oracle-linux-8, build-oracle-linux-9, build-ubuntu]
+    needs: [build-windows, build-macos, build-oracle-linux-8, build-oracle-linux-9, build-ubuntu]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/feature/'))
     steps:
@@ -188,7 +157,6 @@ jobs:
         files: |
           artifacts/doc_converter-windows/doc_converter.exe
           artifacts/doc_converter-macos/doc_converter
-          artifacts/doc_converter-ol7/doc_converter
           artifacts/doc_converter-ol8/doc_converter
           artifacts/doc_converter-ol9/doc_converter
           artifacts/doc_converter-ubuntu/doc_converter
