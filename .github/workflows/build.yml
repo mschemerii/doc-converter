@@ -65,21 +65,26 @@ jobs:
         yum-config-manager --enable ol7_optional_latest
         yum-config-manager --enable ol7_developer_EPEL
         yum install -y scl-utils
-        yum install -y gcc gcc-c++ make python3 python3-pip python3-devel
-    - uses: actions/checkout@v3
+        yum install -y git python3 python3-pip python3-devel gcc gcc-c++ make
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        path: doc-converter
     - name: Install dependencies
+      working-directory: doc-converter
       run: |
         python3 -m pip install --upgrade pip
         python3 -m pip install -r requirements.txt
         python3 -m pip install pyinstaller
     - name: Build executable
+      working-directory: doc-converter
       run: |
         python3 -m PyInstaller --name doc_converter --onefile doc_converter_gui.py
     - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
         name: doc_converter-ol7
-        path: dist/doc_converter
+        path: doc-converter/dist/doc_converter
 
   build-oracle-linux-8:
     runs-on: ubuntu-latest
