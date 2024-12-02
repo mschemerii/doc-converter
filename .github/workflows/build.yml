@@ -363,42 +363,35 @@ jobs:
 
     - name: Prepare macOS Artifact for Upload
       run: |
-        # Extensive debugging of artifact location
-        echo "Current workspace directory:"
-        pwd
+        # Detailed debugging of macOS artifact
+        MACOS_ARTIFACT_DIR="artifacts/doc_converter-macos"
         
-        echo "Listing all directories:"
-        find . -type d
+        echo "Checking macOS artifact directory structure:"
+        find "$MACOS_ARTIFACT_DIR" -type d
         
-        echo "Listing artifacts directory contents:"
-        ls -laR artifacts
+        # Recreate proper .app bundle structure
+        mkdir -p "Doc-Converter.app/Contents/MacOS"
+        mkdir -p "Doc-Converter.app/Contents/Resources"
         
-        echo "Searching for .app bundle in artifacts:"
-        find artifacts -name "*.app" -type d
+        # Copy contents from existing artifact
+        cp -R "$MACOS_ARTIFACT_DIR/Contents/MacOS/Doc-Converter" "Doc-Converter.app/Contents/MacOS/"
         
-        echo "Searching for .app bundle in entire workspace:"
-        find . -name "*.app" -type d
-        
-        # Set the path to the .app bundle
-        APP_BUNDLE_PATH=$(find artifacts -name "*.app" -type d | head -n 1)
-        
-        if [ -z "$APP_BUNDLE_PATH" ]; then
-          echo "Error: No .app bundle found in artifacts directory"
-          
-          # Additional search with more verbose output
-          echo "Attempting broader search:"
-          find . -name "*.app" -type d -print
-          
-          exit 1
+        # Copy Info.plist if it exists
+        if [ -f "$MACOS_ARTIFACT_DIR/Contents/Info.plist" ]; then
+          cp "$MACOS_ARTIFACT_DIR/Contents/Info.plist" "Doc-Converter.app/Contents/"
         fi
         
-        echo "Found .app bundle at: $APP_BUNDLE_PATH"
+        # Copy icon if it exists
+        if [ -f "$MACOS_ARTIFACT_DIR/Contents/Resources/icon-windowed.icns" ]; then
+          cp "$MACOS_ARTIFACT_DIR/Contents/Resources/icon-windowed.icns" "Doc-Converter.app/Contents/Resources/"
+        fi
         
-        # Ensure destination directory exists
-        mkdir -p artifacts/doc_converter-macos
+        # Verify .app bundle structure
+        echo "Created .app bundle structure:"
+        find "Doc-Converter.app" -type d
         
-        # Create zip of the entire .app bundle
-        zip -r "artifacts/doc_converter-macos/Doc-Converter.zip" "$APP_BUNDLE_PATH"
+        # Create zip of the .app bundle
+        zip -r "artifacts/doc_converter-macos/Doc-Converter.zip" "Doc-Converter.app"
         
         # Verify archive creation
         echo "Compressed archive details:"
