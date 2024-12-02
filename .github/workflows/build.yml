@@ -200,21 +200,18 @@ jobs:
       with:
         path: artifacts
     
-    - name: Create tag if not exists
+    - name: Create Release Tag
       id: create_tag
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         # Get the current date in YYYYMMDD format
         TAG=$(date +'v%Y%m%d')
         
-        # Check if the tag already exists
-        if git rev-parse "$TAG" >/dev/null 2>&1; then
-          echo "Tag $TAG already exists, appending a unique identifier"
-          TAG="${TAG}-$(date +'%H%M%S')"
-        fi
+        # Append a unique identifier to ensure uniqueness
+        TAG="${TAG}-$(date +'%H%M%S')"
         
         echo "tag=$TAG" >> $GITHUB_OUTPUT
-        git tag $TAG
-        git push origin $TAG
     
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
