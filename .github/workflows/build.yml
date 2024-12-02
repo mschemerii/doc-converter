@@ -91,12 +91,14 @@ jobs:
         pyinstaller --name "Doc-Converter" --windowed --onefile --osx-bundle-identifier com.example.docconverter doc_converter_gui.py
         mkdir -p "dist/Doc-Converter.app/Contents/MacOS"
         mv "dist/Doc-Converter" "dist/Doc-Converter.app/Contents/MacOS/Doc-Converter"
+        mkdir -p artifacts/doc_converter-macos
+        cp -r "dist/Doc-Converter.app" artifacts/doc_converter-macos/
         
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: doc_converter-macos
-        path: dist/Doc-Converter.app
+        path: artifacts/doc_converter-macos/Doc-Converter.app
 
   build-oracle-linux-8:
     runs-on: ubuntu-latest
@@ -380,7 +382,7 @@ jobs:
         UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
       with:
         upload_url: ${{ env.UPLOAD_URL }}
-        asset_path: artifacts/doc_converter-ubuntu-24-04/doc_converter
+        asset_path: artifacts/doc_converter-ubuntu-24-04/dist/doc_converter
         asset_name: Doc-Converter-Ubuntu-24-04-${{ steps.tag.outputs.tag_name }}.deb
         asset_content_type: application/octet-stream
 
@@ -391,7 +393,7 @@ jobs:
         UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
       with:
         upload_url: ${{ env.UPLOAD_URL }}
-        asset_path: artifacts/doc_converter-ubuntu-22-04/doc_converter
+        asset_path: artifacts/doc_converter-ubuntu-22-04/dist/doc_converter
         asset_name: Doc-Converter-Ubuntu-22-04-${{ steps.tag.outputs.tag_name }}.deb
         asset_content_type: application/octet-stream
 
@@ -402,6 +404,6 @@ jobs:
         UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
       with:
         upload_url: ${{ env.UPLOAD_URL }}
-        asset_path: artifacts/doc_converter-ubuntu-20-04/doc_converter
+        asset_path: artifacts/doc_converter-ubuntu-20-04/dist/doc_converter
         asset_name: Doc-Converter-Ubuntu-20-04-${{ steps.tag.outputs.tag_name }}.deb
         asset_content_type: application/octet-stream
