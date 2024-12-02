@@ -71,20 +71,32 @@ jobs:
         # Install development tools and dependencies
         yum install -y scl-utils
         yum install -y git python3 python3-pip python3-devel gcc gcc-c++ make
+        
+        # Install Node.js with compatible libraries
+        yum install -y centos-release-scl
+        yum install -y devtoolset-9-gcc devtoolset-9-gcc-c++
+        source /opt/rh/devtoolset-9/enable
+        
+        # Install Node.js manually to ensure library compatibility
+        curl -fsSL https://nodejs.org/dist/v16.20.0/node-v16.20.0-linux-x64.tar.xz | tar -xJ -C /usr/local --strip-components=1
+    
     - name: Checkout code
       uses: actions/checkout@v3
       with:
         path: doc-converter
-    - name: Install dependencies
+    
+    - name: Install Python dependencies
       working-directory: doc-converter
       run: |
         python3 -m pip install --upgrade pip
         python3 -m pip install -r requirements.txt
         python3 -m pip install pyinstaller
+    
     - name: Build executable
       working-directory: doc-converter
       run: |
         python3 -m PyInstaller --name doc_converter --onefile doc_converter_gui.py
+    
     - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
