@@ -5,9 +5,17 @@
 import os
 import sys
 import tkinter as tk
-from tkinter import filedialog, messagebox, scrolledtext
+from tkinter import filedialog, messagebox, scrolledtext, ttk
+import logging
 import threading
 import traceback
+
+# Import Python version check
+from python_version_check import check_python_version
+
+# Run version check immediately
+if not check_python_version():
+    sys.exit(1)
 
 # Import the existing conversion script
 from doc_to_docx_converter import convert_doc_to_docx
