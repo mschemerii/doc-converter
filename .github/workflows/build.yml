@@ -361,6 +361,21 @@ jobs:
         asset_name: Doc-Converter-Windows-${{ steps.tag.outputs.tag_name }}.exe
         asset_content_type: application/octet-stream
 
+    - name: Prepare macOS Artifact for Upload
+      run: |
+        # Verify artifact exists
+        pwd
+        echo "Checking artifact directory..."
+        ls -la artifacts/doc_converter-macos
+        echo "Checking Doc-Converter.app..."
+        ls -la "artifacts/doc_converter-macos/Doc-Converter.app"
+        
+        # Create a compressed archive for upload
+        cd artifacts/doc_converter-macos
+        tar -czvf Doc-Converter.tar.gz "Doc-Converter.app"
+        ls -la Doc-Converter.tar.gz
+        cd ../..
+
     - name: Upload macOS Artifact
       uses: actions/upload-release-asset@v1
       env:
@@ -368,9 +383,9 @@ jobs:
         UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
       with:
         upload_url: ${{ env.UPLOAD_URL }}
-        asset_path: artifacts/doc_converter-macos/Doc-Converter.app
-        asset_name: Doc-Converter-${{ steps.tag.outputs.tag_name }}.app
-        asset_content_type: application/octet-stream
+        asset_path: artifacts/doc_converter-macos/Doc-Converter.tar.gz
+        asset_name: Doc-Converter-${{ steps.tag.outputs.tag_name }}.app.tar.gz
+        asset_content_type: application/gzip
 
     - name: Upload Oracle Linux 8 Artifact
       uses: actions/upload-release-asset@v1
