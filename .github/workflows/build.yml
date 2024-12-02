@@ -54,61 +54,70 @@ jobs:
         name: doc_converter-windows
         path: artifacts/doc_converter-windows/Doc-Converter.exe
 
-  build-macos:
+  build-macos-intel:
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v4
-    - name: List pre-installed Python versions
-      run: |
-        # List system Python versions
-        echo "System Python versions:"
-        ls /usr/bin/python*
-        
-        # Check Python versions
-        for python in python python3 python3.9 python3.10 python3.11 python3.12; do
-          if command -v $python &> /dev/null; then
-            echo "Version of $python:"
-            $python --version
-          fi
-        done
-        
-        # List all Python installations
-        echo "Python executable paths:"
-        which -a python python3
+    
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.12.x'
-    - name: Verify Python version
-      run: |
-        python --version
-        python -c "import sys; print(sys.executable)"
+        python-version: '3.12'
+        architecture: 'x64'
+    
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install pyinstaller
+    
     - name: Build executable
       run: |
-        pyinstaller --name "Doc-Converter" --windowed --onefile --osx-bundle-identifier com.example.docconverter doc_converter_gui.py
+        pyinstaller --name "Doc-Converter" --windowed --onefile --osx-bundle-identifier com.example.docconverter --target-architecture x86_64 doc_converter_gui.py
         mkdir -p "dist/Doc-Converter.app/Contents/MacOS"
         mv "dist/Doc-Converter" "dist/Doc-Converter.app/Contents/MacOS/Doc-Converter"
-        mkdir -p artifacts/doc_converter-macos
-        cp -R "dist/Doc-Converter.app" "artifacts/doc_converter-macos/Doc-Converter.app"
-        ls -lR artifacts/doc_converter-macos
         
-    - name: Debug macOS Artifact
-      run: |
-        pwd
-        ls -R artifacts/doc_converter-macos
-        find artifacts/doc_converter-macos -type d
-
+        mkdir -p artifacts/doc_converter-macos-intel
+        cp -R "dist/Doc-Converter.app" "artifacts/doc_converter-macos-intel/Doc-Converter.app"
+    
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: doc_converter-macos
-        path: artifacts/doc_converter-macos/Doc-Converter.app
-
+        name: doc_converter-macos-intel
+        path: artifacts/doc_converter-macos-intel/Doc-Converter.app
+  
+  build-macos-silicon:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        architecture: 'arm64'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pyinstaller
+    
+    - name: Build executable
+      run: |
+        pyinstaller --name "Doc-Converter" --windowed --onefile --osx-bundle-identifier com.example.docconverter --target-architecture arm64 doc_converter_gui.py
+        mkdir -p "dist/Doc-Converter.app/Contents/MacOS"
+        mv "dist/Doc-Converter" "dist/Doc-Converter.app/Contents/MacOS/Doc-Converter"
+        
+        mkdir -p artifacts/doc_converter-macos-silicon
+        cp -R "dist/Doc-Converter.app" "artifacts/doc_converter-macos-silicon/Doc-Converter.app"
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: doc_converter-macos-silicon
+        path: artifacts/doc_converter-macos-silicon/Doc-Converter.app
+  
   build-oracle-linux-8:
     runs-on: ubuntu-latest
     container: 
@@ -317,7 +326,8 @@ jobs:
   create-release:
     needs: 
       - build-windows
-      - build-macos
+      - build-macos-intel
+      - build-macos-silicon
       - build-ubuntu-20-04
       - build-ubuntu-22-04
       - build-ubuntu-24-04
@@ -361,54 +371,78 @@ jobs:
         asset_name: Doc-Converter-Windows-${{ steps.tag.outputs.tag_name }}.exe
         asset_content_type: application/octet-stream
 
-    - name: Prepare macOS Artifact for Upload
+    - name: Prepare macOS Intel Artifact for Upload
       run: |
-        # Detailed debugging of macOS artifact
-        MACOS_ARTIFACT_DIR="artifacts/doc_converter-macos"
-        
-        echo "Checking macOS artifact directory structure:"
-        find "$MACOS_ARTIFACT_DIR" -type d
+        MACOS_INTEL_ARTIFACT_DIR="artifacts/doc_converter-macos-intel"
         
         # Recreate proper .app bundle structure
-        mkdir -p "Doc-Converter.app/Contents/MacOS"
-        mkdir -p "Doc-Converter.app/Contents/Resources"
+        mkdir -p "Doc-Converter-Intel.app/Contents/MacOS"
+        mkdir -p "Doc-Converter-Intel.app/Contents/Resources"
         
         # Copy contents from existing artifact
-        cp -R "$MACOS_ARTIFACT_DIR/Contents/MacOS/Doc-Converter" "Doc-Converter.app/Contents/MacOS/"
+        cp -R "$MACOS_INTEL_ARTIFACT_DIR/Doc-Converter.app/Contents/MacOS/Doc-Converter" "Doc-Converter-Intel.app/Contents/MacOS/"
         
         # Copy Info.plist if it exists
-        if [ -f "$MACOS_ARTIFACT_DIR/Contents/Info.plist" ]; then
-          cp "$MACOS_ARTIFACT_DIR/Contents/Info.plist" "Doc-Converter.app/Contents/"
+        if [ -f "$MACOS_INTEL_ARTIFACT_DIR/Doc-Converter.app/Contents/Info.plist" ]; then
+          cp "$MACOS_INTEL_ARTIFACT_DIR/Doc-Converter.app/Contents/Info.plist" "Doc-Converter-Intel.app/Contents/"
         fi
-        
-        # Copy icon if it exists
-        if [ -f "$MACOS_ARTIFACT_DIR/Contents/Resources/icon-windowed.icns" ]; then
-          cp "$MACOS_ARTIFACT_DIR/Contents/Resources/icon-windowed.icns" "Doc-Converter.app/Contents/Resources/"
-        fi
-        
-        # Verify .app bundle structure
-        echo "Created .app bundle structure:"
-        find "Doc-Converter.app" -type d
         
         # Create zip of the .app bundle
-        zip -r "artifacts/doc_converter-macos/Doc-Converter.zip" "Doc-Converter.app"
+        zip -r "artifacts/doc_converter-macos-intel/Doc-Converter-Intel.zip" "Doc-Converter-Intel.app"
         
         # Verify archive creation
         echo "Compressed archive details:"
-        ls -la "artifacts/doc_converter-macos/Doc-Converter.zip"
+        ls -la "artifacts/doc_converter-macos-intel/Doc-Converter-Intel.zip"
         
         # Show zip contents
-        unzip -l "artifacts/doc_converter-macos/Doc-Converter.zip"
+        unzip -l "artifacts/doc_converter-macos-intel/Doc-Converter-Intel.zip"
 
-    - name: Upload macOS Artifact
+    - name: Upload macOS Intel Artifact
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
       with:
         upload_url: ${{ env.UPLOAD_URL }}
-        asset_path: ${{ github.workspace }}/artifacts/doc_converter-macos/Doc-Converter.zip
-        asset_name: Doc-Converter-${{ steps.tag.outputs.tag_name }}.app.zip
+        asset_path: artifacts/doc_converter-macos-intel/Doc-Converter-Intel.zip
+        asset_name: Doc-Converter-Intel-${{ steps.tag.outputs.tag_name }}.app.zip
+        asset_content_type: application/zip
+
+    - name: Prepare macOS Silicon Artifact for Upload
+      run: |
+        MACOS_SILICON_ARTIFACT_DIR="artifacts/doc_converter-macos-silicon"
+        
+        # Recreate proper .app bundle structure
+        mkdir -p "Doc-Converter-Silicon.app/Contents/MacOS"
+        mkdir -p "Doc-Converter-Silicon.app/Contents/Resources"
+        
+        # Copy contents from existing artifact
+        cp -R "$MACOS_SILICON_ARTIFACT_DIR/Doc-Converter.app/Contents/MacOS/Doc-Converter" "Doc-Converter-Silicon.app/Contents/MacOS/"
+        
+        # Copy Info.plist if it exists
+        if [ -f "$MACOS_SILICON_ARTIFACT_DIR/Doc-Converter.app/Contents/Info.plist" ]; then
+          cp "$MACOS_SILICON_ARTIFACT_DIR/Doc-Converter.app/Contents/Info.plist" "Doc-Converter-Silicon.app/Contents/"
+        fi
+        
+        # Create zip of the .app bundle
+        zip -r "artifacts/doc_converter-macos-silicon/Doc-Converter-Silicon.zip" "Doc-Converter-Silicon.app"
+        
+        # Verify archive creation
+        echo "Compressed archive details:"
+        ls -la "artifacts/doc_converter-macos-silicon/Doc-Converter-Silicon.zip"
+        
+        # Show zip contents
+        unzip -l "artifacts/doc_converter-macos-silicon/Doc-Converter-Silicon.zip"
+
+    - name: Upload macOS Silicon Artifact
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
+      with:
+        upload_url: ${{ env.UPLOAD_URL }}
+        asset_path: artifacts/doc_converter-macos-silicon/Doc-Converter-Silicon.zip
+        asset_name: Doc-Converter-Silicon-${{ steps.tag.outputs.tag_name }}.app.zip
         asset_content_type: application/zip
 
     - name: Upload Oracle Linux 8 Artifact
