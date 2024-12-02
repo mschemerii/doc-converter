@@ -1,10 +1,14 @@
-name: Build Executables
+name: Build and Release Document Converter
 
 on:
   push:
-    branches: [ main, feature/* ]
-  pull_request:
-    branches: [ main ]
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: read
+  actions: write
 
 jobs:
   build-windows:
@@ -52,64 +56,51 @@ jobs:
         path: dist/doc_converter
 
   build-oracle-linux-8:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     container: 
       image: oraclelinux:8
-      options: --privileged
     steps:
-    - name: Prepare environment
-      run: |
-        dnf update -y
-        dnf install -y epel-release
-        dnf install -y xz tar wget
-        dnf install -y python3 python3-pip python3-devel gcc gcc-c++ make
-        
-        # Install Node.js manually
-        wget https://nodejs.org/dist/v16.20.0/node-v16.20.0-linux-x64.tar.xz
-        tar -xf node-v16.20.0-linux-x64.tar.xz -C /usr/local --strip-components=1
-        rm node-v16.20.0-linux-x64.tar.xz
-    
-    - name: Checkout code
-      uses: actions/checkout@v2
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
       with:
-        path: doc-converter
-        fetch-depth: 1
-    
-    - name: Install Python dependencies
-      working-directory: doc-converter
+        python-version: '3.10'
+    - name: Install dependencies
       run: |
+        yum update -y
+        yum install -y python3-pip
         python3 -m pip install --upgrade pip
         python3 -m pip install -r requirements.txt
         python3 -m pip install pyinstaller
-    
     - name: Build executable
-      working-directory: doc-converter
       run: |
-        python3 -m PyInstaller --name doc_converter --onefile doc_converter_gui.py
-    
+        python3 -m PyInstaller --name doc_converter --windowed --onefile doc_converter_gui.py
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: doc_converter-ol8
-        path: doc-converter/dist/doc_converter
+        path: dist/doc_converter
 
   build-oracle-linux-9:
     runs-on: ubuntu-latest
-    container: oraclelinux:9
+    container: 
+      image: oraclelinux:9
     steps:
     - uses: actions/checkout@v4
-    - name: Install Python and dependencies
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+    - name: Install dependencies
       run: |
-        dnf update -y
-        dnf install -y python3 python3-pip gcc python3-devel
-    - name: Install project dependencies
-      run: |
+        yum update -y
+        yum install -y python3-pip
         python3 -m pip install --upgrade pip
-        pip3 install -r requirements.txt
-        pip3 install pyinstaller
+        python3 -m pip install -r requirements.txt
+        python3 -m pip install pyinstaller
     - name: Build executable
       run: |
-        pyinstaller --name doc_converter --onefile doc_converter_gui.py
+        python3 -m PyInstaller --name doc_converter --windowed --onefile doc_converter_gui.py
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
@@ -200,31 +191,83 @@ jobs:
       with:
         path: artifacts
     
-    - name: Create Release Tag
-      id: create_tag
+    - name: Create Release
+      uses: actions/create-release@v1
+      id: create_release
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        # Get the current date in YYYYMMDD format
-        TAG=$(date +'v%Y%m%d')
-        
-        # Append a unique identifier to ensure uniqueness
-        TAG="${TAG}-$(date +'%H%M%S')"
-        
-        echo "tag=$TAG" >> $GITHUB_OUTPUT
-    
-    - name: Create GitHub Release
-      uses: softprops/action-gh-release@v1
       with:
-        tag_name: ${{ steps.create_tag.outputs.tag }}
-        files: |
-          artifacts/doc_converter-windows/doc_converter.exe
-          artifacts/doc_converter-macos/doc_converter
-          artifacts/doc_converter-ol8/doc_converter
-          artifacts/doc_converter-ol9/doc_converter
-          artifacts/doc_converter-ubuntu-24-04/doc_converter
-          artifacts/doc_converter-ubuntu-22-04/doc_converter
-          artifacts/doc_converter-ubuntu-20-04/doc_converter
-        generate_release_notes: true
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
+    
+    - name: Upload Windows Artifact
+      uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: artifacts/doc_converter-windows/doc_converter.exe
+        asset_name: doc_converter-windows.exe
+        asset_content_type: application/octet-stream
+    
+    - name: Upload macOS Artifact
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: artifacts/doc_converter-macos/doc_converter
+        asset_name: doc_converter-macos
+        asset_content_type: application/octet-stream
+    
+    - name: Upload Oracle Linux 8 Artifact
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: artifacts/doc_converter-ol8/doc_converter
+        asset_name: doc_converter-ol8
+        asset_content_type: application/octet-stream
+    
+    - name: Upload Oracle Linux 9 Artifact
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: artifacts/doc_converter-ol9/doc_converter
+        asset_name: doc_converter-ol9
+        asset_content_type: application/octet-stream
+    
+    - name: Upload Ubuntu 24.04 Artifact
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: artifacts/doc_converter-ubuntu-24-04/doc_converter
+        asset_name: doc_converter-ubuntu-24-04
+        asset_content_type: application/octet-stream
+    
+    - name: Upload Ubuntu 22.04 Artifact
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: artifacts/doc_converter-ubuntu-22-04/doc_converter
+        asset_name: doc_converter-ubuntu-22-04
+        asset_content_type: application/octet-stream
+    
+    - name: Upload Ubuntu 20.04 Artifact
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: artifacts/doc_converter-ubuntu-20-04/doc_converter
+        asset_name: doc_converter-ubuntu-20-04
+        asset_content_type: application/octet-stream
