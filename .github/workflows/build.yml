@@ -183,7 +183,14 @@ jobs:
         path: dist/doc_converter
 
   release:
-    needs: [build-windows, build-macos, build-oracle-linux-8, build-oracle-linux-9, build-ubuntu-24-04, build-ubuntu-22-04, build-ubuntu-20-04]
+    needs: 
+      - build-windows
+      - build-macos
+      - build-oracle-linux-8
+      - build-oracle-linux-9
+      - build-ubuntu-24-04
+      - build-ubuntu-22-04
+      - build-ubuntu-20-04
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -193,9 +200,26 @@ jobs:
       with:
         path: artifacts
     
+    - name: Create tag if not exists
+      id: create_tag
+      run: |
+        # Get the current date in YYYYMMDD format
+        TAG=$(date +'v%Y%m%d')
+        
+        # Check if the tag already exists
+        if git rev-parse "$TAG" >/dev/null 2>&1; then
+          echo "Tag $TAG already exists, appending a unique identifier"
+          TAG="${TAG}-$(date +'%H%M%S')"
+        fi
+        
+        echo "tag=$TAG" >> $GITHUB_OUTPUT
+        git tag $TAG
+        git push origin $TAG
+    
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
       with:
+        tag_name: ${{ steps.create_tag.outputs.tag }}
         files: |
           artifacts/doc_converter-windows/doc_converter.exe
           artifacts/doc_converter-macos/doc_converter
