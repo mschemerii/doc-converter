@@ -34,38 +34,54 @@ The application now includes an intelligent Python version check:
 - Users can choose to download the recommended version
 - Application will not start with unsupported Python versions
 
-## Installation
+## Installation and Usage
 
-### Windows and macOS
+### Windows
+1. Download `doc_converter-windows.exe` from the latest release
+2. Double-click the `.exe` file to launch the application
+   - If Windows Defender or antivirus warns you, click "More info" and then "Run anyway"
+3. The application will start with the Document Converter interface
 
-1. Install Python 3.12 from [python.org](https://www.python.org/downloads/)
-2. Create a new directory for the utility:
+### macOS
+1. Download `Doc Converter.app` from the latest release
+2. Right-click (or Control-click) the `.app` and select "Open"
+   - If macOS warns about an unverified developer, click "Open"
+3. The first time you run the app, you may need to grant permissions
+   - Go to System Preferences > Security & Privacy > General
+   - Click "Open Anyway" for the Doc Converter application
+
+### Linux (Ubuntu/Debian)
+1. Download the appropriate `.deb` file for your Ubuntu version
+2. Install the package using the terminal:
 ```bash
-mkdir doc-converter
-cd doc-converter
+sudo dpkg -i doc_converter-ubuntu-*.deb
+```
+3. Launch the application from your applications menu or via terminal:
+```bash
+doc_converter
 ```
 
-3. Clone or download the repository
-4. Install dependencies:
+### Linux (Oracle Linux/RPM-based)
+1. Download the appropriate `.rpm` file for your Oracle Linux version
+2. Install the package using the terminal:
 ```bash
-python -m pip install -r requirements.txt
+sudo rpm -i doc_converter-ol*.rpm
+```
+3. Launch the application from your applications menu or via terminal:
+```bash
+doc_converter
 ```
 
-5. Run the application:
-```bash
-python doc_converter_gui.py
-```
+## Troubleshooting
 
-### Linux (Oracle Linux, Ubuntu)
+### Permission Issues
+- On Windows and macOS, right-click and choose "Run as administrator"
+- On Linux, use `sudo` to run the application if needed
 
-1. Install Python 3.12 using system package manager
-2. Follow similar steps as Windows/macOS installation
-
-## Troubleshooting Python Version
-
-- Check current Python version: `python --version`
-- Recommended version: 3.12.x
-- If version is incorrect, download from [python.org](https://www.python.org/downloads/)
+### Python Version Compatibility
+- Ensure you have Python 3.12 installed
+- The application will guide you through version-specific requirements
+- Visit [python.org](https://www.python.org/downloads/) for the latest Python version
 
 ## Continuous Integration
 
