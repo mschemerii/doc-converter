@@ -52,7 +52,7 @@ jobs:
         path: dist/doc_converter
 
   build-oracle-linux-7:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     container: 
       image: oraclelinux:7
       options: --privileged
@@ -66,7 +66,7 @@ jobs:
         yum-config-manager --enable ol7_developer_EPEL
         yum install -y scl-utils
         yum install -y gcc gcc-c++ make python3 python3-pip python3-devel
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v3
     - name: Install dependencies
       run: |
         python3 -m pip install --upgrade pip
@@ -76,7 +76,7 @@ jobs:
       run: |
         python3 -m PyInstaller --name doc_converter --onefile doc_converter_gui.py
     - name: Upload artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v3
       with:
         name: doc_converter-ol7
         path: dist/doc_converter
