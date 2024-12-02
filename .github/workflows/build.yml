@@ -371,19 +371,28 @@ jobs:
         echo "Listing artifacts directory:"
         ls -la artifacts/doc_converter-macos
         
+        # Detailed directory listing
+        echo "Detailed contents:"
+        find artifacts/doc_converter-macos -type d
+        
         # Create a zip archive of the .app bundle
         cd artifacts/doc_converter-macos
-        zip -r Doc-Converter.zip "Doc-Converter.app"
+        
+        # Verbose zip with full path
+        zip -r Doc-Converter.zip Doc-Converter.app
         
         # Verify archive creation
         echo "Compressed archive details:"
         ls -la Doc-Converter.zip
         
-        # Confirm file exists
+        # Confirm file exists and show its contents
         if [ ! -f "Doc-Converter.zip" ]; then
           echo "Error: Artifact archive was not created"
           exit 1
         fi
+        
+        # Show zip contents
+        unzip -l Doc-Converter.zip
 
     - name: Upload macOS Artifact
       uses: actions/upload-release-asset@v1
