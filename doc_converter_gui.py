@@ -181,9 +181,16 @@ class DocConverterApp:
     def run_conversion(self, input_file):
         """Perform the actual conversion"""
         try:
-            # Perform conversion
-            output_file = convert_doc_to_docx(input_file)
-            print(f"Successfully converted file to: {output_file}")
+            # Import the full document processing function
+            from process_document import process_document
+            
+            # Perform full document processing
+            success = process_document(input_file)
+            
+            if success:
+                print(f"Successfully processed document: {input_file}")
+            else:
+                print(f"Failed to process document: {input_file}")
             
             # Re-enable convert button
             self.master.after(0, self.convert_button.config, {"state": tk.NORMAL})
@@ -192,7 +199,8 @@ class DocConverterApp:
             self.master.after(0, self.exit_button.config, {"state": tk.NORMAL})
         
         except Exception as e:
-            print(f"Conversion Error: {str(e)}")
+            print(f"Document Processing Error: {str(e)}")
+            import traceback
             traceback.print_exc()
             
             # Re-enable convert button
