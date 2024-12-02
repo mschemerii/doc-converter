@@ -10,9 +10,9 @@ jobs:
   build-windows:
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.10'
     - name: Install dependencies
@@ -24,7 +24,7 @@ jobs:
       run: |
         pyinstaller --name doc_converter --windowed --onefile doc_converter_gui.py
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: doc_converter-windows
         path: dist/doc_converter.exe
@@ -32,9 +32,9 @@ jobs:
   build-macos:
     runs-on: macos-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.10'
     - name: Install dependencies
@@ -46,7 +46,7 @@ jobs:
       run: |
         pyinstaller --name doc_converter --windowed --onefile doc_converter_gui.py
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: doc_converter-macos
         path: dist/doc_converter
@@ -55,7 +55,7 @@ jobs:
     runs-on: ubuntu-latest
     container: oraclelinux:7
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Install Python and dependencies
       run: |
         yum update -y
@@ -70,7 +70,7 @@ jobs:
       run: |
         pyinstaller --name doc_converter --onefile doc_converter_gui.py
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: doc_converter-ol7
         path: dist/doc_converter
@@ -79,7 +79,7 @@ jobs:
     runs-on: ubuntu-latest
     container: oraclelinux:8
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Install Python and dependencies
       run: |
         dnf update -y
@@ -93,7 +93,7 @@ jobs:
       run: |
         pyinstaller --name doc_converter --onefile doc_converter_gui.py
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: doc_converter-ol8
         path: dist/doc_converter
@@ -102,7 +102,7 @@ jobs:
     runs-on: ubuntu-latest
     container: oraclelinux:9
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Install Python and dependencies
       run: |
         dnf update -y
@@ -116,7 +116,7 @@ jobs:
       run: |
         pyinstaller --name doc_converter --onefile doc_converter_gui.py
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: doc_converter-ol9
         path: dist/doc_converter
@@ -124,9 +124,9 @@ jobs:
   build-ubuntu:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.10'
     - name: Install dependencies
@@ -138,7 +138,7 @@ jobs:
       run: |
         pyinstaller --name doc_converter --onefile doc_converter_gui.py
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: doc_converter-ubuntu
         path: dist/doc_converter
@@ -149,7 +149,7 @@ jobs:
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/feature/'))
     steps:
     - name: Download all artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         path: artifacts
     - name: Create Release
