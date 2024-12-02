@@ -30,24 +30,40 @@ class DocConverterApp:
         master.title("Doc Converter")
         master.geometry("500x400")
         
-        # File selection frame
-        self.file_frame = tk.Frame(master)
-        self.file_frame.pack(pady=10, padx=10, fill=tk.X)
+        # Configure grid weights for centering
+        master.grid_rowconfigure(0, weight=1)
+        master.grid_rowconfigure(4, weight=1)
+        master.grid_columnconfigure(0, weight=1)
         
+        # Main container frame
+        self.main_frame = tk.Frame(master)
+        self.main_frame.grid(row=1, column=0, sticky="nsew")
+        
+        # Configure main frame grid
+        self.main_frame.grid_columnconfigure(0, weight=1)
+        
+        # File selection frame
+        self.file_frame = tk.Frame(self.main_frame)
+        self.file_frame.grid(row=0, column=0, pady=10, padx=20, sticky="ew")
+        self.file_frame.grid_columnconfigure(0, weight=1)
+        
+        # File entry and browse button in file frame
         self.file_path = tk.StringVar()
-        self.file_entry = tk.Entry(self.file_frame, textvariable=self.file_path, width=40)
-        self.file_entry.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(0, 10))
+        self.file_entry = tk.Entry(self.file_frame, textvariable=self.file_path)
+        self.file_entry.grid(row=0, column=0, padx=(0, 10), sticky="ew")
         
         self.browse_button = tk.Button(self.file_frame, text="Browse", command=self.browse_file)
-        self.browse_button.pack(side=tk.RIGHT)
+        self.browse_button.grid(row=0, column=1)
         
         # Convert button
-        self.convert_button = tk.Button(master, text="Convert", command=self.start_conversion, state=tk.NORMAL)
-        self.convert_button.pack(pady=10)
+        self.convert_button = tk.Button(self.main_frame, text="Convert", command=self.start_conversion, 
+                                      state=tk.NORMAL, width=15)
+        self.convert_button.grid(row=1, column=0, pady=10)
         
         # Exit button (initially disabled)
-        self.exit_button = tk.Button(master, text="Exit", command=self.exit_app, state=tk.DISABLED)
-        self.exit_button.pack(pady=10)
+        self.exit_button = tk.Button(self.main_frame, text="Exit", command=self.exit_app, 
+                                   state=tk.DISABLED, width=15)
+        self.exit_button.grid(row=2, column=0, pady=10)
         
         # Output window
         self.output_window = None
@@ -97,13 +113,28 @@ class DocConverterApp:
         self.output_window.title("Conversion Output")
         self.output_window.geometry("600x400")
         
+        # Configure grid weights for output window
+        self.output_window.grid_rowconfigure(0, weight=1)
+        self.output_window.grid_columnconfigure(0, weight=1)
+        
+        # Frame for output content
+        output_frame = tk.Frame(self.output_window)
+        output_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
+        output_frame.grid_rowconfigure(0, weight=1)
+        output_frame.grid_columnconfigure(0, weight=1)
+        
         # Text area for output
         self.output_text = scrolledtext.ScrolledText(
-            self.output_window, 
+            output_frame, 
             wrap=tk.WORD, 
             state=tk.NORMAL
         )
-        self.output_text.pack(expand=True, fill=tk.BOTH, padx=10, pady=10)
+        self.output_text.grid(row=0, column=0, sticky="nsew")
+        
+        # Exit button for output window
+        output_exit_button = tk.Button(output_frame, text="Close", 
+                                     command=self.on_output_window_close, width=15)
+        output_exit_button.grid(row=1, column=0, pady=10)
         
         # Redirect stdout to the text widget
         sys.stdout = RedirectText(self.output_text)
@@ -154,6 +185,15 @@ class DocConverterApp:
 def main():
     root = tk.Tk()
     app = DocConverterApp(root)
+    
+    # Center the window on the screen
+    root.update_idletasks()
+    width = root.winfo_width()
+    height = root.winfo_height()
+    x = (root.winfo_screenwidth() // 2) - (width // 2)
+    y = (root.winfo_screenheight() // 2) - (height // 2)
+    root.geometry(f'+{x}+{y}')
+    
     root.mainloop()
 
 if __name__ == "__main__":
