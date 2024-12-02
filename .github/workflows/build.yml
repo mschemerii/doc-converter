@@ -69,13 +69,7 @@ jobs:
         yum install -y glibc-2.17 libstdc++-4.8.5
         
         # Install development tools and dependencies
-        yum install -y scl-utils
         yum install -y git python3 python3-pip python3-devel gcc gcc-c++ make
-        
-        # Install Node.js with compatible libraries
-        yum install -y centos-release-scl
-        yum install -y devtoolset-9-gcc devtoolset-9-gcc-c++
-        source /opt/rh/devtoolset-9/enable
         
         # Install Node.js manually to ensure library compatibility
         curl -fsSL https://nodejs.org/dist/v16.20.0/node-v16.20.0-linux-x64.tar.xz | tar -xJ -C /usr/local --strip-components=1
