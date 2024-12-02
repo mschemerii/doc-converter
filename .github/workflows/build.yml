@@ -60,7 +60,7 @@ jobs:
       run: |
         # List system Python versions
         echo "System Python versions:"
-        ls /usr/local/bin/python*
+        ls /usr/bin/python*
         
         # Check Python versions
         for python in python python3 python3.9 python3.10 python3.11 python3.12; do
@@ -105,8 +105,8 @@ jobs:
     - name: Install system dependencies
       run: |
         dnf update -y
-        dnf install -y which findutils
-    
+        dnf install -y which findutils gcc openssl-devel bzip2-devel libffi-devel wget tar xz make
+
     - name: List pre-installed Python versions
       run: |
         echo "System Python versions:"
@@ -125,23 +125,22 @@ jobs:
     
     - name: Install Python 3.12
       run: |
-        # Enable latest Python 3.12 stream
-        dnf module reset python38 -y
-        dnf module enable python38:3.12 -y
+        # Enable Python 3.12 module
+        dnf module reset python3 -y
+        dnf module enable python3:3.12 -y
         
-        # Install Python 3.12
-        dnf install -y python3.12
+        # Install Python 3.12 and pip
+        dnf install -y python3.12 python3.12-pip
         
         # Verify installation
         python3.12 --version
 
     - name: Install pip and project dependencies
       run: |
-        # Upgrade system pip
-        python3 -m pip install --upgrade pip
-        
-        # Use Python 3.12 for project dependencies
+        # Upgrade pip
         python3.12 -m pip install --upgrade pip
+        
+        # Install project dependencies
         python3.12 -m pip install -r requirements.txt
         python3.12 -m pip install pyinstaller
     
@@ -165,8 +164,8 @@ jobs:
     - name: Install system dependencies
       run: |
         dnf update -y
-        dnf install -y which findutils
-    
+        dnf install -y which findutils gcc openssl-devel bzip2-devel libffi-devel wget tar xz make
+
     - name: List pre-installed Python versions
       run: |
         echo "System Python versions:"
@@ -185,23 +184,22 @@ jobs:
     
     - name: Install Python 3.12
       run: |
-        # Enable latest Python 3.12 stream
+        # Enable Python 3.12 module
         dnf module reset python3 -y
         dnf module enable python3:3.12 -y
         
-        # Install Python 3.12
-        dnf install -y python3.12
+        # Install Python 3.12 and pip
+        dnf install -y python3.12 python3.12-pip
         
         # Verify installation
         python3.12 --version
 
     - name: Install pip and project dependencies
       run: |
-        # Upgrade system pip
-        python3 -m pip install --upgrade pip
-        
-        # Use Python 3.12 for project dependencies
+        # Upgrade pip
         python3.12 -m pip install --upgrade pip
+        
+        # Install project dependencies
         python3.12 -m pip install -r requirements.txt
         python3.12 -m pip install pyinstaller
     
