@@ -53,21 +53,27 @@ jobs:
 
   build-oracle-linux-7:
     runs-on: ubuntu-latest
-    container: oraclelinux:7
+    container: 
+      image: oraclelinux:7
+      options: --privileged
     steps:
+    - name: Prepare environment
+      run: |
+        yum update -y
+        yum install -y epel-release
+        yum install -y centos-release-scl
+        yum install -y devtoolset-9-gcc devtoolset-9-gcc-c++
     - uses: actions/checkout@v4
     - name: Install Python and dependencies
       run: |
-        yum update -y
-        yum install -y oracle-epel-release-el7
-        yum install -y python3 python3-pip gcc python3-devel
-    - name: Install project dependencies
-      run: |
+        source /opt/rh/devtoolset-9/enable
+        yum install -y python3 python3-pip python3-devel gcc
         python3 -m pip install --upgrade pip
-        pip3 install -r requirements.txt
-        pip3 install pyinstaller
+        python3 -m pip install -r requirements.txt
+        python3 -m pip install pyinstaller
     - name: Build executable
       run: |
+        source /opt/rh/devtoolset-9/enable
         pyinstaller --name doc_converter --onefile doc_converter_gui.py
     - name: Upload artifact
       uses: actions/upload-artifact@v4
