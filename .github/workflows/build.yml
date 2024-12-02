@@ -45,12 +45,14 @@ jobs:
         pip install pyinstaller
     - name: Build executable
       run: |
-        pyinstaller --name doc_converter --windowed --onefile doc_converter_gui.py
+        pyinstaller --name "Doc-Converter" --windowed --onefile doc_converter_gui.py
+        mkdir -p artifacts/doc_converter-windows
+        cp dist/Doc-Converter.exe artifacts/doc_converter-windows/
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: doc_converter-windows
-        path: dist/doc_converter.exe
+        path: artifacts/doc_converter-windows/Doc-Converter.exe
 
   build-macos:
     runs-on: macos-latest
@@ -89,8 +91,6 @@ jobs:
     - name: Build executable
       run: |
         pyinstaller --name "Doc-Converter" --windowed --onefile --osx-bundle-identifier com.example.docconverter doc_converter_gui.py
-        mkdir -p "dist/Doc-Converter.app/Contents/MacOS"
-        mv "dist/Doc-Converter" "dist/Doc-Converter.app/Contents/MacOS/Doc-Converter"
         mkdir -p artifacts/doc_converter-macos
         cp -r "dist/Doc-Converter.app" artifacts/doc_converter-macos/
         
@@ -125,13 +125,15 @@ jobs:
     
     - name: Build executable
       run: |
-        python3 -m PyInstaller --name doc_converter --windowed --onefile doc_converter_gui.py
+        python3 -m PyInstaller --name "Doc-Converter" --onefile doc_converter_gui.py
+        mkdir -p artifacts/doc_converter-ol8
+        cp dist/Doc-Converter artifacts/doc_converter-ol8/
     
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: doc_converter-ol8
-        path: dist/doc_converter
+        path: artifacts/doc_converter-ol8/Doc-Converter
 
   build-oracle-linux-9:
     runs-on: ubuntu-latest
@@ -158,13 +160,15 @@ jobs:
     
     - name: Build executable
       run: |
-        python3 -m PyInstaller --name doc_converter --windowed --onefile doc_converter_gui.py
+        python3 -m PyInstaller --name "Doc-Converter" --onefile doc_converter_gui.py
+        mkdir -p artifacts/doc_converter-ol9
+        cp dist/Doc-Converter artifacts/doc_converter-ol9/
     
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: doc_converter-ol9
-        path: dist/doc_converter
+        path: artifacts/doc_converter-ol9/Doc-Converter
 
   build-ubuntu-24-04:
     runs-on: ubuntu-24.04
@@ -202,12 +206,14 @@ jobs:
         pip install pyinstaller
     - name: Build executable
       run: |
-        pyinstaller --name doc_converter --windowed --onefile doc_converter_gui.py
+        pyinstaller --name "Doc-Converter" --onefile doc_converter_gui.py
+        mkdir -p artifacts/doc_converter-ubuntu-24-04
+        cp dist/Doc-Converter artifacts/doc_converter-ubuntu-24-04/
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: doc_converter-ubuntu-24-04
-        path: dist/doc_converter
+        path: artifacts/doc_converter-ubuntu-24-04/Doc-Converter
 
   build-ubuntu-22-04:
     runs-on: ubuntu-22.04
@@ -245,12 +251,14 @@ jobs:
         pip install pyinstaller
     - name: Build executable
       run: |
-        pyinstaller --name doc_converter --windowed --onefile doc_converter_gui.py
+        pyinstaller --name "Doc-Converter" --onefile doc_converter_gui.py
+        mkdir -p artifacts/doc_converter-ubuntu-22-04
+        cp dist/Doc-Converter artifacts/doc_converter-ubuntu-22-04/
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: doc_converter-ubuntu-22-04
-        path: dist/doc_converter
+        path: artifacts/doc_converter-ubuntu-22-04/Doc-Converter
 
   build-ubuntu-20-04:
     runs-on: ubuntu-20.04
@@ -288,12 +296,14 @@ jobs:
         pip install pyinstaller
     - name: Build executable
       run: |
-        pyinstaller --name doc_converter --windowed --onefile doc_converter_gui.py
+        pyinstaller --name "Doc-Converter" --onefile doc_converter_gui.py
+        mkdir -p artifacts/doc_converter-ubuntu-20-04
+        cp dist/Doc-Converter artifacts/doc_converter-ubuntu-20-04/
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: doc_converter-ubuntu-20-04
-        path: dist/doc_converter
+        path: artifacts/doc_converter-ubuntu-20-04/Doc-Converter
 
   create-release:
     needs: 
@@ -338,7 +348,7 @@ jobs:
         UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
       with:
         upload_url: ${{ env.UPLOAD_URL }}
-        asset_path: artifacts/doc_converter-windows/doc_converter.exe
+        asset_path: artifacts/doc_converter-windows/Doc-Converter.exe
         asset_name: Doc-Converter-Windows-${{ steps.tag.outputs.tag_name }}.exe
         asset_content_type: application/octet-stream
 
@@ -360,7 +370,7 @@ jobs:
         UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
       with:
         upload_url: ${{ env.UPLOAD_URL }}
-        asset_path: artifacts/doc_converter-ol8/doc_converter
+        asset_path: artifacts/doc_converter-ol8/Doc-Converter
         asset_name: Doc-Converter-OL8-${{ steps.tag.outputs.tag_name }}.rpm
         asset_content_type: application/octet-stream
 
@@ -371,7 +381,7 @@ jobs:
         UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
       with:
         upload_url: ${{ env.UPLOAD_URL }}
-        asset_path: artifacts/doc_converter-ol9/doc_converter
+        asset_path: artifacts/doc_converter-ol9/Doc-Converter
         asset_name: Doc-Converter-OL9-${{ steps.tag.outputs.tag_name }}.rpm
         asset_content_type: application/octet-stream
 
@@ -382,7 +392,7 @@ jobs:
         UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
       with:
         upload_url: ${{ env.UPLOAD_URL }}
-        asset_path: artifacts/doc_converter-ubuntu-24-04/dist/doc_converter
+        asset_path: artifacts/doc_converter-ubuntu-24-04/Doc-Converter
         asset_name: Doc-Converter-Ubuntu-24-04-${{ steps.tag.outputs.tag_name }}.deb
         asset_content_type: application/octet-stream
 
@@ -393,7 +403,7 @@ jobs:
         UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
       with:
         upload_url: ${{ env.UPLOAD_URL }}
-        asset_path: artifacts/doc_converter-ubuntu-22-04/dist/doc_converter
+        asset_path: artifacts/doc_converter-ubuntu-22-04/Doc-Converter
         asset_name: Doc-Converter-Ubuntu-22-04-${{ steps.tag.outputs.tag_name }}.deb
         asset_content_type: application/octet-stream
 
@@ -404,6 +414,6 @@ jobs:
         UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
       with:
         upload_url: ${{ env.UPLOAD_URL }}
-        asset_path: artifacts/doc_converter-ubuntu-20-04/dist/doc_converter
+        asset_path: artifacts/doc_converter-ubuntu-20-04/Doc-Converter
         asset_name: Doc-Converter-Ubuntu-20-04-${{ steps.tag.outputs.tag_name }}.deb
         asset_content_type: application/octet-stream
