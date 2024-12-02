@@ -363,32 +363,42 @@ jobs:
 
     - name: Prepare macOS Artifact for Upload
       run: |
-        # Ensure we're in the correct directory
-        cd "${{ github.workspace }}"
-        
         # Extensive debugging of artifact location
-        echo "Current directory contents:"
+        echo "Current workspace directory:"
         pwd
-        ls -la
         
-        echo "Searching for .app bundle:"
+        echo "Listing all directories:"
+        find . -type d
+        
+        echo "Listing artifacts directory contents:"
+        ls -laR artifacts
+        
+        echo "Searching for .app bundle in artifacts:"
+        find artifacts -name "*.app" -type d
+        
+        echo "Searching for .app bundle in entire workspace:"
         find . -name "*.app" -type d
         
-        # Locate the .app bundle
-        APP_BUNDLE=$(find . -name "*.app" -type d | head -n 1)
+        # Set the path to the .app bundle
+        APP_BUNDLE_PATH=$(find artifacts -name "*.app" -type d | head -n 1)
         
-        if [ -z "$APP_BUNDLE" ]; then
-          echo "Error: No .app bundle found"
+        if [ -z "$APP_BUNDLE_PATH" ]; then
+          echo "Error: No .app bundle found in artifacts directory"
+          
+          # Additional search with more verbose output
+          echo "Attempting broader search:"
+          find . -name "*.app" -type d -print
+          
           exit 1
         fi
         
-        echo "Found .app bundle: $APP_BUNDLE"
+        echo "Found .app bundle at: $APP_BUNDLE_PATH"
         
-        # Prepare artifacts directory
+        # Ensure destination directory exists
         mkdir -p artifacts/doc_converter-macos
         
         # Create zip of the entire .app bundle
-        zip -r "artifacts/doc_converter-macos/Doc-Converter.zip" "$APP_BUNDLE"
+        zip -r "artifacts/doc_converter-macos/Doc-Converter.zip" "$APP_BUNDLE_PATH"
         
         # Verify archive creation
         echo "Compressed archive details:"
