@@ -60,13 +60,22 @@ class DocConverterApp:
                                       state=tk.NORMAL, width=15)
         self.convert_button.grid(row=1, column=0, pady=10)
         
+        # Show Output button
+        self.show_output_button = tk.Button(self.main_frame, text="Show Output", 
+                                          command=self.show_output_window,
+                                          state=tk.DISABLED, width=15)
+        self.show_output_button.grid(row=2, column=0, pady=10)
+        
         # Exit button (initially disabled)
         self.exit_button = tk.Button(self.main_frame, text="Exit", command=self.exit_app, 
                                    state=tk.DISABLED, width=15)
-        self.exit_button.grid(row=2, column=0, pady=10)
+        self.exit_button.grid(row=3, column=0, pady=10)
         
         # Output window
         self.output_window = None
+        
+        # Store last output
+        self.last_output = []
     
     def browse_file(self):
         """Open file browser to select .doc file"""
@@ -76,6 +85,13 @@ class DocConverterApp:
         )
         if filename:
             self.file_path.set(filename)
+    
+    def show_output_window(self):
+        """Show the output window with previous output"""
+        self.create_output_window()
+        # Replay previous output
+        for message in self.last_output:
+            self.output_text.insert(tk.END, message)
     
     def start_conversion(self):
         """Start conversion process in a separate thread"""
@@ -89,6 +105,9 @@ class DocConverterApp:
         if not input_file.lower().endswith('.doc'):
             messagebox.showerror("Error", "Please select a .doc file")
             return
+        
+        # Clear previous output
+        self.last_output = []
         
         # Create output window
         self.create_output_window()
@@ -107,6 +126,7 @@ class DocConverterApp:
     def create_output_window(self):
         """Create a new window to display conversion output"""
         if self.output_window and self.output_window.winfo_exists():
+            self.output_window.lift()
             return
         
         self.output_window = tk.Toplevel(self.master)
@@ -136,12 +156,25 @@ class DocConverterApp:
                                      command=self.on_output_window_close, width=15)
         output_exit_button.grid(row=1, column=0, pady=10)
         
-        # Redirect stdout to the text widget
-        sys.stdout = RedirectText(self.output_text)
-        sys.stderr = RedirectText(self.output_text)
+        # Custom stdout redirector that also stores output
+        class StoringRedirectText(RedirectText):
+            def __init__(self, text_widget, output_store):
+                super().__init__(text_widget)
+                self.output_store = output_store
+            
+            def write(self, string):
+                super().write(string)
+                self.output_store.append(string)
+        
+        # Redirect stdout to the text widget and store output
+        sys.stdout = StoringRedirectText(self.output_text, self.last_output)
+        sys.stderr = StoringRedirectText(self.output_text, self.last_output)
         
         # Close event handler
         self.output_window.protocol("WM_DELETE_WINDOW", self.on_output_window_close)
+        
+        # Enable the show output button
+        self.show_output_button.config(state=tk.NORMAL)
     
     def run_conversion(self, input_file):
         """Perform the actual conversion"""
