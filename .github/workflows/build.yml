@@ -139,6 +139,7 @@ jobs:
         path: dist/doc_converter
 
   build-ubuntu-24-04:
+    if: ${{ !contains(fromJson('["24.04"]'), runner.os-version) }}
     runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v4
@@ -161,6 +162,7 @@ jobs:
         path: dist/doc_converter
 
   build-ubuntu-22-04:
+    if: ${{ !contains(fromJson('["22.04"]'), runner.os-version) }}
     runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v4
@@ -183,6 +185,7 @@ jobs:
         path: dist/doc_converter
 
   build-ubuntu-20-04:
+    if: ${{ !contains(fromJson('["20.04"]'), runner.os-version) }}
     runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v4
