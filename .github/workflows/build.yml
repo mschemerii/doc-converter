@@ -105,48 +105,22 @@ jobs:
     - name: Install system dependencies
       run: |
         dnf update -y
-        dnf install -y which findutils gcc openssl-devel bzip2-devel libffi-devel wget tar xz make
+        dnf install -y python3 python3-pip gcc make
 
-    - name: List pre-installed Python versions
+    - name: List Python version
       run: |
-        echo "System Python versions:"
-        find /usr/bin -name 'python*'
-        
-        echo "Checking Python versions:"
-        for python in python python3 python3.9 python3.10 python3.11 python3.12; do
-          if command -v $python &> /dev/null; then
-            echo "Version of $python:"
-            $python --version || true
-          fi
-        done
-        
-        echo "Python executable paths:"
-        which python python3 || true
-    
-    - name: Install Python 3.12
-      run: |
-        # Enable Python 3.12 module
-        dnf module reset python3 -y
-        dnf module enable python3:3.12 -y
-        
-        # Install Python 3.12 and pip
-        dnf install -y python3.12 python3.12-pip
-        
-        # Verify installation
-        python3.12 --version
+        python3 --version
+        pip3 --version
 
-    - name: Install pip and project dependencies
+    - name: Install project dependencies
       run: |
-        # Upgrade pip
-        python3.12 -m pip install --upgrade pip
-        
-        # Install project dependencies
-        python3.12 -m pip install -r requirements.txt
-        python3.12 -m pip install pyinstaller
+        python3 -m pip install --upgrade pip
+        python3 -m pip install -r requirements.txt
+        python3 -m pip install pyinstaller
     
     - name: Build executable
       run: |
-        python3.12 -m PyInstaller --name doc_converter --windowed --onefile doc_converter_gui.py
+        python3 -m PyInstaller --name doc_converter --windowed --onefile doc_converter_gui.py
     
     - name: Upload artifact
       uses: actions/upload-artifact@v4
@@ -164,48 +138,22 @@ jobs:
     - name: Install system dependencies
       run: |
         dnf update -y
-        dnf install -y which findutils gcc openssl-devel bzip2-devel libffi-devel wget tar xz make
+        dnf install -y python3 python3-pip gcc make
 
-    - name: List pre-installed Python versions
+    - name: List Python version
       run: |
-        echo "System Python versions:"
-        find /usr/bin -name 'python*'
-        
-        echo "Checking Python versions:"
-        for python in python python3 python3.9 python3.10 python3.11 python3.12; do
-          if command -v $python &> /dev/null; then
-            echo "Version of $python:"
-            $python --version || true
-          fi
-        done
-        
-        echo "Python executable paths:"
-        which python python3 || true
-    
-    - name: Install Python 3.12
-      run: |
-        # Enable Python 3.12 module
-        dnf module reset python3 -y
-        dnf module enable python3:3.12 -y
-        
-        # Install Python 3.12 and pip
-        dnf install -y python3.12 python3.12-pip
-        
-        # Verify installation
-        python3.12 --version
+        python3 --version
+        pip3 --version
 
-    - name: Install pip and project dependencies
+    - name: Install project dependencies
       run: |
-        # Upgrade pip
-        python3.12 -m pip install --upgrade pip
-        
-        # Install project dependencies
-        python3.12 -m pip install -r requirements.txt
-        python3.12 -m pip install pyinstaller
+        python3 -m pip install --upgrade pip
+        python3 -m pip install -r requirements.txt
+        python3 -m pip install pyinstaller
     
     - name: Build executable
       run: |
-        python3.12 -m PyInstaller --name doc_converter --windowed --onefile doc_converter_gui.py
+        python3 -m PyInstaller --name doc_converter --windowed --onefile doc_converter_gui.py
     
     - name: Upload artifact
       uses: actions/upload-artifact@v4
