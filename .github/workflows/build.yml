@@ -139,69 +139,132 @@ jobs:
         path: dist/doc_converter
 
   build-ubuntu-24-04:
-    if: ${{ !contains(fromJson('["24.04"]'), runner.os-version) }}
     runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v4
+    - name: Determine if build should run
+      id: check_build
+      run: |
+        # Get the current ubuntu-latest version
+        LATEST_VERSION=$(curl -s https://raw.githubusercontent.com/actions/runner-images/main/images/ubuntu/Ubuntu-Latest.json | grep -o '"ImageVersion": *"[^"]*"' | cut -d'"' -f4)
+        
+        # Check if this version matches the current runner
+        if [[ "$LATEST_VERSION" == *"24.04"* ]]; then
+          echo "Skipping build as this is the latest Ubuntu version"
+          echo "should_run=false" >> $GITHUB_OUTPUT
+        else
+          echo "Running build for this Ubuntu version"
+          echo "should_run=true" >> $GITHUB_OUTPUT
+        fi
+    
     - name: Set up Python
+      if: steps.check_build.outputs.should_run == 'true'
       uses: actions/setup-python@v5
       with:
         python-version: '3.10'
+    
     - name: Install dependencies
+      if: steps.check_build.outputs.should_run == 'true'
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install pyinstaller
+    
     - name: Build executable
+      if: steps.check_build.outputs.should_run == 'true'
       run: |
         pyinstaller --name doc_converter --windowed --onefile doc_converter_gui.py
+    
     - name: Upload artifact
+      if: steps.check_build.outputs.should_run == 'true'
       uses: actions/upload-artifact@v4
       with:
         name: doc_converter-ubuntu-24-04
         path: dist/doc_converter
 
   build-ubuntu-22-04:
-    if: ${{ !contains(fromJson('["22.04"]'), runner.os-version) }}
     runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v4
+    - name: Determine if build should run
+      id: check_build
+      run: |
+        # Get the current ubuntu-latest version
+        LATEST_VERSION=$(curl -s https://raw.githubusercontent.com/actions/runner-images/main/images/ubuntu/Ubuntu-Latest.json | grep -o '"ImageVersion": *"[^"]*"' | cut -d'"' -f4)
+        
+        # Check if this version matches the current runner
+        if [[ "$LATEST_VERSION" == *"22.04"* ]]; then
+          echo "Skipping build as this is the latest Ubuntu version"
+          echo "should_run=false" >> $GITHUB_OUTPUT
+        else
+          echo "Running build for this Ubuntu version"
+          echo "should_run=true" >> $GITHUB_OUTPUT
+        fi
+    
     - name: Set up Python
+      if: steps.check_build.outputs.should_run == 'true'
       uses: actions/setup-python@v5
       with:
         python-version: '3.10'
+    
     - name: Install dependencies
+      if: steps.check_build.outputs.should_run == 'true'
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install pyinstaller
+    
     - name: Build executable
+      if: steps.check_build.outputs.should_run == 'true'
       run: |
         pyinstaller --name doc_converter --windowed --onefile doc_converter_gui.py
+    
     - name: Upload artifact
+      if: steps.check_build.outputs.should_run == 'true'
       uses: actions/upload-artifact@v4
       with:
         name: doc_converter-ubuntu-22-04
         path: dist/doc_converter
 
   build-ubuntu-20-04:
-    if: ${{ !contains(fromJson('["20.04"]'), runner.os-version) }}
     runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v4
+    - name: Determine if build should run
+      id: check_build
+      run: |
+        # Get the current ubuntu-latest version
+        LATEST_VERSION=$(curl -s https://raw.githubusercontent.com/actions/runner-images/main/images/ubuntu/Ubuntu-Latest.json | grep -o '"ImageVersion": *"[^"]*"' | cut -d'"' -f4)
+        
+        # Check if this version matches the current runner
+        if [[ "$LATEST_VERSION" == *"20.04"* ]]; then
+          echo "Skipping build as this is the latest Ubuntu version"
+          echo "should_run=false" >> $GITHUB_OUTPUT
+        else
+          echo "Running build for this Ubuntu version"
+          echo "should_run=true" >> $GITHUB_OUTPUT
+        fi
+    
     - name: Set up Python
+      if: steps.check_build.outputs.should_run == 'true'
       uses: actions/setup-python@v5
       with:
         python-version: '3.10'
+    
     - name: Install dependencies
+      if: steps.check_build.outputs.should_run == 'true'
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install pyinstaller
+    
     - name: Build executable
+      if: steps.check_build.outputs.should_run == 'true'
       run: |
         pyinstaller --name doc_converter --windowed --onefile doc_converter_gui.py
+    
     - name: Upload artifact
+      if: steps.check_build.outputs.should_run == 'true'
       uses: actions/upload-artifact@v4
       with:
         name: doc_converter-ubuntu-20-04
