@@ -88,15 +88,15 @@ jobs:
         pip install pyinstaller
     - name: Build executable
       run: |
-        pyinstaller --name "Doc Converter" --windowed --onefile --osx-bundle-identifier com.example.docconverter doc_converter_gui.py
-        mkdir -p "dist/Doc Converter.app/Contents/MacOS"
-        mv "dist/Doc Converter" "dist/Doc Converter.app/Contents/MacOS/Doc Converter"
+        pyinstaller --name "Doc-Converter" --windowed --onefile --osx-bundle-identifier com.example.docconverter doc_converter_gui.py
+        mkdir -p "dist/Doc-Converter.app/Contents/MacOS"
+        mv "dist/Doc-Converter" "dist/Doc-Converter.app/Contents/MacOS/Doc-Converter"
         
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: doc_converter-macos
-        path: dist/Doc Converter.app
+        path: dist/Doc-Converter.app
 
   build-oracle-linux-8:
     runs-on: ubuntu-latest
@@ -311,7 +311,7 @@ jobs:
       shell: bash
       run: |
         TAG_NAME="v$(date +'%Y.%m.%d-%H%M')"
-        echo "tag_name=${TAG_NAME}" >> "$GITHUB_OUTPUT"
+        echo "::set-output name=tag_name::${TAG_NAME}"
 
     - name: Create Release
       id: create_release
@@ -333,68 +333,75 @@ jobs:
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
       with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        upload_url: ${{ env.UPLOAD_URL }}
         asset_path: artifacts/doc_converter-windows/doc_converter.exe
-        asset_name: doc_converter-windows.exe
+        asset_name: Doc-Converter-Windows-${{ steps.tag.outputs.tag_name }}.exe
         asset_content_type: application/octet-stream
 
     - name: Upload macOS Artifact
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
       with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: artifacts/doc_converter-macos/Doc Converter.app
-        asset_name: Doc Converter.app
+        upload_url: ${{ env.UPLOAD_URL }}
+        asset_path: artifacts/doc_converter-macos/Doc-Converter.app
+        asset_name: Doc-Converter-${{ steps.tag.outputs.tag_name }}.app
         asset_content_type: application/octet-stream
 
     - name: Upload Oracle Linux 8 Artifact
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
       with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        upload_url: ${{ env.UPLOAD_URL }}
         asset_path: artifacts/doc_converter-ol8/doc_converter
-        asset_name: doc_converter-ol8.rpm
+        asset_name: Doc-Converter-OL8-${{ steps.tag.outputs.tag_name }}.rpm
         asset_content_type: application/octet-stream
 
     - name: Upload Oracle Linux 9 Artifact
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
       with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        upload_url: ${{ env.UPLOAD_URL }}
         asset_path: artifacts/doc_converter-ol9/doc_converter
-        asset_name: doc_converter-ol9.rpm
+        asset_name: Doc-Converter-OL9-${{ steps.tag.outputs.tag_name }}.rpm
         asset_content_type: application/octet-stream
 
     - name: Upload Ubuntu 24.04 Artifact
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
       with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        upload_url: ${{ env.UPLOAD_URL }}
         asset_path: artifacts/doc_converter-ubuntu-24-04/doc_converter
-        asset_name: doc_converter-ubuntu-24-04.deb
+        asset_name: Doc-Converter-Ubuntu-24-04-${{ steps.tag.outputs.tag_name }}.deb
         asset_content_type: application/octet-stream
 
     - name: Upload Ubuntu 22.04 Artifact
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
       with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        upload_url: ${{ env.UPLOAD_URL }}
         asset_path: artifacts/doc_converter-ubuntu-22-04/doc_converter
-        asset_name: doc_converter-ubuntu-22-04.deb
+        asset_name: Doc-Converter-Ubuntu-22-04-${{ steps.tag.outputs.tag_name }}.deb
         asset_content_type: application/octet-stream
 
     - name: Upload Ubuntu 20.04 Artifact
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
       with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        upload_url: ${{ env.UPLOAD_URL }}
         asset_path: artifacts/doc_converter-ubuntu-20-04/doc_converter
-        asset_name: doc_converter-ubuntu-20-04.deb
+        asset_name: Doc-Converter-Ubuntu-20-04-${{ steps.tag.outputs.tag_name }}.deb
         asset_content_type: application/octet-stream
