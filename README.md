@@ -150,17 +150,21 @@ Linux-specific:
 
 ## Usage Examples
 
-1. Basic document processing:
+1. Basic document processing via CLI:
 ```bash
 python process_document.py "document.doc"
 ```
 
-2. Process multiple documents:
+2. GUI Document Conversion:
 ```bash
-for file in *.doc; do
-    python process_document.py "$file"
-done
+python doc_converter_gui.py
 ```
+
+### GUI Features
+- Browse button to select .doc file
+- Convert button to start conversion
+- Real-time output window
+- Exit button with safety checks
 
 ## Error Handling
 
