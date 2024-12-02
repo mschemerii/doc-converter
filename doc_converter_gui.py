@@ -188,8 +188,12 @@ class DocConverterApp:
             success = process_document(input_file)
             
             if success:
+                # Show a clear success popup
+                self.master.after(0, self.show_success_popup, input_file)
                 print(f"Successfully processed document: {input_file}")
             else:
+                # Show an error popup if processing failed
+                self.master.after(0, self.show_error_popup, "Document processing failed")
                 print(f"Failed to process document: {input_file}")
             
             # Re-enable convert button
@@ -203,8 +207,89 @@ class DocConverterApp:
             import traceback
             traceback.print_exc()
             
+            # Show an error popup
+            self.master.after(0, self.show_error_popup, str(e))
+            
             # Re-enable convert button
             self.master.after(0, self.convert_button.config, {"state": tk.NORMAL})
+    
+    def show_success_popup(self, input_file):
+        """Show a clear success popup with details about the processed document"""
+        # Get the directory where the processed files are located
+        directory = os.path.dirname(input_file) or '.'
+        base_name = os.path.splitext(os.path.basename(input_file))[0]
+        
+        # Construct a message with details
+        message = (
+            f"Document Processing Complete!\n\n"
+            f"Original File: {input_file}\n\n"
+            f"Processed Files Location: {directory}\n\n"
+            f"Files Created:\n"
+            f"- {base_name}.docx\n"
+            f"- {base_name}_with_headers.docx\n"
+            f"- Other modified copies"
+        )
+        
+        # Create a custom popup window
+        popup = tk.Toplevel(self.master)
+        popup.title("Processing Successful")
+        popup.geometry("400x300")
+        popup.grab_set()  # Make the popup modal
+        
+        # Success icon (you can customize this)
+        success_label = tk.Label(popup, text="✅", font=("Arial", 48))
+        success_label.pack(pady=(20, 10))
+        
+        # Message text
+        message_label = tk.Label(
+            popup, 
+            text=message, 
+            font=("Arial", 10), 
+            justify=tk.LEFT,
+            wraplength=350
+        )
+        message_label.pack(padx=20, pady=10)
+        
+        # Close button
+        close_button = tk.Button(
+            popup, 
+            text="Close", 
+            command=popup.destroy, 
+            width=15
+        )
+        close_button.pack(pady=20)
+    
+    def show_error_popup(self, error_message):
+        """Show a clear error popup with details about the processing failure"""
+        # Create a custom error popup window
+        popup = tk.Toplevel(self.master)
+        popup.title("Processing Error")
+        popup.geometry("400x250")
+        popup.grab_set()  # Make the popup modal
+        
+        # Error icon (you can customize this)
+        error_label = tk.Label(popup, text="❌", font=("Arial", 48))
+        error_label.pack(pady=(20, 10))
+        
+        # Error message text
+        message_label = tk.Label(
+            popup, 
+            text=f"Document Processing Failed:\n\n{error_message}", 
+            font=("Arial", 10), 
+            fg="red",
+            justify=tk.CENTER,
+            wraplength=350
+        )
+        message_label.pack(padx=20, pady=10)
+        
+        # Close button
+        close_button = tk.Button(
+            popup, 
+            text="Close", 
+            command=popup.destroy, 
+            width=15
+        )
+        close_button.pack(pady=20)
     
     def on_output_window_close(self):
         """Handle closing of output window"""
