@@ -302,13 +302,32 @@ class DocConverterApp:
             sys.stderr = sys.__stderr__
     
     def exit_app(self):
-        """Exit the application"""
-        # Only allow exit if output window is closed
-        if self.output_window and self.output_window.winfo_exists():
-            messagebox.showwarning("Cannot Exit", "Please close the Output Window first.")
-            return
-        
-        self.master.quit()
+        """Handle application exit with output window confirmation"""
+        # Check if output window exists and has content
+        if (self.output_window and self.output_window.winfo_exists() and 
+            hasattr(self, 'output_text') and 
+            self.output_text.get("1.0", tk.END).strip()):
+            
+            # Ask user if they want to close the output window
+            response = messagebox.askyesno(
+                "Close Output Window", 
+                "Do you want to close the output window before exiting?",
+                icon='question'
+            )
+            
+            if response:
+                # User wants to close output window
+                if self.output_window:
+                    self.output_window.destroy()
+                self.master.quit()
+            else:
+                # User wants to keep output window open
+                if self.output_window:
+                    self.output_window.lift()  # Bring output window to front
+                    self.output_window.focus_force()
+        else:
+            # No output window or no content, just exit
+            self.master.quit()
 
 def main():
     root = tk.Tk()
