@@ -305,8 +305,10 @@ jobs:
     steps:
     - name: Generate release tag
       id: tag
+      shell: bash
       run: |
-        echo "tag_name=v$(date +'%Y.%m.%d-%H%M')" >> "$GITHUB_OUTPUT"
+        TAG_NAME="v$(date +'%Y.%m.%d-%H%M')"
+        echo "TAG_NAME=${TAG_NAME}" >> "$GITHUB_OUTPUT"
 
     - name: Create Release
       id: create_release
@@ -314,8 +316,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ steps.tag.outputs.tag_name }}
-        release_name: Release ${{ steps.tag.outputs.tag_name }}
+        tag_name: ${{ steps.tag.outputs.TAG_NAME }}
+        release_name: Release ${{ steps.tag.outputs.TAG_NAME }}
         draft: false
         prerelease: false
 
@@ -342,7 +344,7 @@ jobs:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: artifacts/doc_converter-macos/doc_converter
         asset_name: doc_converter.app
-        asset_content_type: application/octet-stream
+        asset_content_type: application/x-mach-binary
 
     - name: Upload Oracle Linux 8 Artifact
       uses: actions/upload-release-asset@v1
