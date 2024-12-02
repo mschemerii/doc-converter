@@ -271,30 +271,27 @@ jobs:
         path: dist/doc_converter
 
   release:
-    needs: [build-windows, build-macos, build-oracle-linux-8, build-oracle-linux-9, build-ubuntu, build-ubuntu-24-04, build-ubuntu-22-04, build-ubuntu-20-04]
+    needs: [build-windows, build-macos, build-oracle-linux-8, build-oracle-linux-9, build-ubuntu-24-04, build-ubuntu-22-04, build-ubuntu-20-04]
     runs-on: ubuntu-latest
     steps:
-    - name: Download artifacts
+    - uses: actions/checkout@v4
+    
+    - name: Download all artifacts
       uses: actions/download-artifact@v4
       with:
         path: artifacts
-        merge-multiple: true
-
+    
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
       with:
-        tag_name: v24
-        name: Release v24
-        draft: false
-        prerelease: false
         files: |
           artifacts/doc_converter-windows/doc_converter.exe
           artifacts/doc_converter-macos/doc_converter
           artifacts/doc_converter-ol8/doc_converter
           artifacts/doc_converter-ol9/doc_converter
-          artifacts/doc_converter-ubuntu/doc_converter
           artifacts/doc_converter-ubuntu-24-04/doc_converter
           artifacts/doc_converter-ubuntu-22-04/doc_converter
           artifacts/doc_converter-ubuntu-20-04/doc_converter
+        generate_release_notes: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
