@@ -94,9 +94,15 @@ jobs:
         mkdir -p "dist/Doc-Converter.app/Contents/MacOS"
         mv "dist/Doc-Converter" "dist/Doc-Converter.app/Contents/MacOS/Doc-Converter"
         mkdir -p artifacts/doc_converter-macos
-        cp -R "dist/Doc-Converter.app" artifacts/doc_converter-macos/
-        ls -la artifacts/doc_converter-macos/
+        cp -R "dist/Doc-Converter.app" "artifacts/doc_converter-macos/Doc-Converter.app"
+        ls -lR artifacts/doc_converter-macos
         
+    - name: Debug macOS Artifact
+      run: |
+        pwd
+        ls -R artifacts/doc_converter-macos
+        find artifacts/doc_converter-macos -type d
+
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
