@@ -10,120 +10,84 @@ A comprehensive Python-based utility for converting, modifying, and preparing do
 - Create multiple document copies with specific modifications
 - Platform-specific support for Windows, macOS, and Linux
 - Automatic virtual environment management
+- **New: Python Version Compatibility Check**
+  - Automatically detects and recommends Python 3.12
+  - Cross-platform download guidance for Python installation
 
 ## Prerequisites
 
-- Python 3.x
+- **Recommended Python Version: 3.12**
 - Microsoft Word (for .doc to .docx conversion on Windows/macOS)
 - Pandoc (for .doc to .docx conversion on Linux)
-- Operating System: Windows, macOS, or Linux (Oracle Linux 7/8/9, Ubuntu LTS)
+- Operating System: Windows, macOS, or Linux (Oracle Linux 8/9, Ubuntu LTS)
+
+## Python Version Management
+
+The application now includes an intelligent Python version check:
+- Automatically detects your current Python version
+- Recommends upgrading to Python 3.12
+- Provides OS-specific download links
+- Prevents application launch with incompatible Python versions
+
+### Version Check Behavior
+- If Python version is below 3.12, a dialog will appear
+- Users can choose to download the recommended version
+- Application will not start with unsupported Python versions
 
 ## Installation
 
 ### Windows and macOS
 
-1. Create a new directory for the utility:
+1. Install Python 3.12 from [python.org](https://www.python.org/downloads/)
+2. Create a new directory for the utility:
 ```bash
 mkdir doc-converter
 cd doc-converter
 ```
 
-2. Download or copy these required files into the directory:
-- `process_document.py`: Main orchestration script
-- `doc_to_docx_converter.py`: Handles .doc to .docx conversion
-- `modify_docx_tables.py`: Modifies table properties
-- `add_table_rows.py`: Adds empty rows to tables
-- `rename_docx.py`: Creates document copies with modifications
-- `requirements.txt`: Lists all dependencies
-
-3. Run the processing script:
+3. Clone or download the repository
+4. Install dependencies:
 ```bash
-python process_document.py <path-to-doc-file>
+python -m pip install -r requirements.txt
 ```
 
-The script will automatically:
-- Create a virtual environment (if not exists)
-- Install required dependencies
-- Process your document
-- Deactivate the virtual environment when done
-
-### Linux
-
-#### Ubuntu/Debian
+5. Run the application:
 ```bash
-# Install system dependencies
-sudo apt-get update
-sudo apt-get install pandoc
-
-# Set up the project
-git clone <repository-url>
-cd doc-converter
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+python doc_converter_gui.py
 ```
 
-#### Oracle Linux 7/8/9
-```bash
-# Install system dependencies
-sudo yum update
-sudo yum install pandoc
+### Linux (Oracle Linux, Ubuntu)
 
-# Set up the project
-git clone <repository-url>
-cd doc-converter
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
+1. Install Python 3.12 using system package manager
+2. Follow similar steps as Windows/macOS installation
 
-## Linux Conversion Notes
+## Troubleshooting Python Version
 
-On Linux systems, the document conversion relies on Pandoc:
-- Ensure Pandoc is installed before running the script
-- Conversion may have limitations compared to Microsoft Word
-- Some complex formatting might not be perfectly preserved
+- Check current Python version: `python --version`
+- Recommended version: 3.12.x
+- If version is incorrect, download from [python.org](https://www.python.org/downloads/)
 
-## Components
+## Continuous Integration
 
-### 1. doc_to_docx_converter.py
-Converts .doc files to .docx format:
-- Uses Microsoft Word on Windows/macOS
-- Uses Pandoc on Linux
-- Maintains document formatting
-- Handles file path conversion
+- Automated builds for Windows, macOS, Linux
+- Supports multiple Linux distributions
+- Uses GitHub Actions for consistent deployment
 
-### 2. modify_docx_tables.py
-Modifies table properties in .docx files:
-- Removes "Automatically resize to fit contents" setting
-- Removes fixed column widths
-- Sets table width to 100%
-- Uses python-docx for XML manipulation
+## Contributing
 
-### 3. add_table_rows.py
-Adds empty rows after content rows in tables:
-- Preserves table formatting
-- Copies row properties
-- Maintains cell and paragraph formatting
-- Handles complex table structures
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
 
-### 4. rename_docx.py
-Creates multiple document copies with modifications:
-- Renames files (replaces "+-+" with "_")
-- Removes "+" characters
-- Adds custom suffixes
-- Adds centered headers
-- Selectively removes document sections:
-  * Removes content from "Rollback" heading
-  * Removes content from "Pre-Deploy Steps" to "Rollback"
+## License
 
-### 5. process_document.py
-Orchestrates the entire document processing workflow:
-1. Manages Python virtual environment
-2. Converts .doc to .docx
-3. Modifies table properties
-4. Adds empty rows to tables
-5. Creates renamed copies with headers
+[Specify your license here]
+
+## Contact
+
+[Your contact information]
 
 ## Output Files
 
@@ -199,24 +163,43 @@ The utility includes comprehensive error handling for:
    chmod +x *.py
    ```
 
-## Contributing
+## Components
 
-1. Fork the repository
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a new Pull Request
+### 1. doc_to_docx_converter.py
+Converts .doc files to .docx format:
+- Uses Microsoft Word on Windows/macOS
+- Uses Pandoc on Linux
+- Maintains document formatting
+- Handles file path conversion
 
-## License
+### 2. modify_docx_tables.py
+Modifies table properties in .docx files:
+- Removes "Automatically resize to fit contents" setting
+- Removes fixed column widths
+- Sets table width to 100%
+- Uses python-docx for XML manipulation
 
-[Specify your license here]
+### 3. add_table_rows.py
+Adds empty rows after content rows in tables:
+- Preserves table formatting
+- Copies row properties
+- Maintains cell and paragraph formatting
+- Handles complex table structures
 
-## Support
+### 4. rename_docx.py
+Creates multiple document copies with modifications:
+- Renames files (replaces "+-+" with "_")
+- Removes "+" characters
+- Adds custom suffixes
+- Adds centered headers
+- Selectively removes document sections:
+  * Removes content from "Rollback" heading
+  * Removes content from "Pre-Deploy Steps" to "Rollback"
 
-For issues, questions, or contributions, please:
-1. Check existing issues
-2. Create a new issue with:
-   - OS version
-   - Python version
-   - Document sample (if possible)
-   - Error message/logs
+### 5. process_document.py
+Orchestrates the entire document processing workflow:
+1. Manages Python virtual environment
+2. Converts .doc to .docx
+3. Modifies table properties
+4. Adds empty rows to tables
+5. Creates renamed copies with headers
