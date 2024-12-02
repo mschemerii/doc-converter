@@ -363,27 +363,24 @@ jobs:
 
     - name: Prepare macOS Artifact for Upload
       run: |
-        # Use absolute path and verbose debugging
-        GITHUB_WORKSPACE="${{ github.workspace }}"
-        ARTIFACT_DIR="${GITHUB_WORKSPACE}/artifacts/doc_converter-macos"
+        # Ensure we're in the correct directory
+        cd "${{ github.workspace }}"
         
-        echo "GitHub Workspace: ${GITHUB_WORKSPACE}"
-        echo "Artifact Directory: ${ARTIFACT_DIR}"
+        # Debug: show current directory and artifact contents
+        pwd
+        echo "Listing artifacts directory:"
+        ls -la artifacts/doc_converter-macos
         
-        # Verify artifact exists
-        echo "Contents of artifact directory:"
-        ls -la "${ARTIFACT_DIR}"
-        
-        # Create a compressed archive for upload
-        cd "${ARTIFACT_DIR}"
-        tar -czvf "Doc-Converter.tar.gz" "Doc-Converter.app"
+        # Create a zip archive of the .app bundle
+        cd artifacts/doc_converter-macos
+        zip -r Doc-Converter.zip "Doc-Converter.app"
         
         # Verify archive creation
         echo "Compressed archive details:"
-        ls -la "Doc-Converter.tar.gz"
+        ls -la Doc-Converter.zip
         
         # Confirm file exists
-        if [ ! -f "Doc-Converter.tar.gz" ]; then
+        if [ ! -f "Doc-Converter.zip" ]; then
           echo "Error: Artifact archive was not created"
           exit 1
         fi
@@ -395,9 +392,9 @@ jobs:
         UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
       with:
         upload_url: ${{ env.UPLOAD_URL }}
-        asset_path: ${{ github.workspace }}/artifacts/doc_converter-macos/Doc-Converter.tar.gz
-        asset_name: Doc-Converter-${{ steps.tag.outputs.tag_name }}.app.tar.gz
-        asset_content_type: application/gzip
+        asset_path: ${{ github.workspace }}/artifacts/doc_converter-macos/Doc-Converter.zip
+        asset_name: Doc-Converter-${{ steps.tag.outputs.tag_name }}.app.zip
+        asset_content_type: application/zip
 
     - name: Upload Oracle Linux 8 Artifact
       uses: actions/upload-release-asset@v1
