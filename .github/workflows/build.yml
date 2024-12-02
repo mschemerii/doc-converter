@@ -61,7 +61,7 @@ jobs:
       run: |
         yum update -y
         yum install -y oracle-epel-release-el7
-        yum install -y centos-release-scl
+        yum install -y oracle-softwarecollections-release-el7
         yum install -y devtoolset-9-gcc devtoolset-9-gcc-c++
     - uses: actions/checkout@v4
     - name: Install Python and dependencies
