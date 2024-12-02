@@ -16,18 +16,19 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: List pre-installed Python versions
+      shell: pwsh
       run: |
+        # Get current Python version
         $pythonVersions = python -c "import sys; print(sys.version)"
         Write-Host "Current Python version: $pythonVersions"
         
-        # List all Python installations
+        # List Python installations
         $env:Path -split ';' | Where-Object { $_ -like '*Python*' } | ForEach-Object {
           $pythonPath = $_
-          $versions = Get-ChildItem "$pythonPath\python*.exe" | ForEach-Object { 
+          Write-Host "Checking Python installations in $pythonPath"
+          Get-ChildItem "$pythonPath\python*.exe" | ForEach-Object { 
             & $_.FullName --version
           }
-          Write-Host "Python installations in $pythonPath:"
-          $versions
         }
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -101,28 +102,27 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: List pre-installed Python versions
-      run: |
-        # List system Python versions
-        echo "System Python versions:"
-        ls /usr/bin/python*
-        
-        # Check Python versions
-        for python in python python3 python3.9 python3.10 python3.11 python3.12; do
-          if command -v $python &> /dev/null; then
-            echo "Version of $python:"
-            $python --version
-          fi
-        done
-        
-        # List all Python installations
-        echo "Python executable paths:"
-        which -a python python3
     - name: Install system dependencies
       run: |
         dnf update -y
-        dnf install -y gcc openssl-devel bzip2-devel libffi-devel wget tar xz python3-pip
-
+        dnf install -y which findutils
+    
+    - name: List pre-installed Python versions
+      run: |
+        echo "System Python versions:"
+        find /usr/bin -name 'python*'
+        
+        echo "Checking Python versions:"
+        for python in python python3 python3.9 python3.10 python3.11 python3.12; do
+          if command -v $python &> /dev/null; then
+            echo "Version of $python:"
+            $python --version || true
+          fi
+        done
+        
+        echo "Python executable paths:"
+        which python python3 || true
+    
     - name: Install Python 3.12
       run: |
         # Enable latest Python 3.12 stream
@@ -162,28 +162,27 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: List pre-installed Python versions
-      run: |
-        # List system Python versions
-        echo "System Python versions:"
-        ls /usr/bin/python*
-        
-        # Check Python versions
-        for python in python python3 python3.9 python3.10 python3.11 python3.12; do
-          if command -v $python &> /dev/null; then
-            echo "Version of $python:"
-            $python --version
-          fi
-        done
-        
-        # List all Python installations
-        echo "Python executable paths:"
-        which -a python python3
     - name: Install system dependencies
       run: |
         dnf update -y
-        dnf install -y gcc openssl-devel bzip2-devel libffi-devel wget tar xz python3-pip
-
+        dnf install -y which findutils
+    
+    - name: List pre-installed Python versions
+      run: |
+        echo "System Python versions:"
+        find /usr/bin -name 'python*'
+        
+        echo "Checking Python versions:"
+        for python in python python3 python3.9 python3.10 python3.11 python3.12; do
+          if command -v $python &> /dev/null; then
+            echo "Version of $python:"
+            $python --version || true
+          fi
+        done
+        
+        echo "Python executable paths:"
+        which python python3 || true
+    
     - name: Install Python 3.12
       run: |
         # Enable latest Python 3.12 stream
