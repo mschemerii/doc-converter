@@ -131,30 +131,30 @@ jobs:
         pip install pyinstaller
     - name: Build executable
       run: |
-        pyinstaller --name doc_converter --onefile doc_converter_gui.py
+        pyinstaller --name doc_converter --windowed --onefile doc_converter_gui.py
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: doc_converter-ubuntu
         path: dist/doc_converter
 
-  create-release:
+  release:
     needs: [build-windows, build-macos, build-oracle-linux-8, build-oracle-linux-9, build-ubuntu]
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/feature/'))
     steps:
-    - name: Download all artifacts
+    - name: Download artifacts
       uses: actions/download-artifact@v4
       with:
         path: artifacts
-    - name: Create Release
-      id: create_release
+        merge-multiple: true
+
+    - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
       with:
-        tag_name: v${{ github.run_number }}
-        name: Release v${{ github.run_number }}
+        tag_name: v24
+        name: Release v24
         draft: false
-        prerelease: ${{ !endsWith(github.ref, 'main') }}
+        prerelease: false
         files: |
           artifacts/doc_converter-windows/doc_converter.exe
           artifacts/doc_converter-macos/doc_converter
