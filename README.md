@@ -72,6 +72,68 @@ sudo rpm -i doc_converter-ol*.rpm
 doc_converter
 ```
 
+## Running the Application
+
+### Launching the GUI Executable
+
+#### Standalone Executable
+- Use the platform-specific executable from the latest release
+- Double-click the application icon to launch
+
+### Running Directly with Python
+
+#### Prerequisites
+- Python 3.12 installed
+- Project dependencies installed
+
+#### Setup Virtual Environment (Recommended)
+```bash
+# Create a virtual environment
+python3 -m venv doc-converter-env
+
+# Activate the virtual environment
+# On Windows
+doc-converter-env\Scripts\activate
+
+# On macOS/Linux
+source doc-converter-env/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+#### Launch GUI Directly
+```bash
+# Ensure you're in the project directory
+python doc_converter_gui.py
+```
+
+#### Command-Line Usage
+Some utility scripts can be run directly from the command line:
+
+```bash
+# Convert documents
+python convert_docx.py input.doc output.docx
+
+# Modify document properties
+python modify_docx.py input.docx output.docx
+```
+
+### Development Mode
+
+#### Running Tests
+```bash
+# Install test dependencies
+pip install pytest
+
+# Run tests
+pytest tests/
+```
+
+#### Debugging
+- Use `python -m pdb doc_converter_gui.py` for interactive debugging
+- Set `logging.DEBUG` for verbose output in scripts
+
 ## Troubleshooting
 
 ### Permission Issues
@@ -103,7 +165,7 @@ doc_converter
 
 ## Contact
 
-[Your contact information]
+On Oracle Slack @mschemer
 
 ## Output Files
 
