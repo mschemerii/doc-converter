@@ -63,7 +63,7 @@ class DocConverterApp:
         # Show Output button
         self.show_output_button = tk.Button(self.main_frame, text="Show Output", 
                                           command=self.show_output_window,
-                                          state=tk.DISABLED, width=15)
+                                          state=tk.NORMAL, width=15)
         self.show_output_button.grid(row=2, column=0, pady=10)
         
         # Exit button (initially disabled)
@@ -90,6 +90,8 @@ class DocConverterApp:
         """Show the output window with previous output"""
         self.create_output_window()
         # Replay previous output
+        if not self.last_output:
+            self.output_text.insert(tk.END, "No output available.\n")
         for message in self.last_output:
             self.output_text.insert(tk.END, message)
     
