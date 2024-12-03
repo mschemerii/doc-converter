@@ -44,6 +44,8 @@ jobs:
       run: |
         # Install Tkinter for macOS
         brew install python-tk@3.10
+        # Explicitly link Tkinter
+        ln -s /usr/local/opt/python@3.10/Frameworks/Python.framework/Versions/3.10/lib/python3.10/tkinter /Users/runner/hostedtoolcache/Python/3.10.15/x64/lib/python3.10/tkinter
         python3 -m pip install tk
 
     - name: Install project dependencies
@@ -123,8 +125,10 @@ jobs:
     - name: Install Tkinter
       run: |
         # Install Tkinter for macOS
-        arch -x86_64 brew install python-tk@3.10
-        arch -x86_64 python3.10 -m pip install tk
+        brew install python-tk@3.10
+        # Explicitly link Tkinter
+        ln -s /usr/local/opt/python@3.10/Frameworks/Python.framework/Versions/3.10/lib/python3.10/tkinter /Users/runner/hostedtoolcache/Python/3.10.15/x64/lib/python3.10/tkinter
+        python3 -m pip install tk
 
     - name: Install project dependencies
       run: |
@@ -215,7 +219,7 @@ jobs:
         
         # Zip the executable
         cd build\windows-${{ matrix.architecture }}
-        Compress-Archive -Path "Doc-Converter-Windows-${{ matrix.architecture }}.exe" -DestinationPath "Doc-Converter-Windows-${{ matrix.architecture }}.zip"
+        Compress-Archive -Path ".\Doc-Converter-Windows-${{ matrix.architecture }}.exe" -DestinationPath "Doc-Converter-Windows-${{ matrix.architecture }}.zip"
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
