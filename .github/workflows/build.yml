@@ -77,7 +77,13 @@ jobs:
         # Build command here with arch specification
         pyinstaller --clean --noconfirm --windowed \
           --name "Doc-Converter-Intel" \
+          --distpath "$BUILD_DIR" \
           doc_converter_gui.py
+
+    - name: Verify Build Artifacts
+      run: |
+        # List contents of build directory
+        ls -la build/macos-intel-py3.10
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
@@ -122,8 +128,10 @@ jobs:
       run: |
         # Install Tkinter for macOS
         brew install python-tk@3.10
+        # Create tkinter directory if it doesn't exist
+        mkdir -p /Users/runner/hostedtoolcache/Python/3.10.15/arm64/lib/python3.10/
         # Explicitly link Tkinter
-        ln -s /usr/local/opt/python@3.10/Frameworks/Python.framework/Versions/3.10/lib/python3.10/tkinter /Users/runner/hostedtoolcache/Python/3.10.15/x64/lib/python3.10/tkinter
+        ln -s /opt/homebrew/Cellar/python-tk@3.10/3.10.15_1/libexec/tkinter /Users/runner/hostedtoolcache/Python/3.10.15/arm64/lib/python3.10/tkinter
         python3 -m pip install tk
 
     - name: Install project dependencies
@@ -155,7 +163,13 @@ jobs:
         # Build command here
         pyinstaller --clean --noconfirm --windowed \
           --name "Doc-Converter-Silicon" \
+          --distpath "$BUILD_DIR" \
           doc_converter_gui.py
+
+    - name: Verify Build Artifacts
+      run: |
+        # List contents of build directory
+        ls -la build/macos-silicon-py3.10
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
@@ -205,9 +219,18 @@ jobs:
 
     - name: Build Windows Executable
       run: |
+        # Create build directory explicitly
+        mkdir -p "build\windows-${{ matrix.architecture }}"
+        
         pyinstaller --clean --noconfirm --windowed `
           --name "Doc-Converter-Windows-${{ matrix.architecture }}" `
+          --distpath "build\windows-${{ matrix.architecture }}" `
           doc_converter_gui.py
+
+    - name: Verify Build Artifacts
+      run: |
+        # List contents of build directory with full details
+        powershell -Command "Get-ChildItem -Path 'build\windows-${{ matrix.architecture }}' -Recurse | Format-Table -AutoSize"
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
@@ -215,6 +238,7 @@ jobs:
         name: doc-converter-windows-${{ matrix.architecture }}
         path: build\windows-${{ matrix.architecture }}\Doc-Converter-Windows-${{ matrix.architecture }}.exe
         retention-days: 7
+        if-no-files-found: error
 
   release:
     needs: [build-macos-intel, build-macos-silicon, build-windows]
