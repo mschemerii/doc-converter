@@ -83,23 +83,9 @@ jobs:
         # Repair .app bundle permissions
         chmod -R 755 "Doc-Converter-MacOS-Intel.app"
         
-        # Create ad-hoc signing certificate
-        security create-keychain -p "" build.keychain
-        security default-keychain -s build.keychain
-        security unlock-keychain -p "" build.keychain
-        
-        # Import Apple Developer CA certificate
-        security import /Library/Developer/CommandLineTools/Certificates/Apple_Development.cer -k build.keychain -T /usr/bin/codesign
-        
-        # Ad-hoc sign the application with deep signing and entitlements
-        codesign --force --deep \
-          --sign - \
-          --options runtime \
-          --entitlements macos_entitlements.xml \
-          "Doc-Converter-MacOS-Intel.app"
-        
-        # Verify code signing
-        codesign --verify --verbose --strict "Doc-Converter-MacOS-Intel.app"
+        # Simplify code signing process
+        codesign --force --deep --sign - --options runtime --entitlements macos_entitlements.xml "Doc-Converter-MacOS-Intel.app"
+        codesign --verify --verbose "Doc-Converter-MacOS-Intel.app"
         
         # Create a tar.gz of the entire .app bundle with full path preservation
         tar -czvf "../Doc-Converter-MacOS-Intel.tar.gz" "Doc-Converter-MacOS-Intel.app"
@@ -189,23 +175,9 @@ jobs:
         # Repair .app bundle permissions
         chmod -R 755 "Doc-Converter-MacOS-Silicon.app"
         
-        # Create ad-hoc signing certificate
-        security create-keychain -p "" build.keychain
-        security default-keychain -s build.keychain
-        security unlock-keychain -p "" build.keychain
-        
-        # Import Apple Developer CA certificate
-        security import /Library/Developer/CommandLineTools/Certificates/Apple_Development.cer -k build.keychain -T /usr/bin/codesign
-        
-        # Ad-hoc sign the application with deep signing and entitlements
-        codesign --force --deep \
-          --sign - \
-          --options runtime \
-          --entitlements macos_entitlements.xml \
-          "Doc-Converter-MacOS-Silicon.app"
-        
-        # Verify code signing
-        codesign --verify --verbose --strict "Doc-Converter-MacOS-Silicon.app"
+        # Simplify code signing process
+        codesign --force --deep --sign - --options runtime --entitlements macos_entitlements.xml "Doc-Converter-MacOS-Silicon.app"
+        codesign --verify --verbose "Doc-Converter-MacOS-Silicon.app"
         
         # Create a tar.gz of the entire .app bundle with full path preservation
         tar -czvf "../Doc-Converter-MacOS-Silicon.tar.gz" "Doc-Converter-MacOS-Silicon.app"
