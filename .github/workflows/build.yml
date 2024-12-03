@@ -63,6 +63,36 @@ jobs:
         mkdir -p "Doc-Converter.app/Contents/MacOS"
         mkdir -p "Doc-Converter.app/Contents/Resources"
         
+        # Create temporary keychain
+        security create-keychain -p github-actions build.keychain
+        security default-keychain -s build.keychain
+        security unlock-keychain -p github-actions build.keychain
+        security set-keychain-settings -t 3600 -l build.keychain
+
+        # Generate private key and certificate
+        openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+          -keyout build.key -out build.crt \
+          -subj "/CN=Developer ID Application"
+
+        # Convert to p12 format
+        openssl pkcs12 -export \
+          -in build.crt \
+          -inkey build.key \
+          -out build.p12 \
+          -name "Developer ID Application" \
+          -passout pass:github-actions
+
+        # Import certificate to keychain
+        security import build.p12 -k build.keychain -P github-actions \
+          -T /usr/bin/codesign
+
+        # Allow codesign to access the certificate
+        security set-key-partition-list -S apple-tool:,apple:,codesign: -s \
+          -k github-actions build.keychain
+
+        # Find the certificate
+        CERT_NAME="Developer ID Application"
+        
         # Build the executable with x86_64 architecture
         arch -x86_64 python -m PyInstaller \
           --name "Doc-Converter" \
@@ -119,25 +149,11 @@ jobs:
         </plist>
         EOF
         
-        # Create temporary keychain
-        security create-keychain -p github-actions build.keychain
-        security default-keychain -s build.keychain
-        security unlock-keychain -p github-actions build.keychain
-        
-        # Create self-signed certificate
-        security create-certificate-authority \
-          --years 1 \
-          --subject "CN=Developer ID Application" \
-          --keychain build.keychain
-        
-        # Find the certificate
-        CERT_ID=$(security find-certificate -a build.keychain | grep "Developer ID Application" -A 1 | grep "SHA-1" | awk '{print $3}')
-        
         # Sign the app bundle
         codesign --force --deep --options runtime \
           --entitlements entitlements.plist \
-          --sign "$CERT_ID" \
-          --timestamp \
+          --sign "$CERT_NAME" \
+          --keychain build.keychain \
           "Doc-Converter.app"
         
         # Create zip of the app bundle
