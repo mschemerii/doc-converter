@@ -208,13 +208,14 @@ jobs:
         mkdir -p "Doc-Converter.app/Contents/Frameworks"
 
         # Find the executable and move it
-        EXECUTABLE=$(find dist -type f -perm +111 | grep -v '\.so$' | head -n 1)
+        # Use file type to identify the correct executable
+        EXECUTABLE=$(find dist -type f | xargs file | grep "Mach-O 64-bit executable" | cut -d: -f1)
         if [ -z "$EXECUTABLE" ]; then
           echo "Error: No executable found"
           echo "Listing dist directory contents:"
           ls -la dist
-          echo "Listing all executable files:"
-          find dist -type f -perm +111
+          echo "Listing all files:"
+          find dist -type f | xargs file
           exit 1
         fi
         
@@ -245,8 +246,6 @@ jobs:
             <string>1.0</string>
             <key>CFBundleVersion</key>
             <string>1</string>
-            <key>CFBundlePackageType</key>
-            <string>APPL</string>
             <key>LSArchitecturePriority</key>
             <array>
                 <string>arm64</string>
