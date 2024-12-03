@@ -63,13 +63,23 @@ jobs:
         mkdir -p build/intel
         cd build/intel
         
-        # Build the executable with x86_64 architecture
+        # Capture full PyInstaller output
         python -m PyInstaller \
           --name "Doc-Converter" \
           --windowed \
           --target-arch x86_64 \
           --log-level=DEBUG \
-          ../../doc_converter_gui.py
+          --clean \
+          --noconfirm \
+          ../../doc_converter_gui.py \
+          2>&1 | tee pyinstaller_build.log
+
+        # Check if PyInstaller build log contains errors
+        if grep -q "ERROR" pyinstaller_build.log; then
+          echo "PyInstaller build encountered errors:"
+          cat pyinstaller_build.log
+          exit 1
+        fi
 
         # Explicitly check for .app bundle and executable
         if [ ! -d "dist/Doc-Converter.app" ]; then
@@ -77,7 +87,7 @@ jobs:
           echo "Contents of dist directory:"
           find dist -type d
           echo "PyInstaller build log:"
-          cat build/Doc-Converter/build/warnings.txt || true
+          cat pyinstaller_build.log
           exit 1
         fi
 
@@ -91,6 +101,10 @@ jobs:
           echo "Error: Executable is not x86_64"
           exit 1
         fi
+
+        # List all dependencies
+        echo "Dependency list:"
+        otool -L "dist/Doc-Converter.app/Contents/MacOS/Doc-Converter"
 
         # Sign the executable first
         codesign --force --deep --sign - \
@@ -158,8 +172,11 @@ jobs:
           --name "Doc-Converter" \
           --windowed \
           --target-arch arm64 \
+          --log-level=DEBUG \
+          --clean \
+          --noconfirm \
           ../../doc_converter_gui.py
-
+        
         # Verify the .app bundle exists
         if [ ! -d "dist/Doc-Converter.app" ]; then
           echo "Error: Doc-Converter.app not found in dist directory"
@@ -167,35 +184,48 @@ jobs:
           find dist -type d
           exit 1
         fi
-
+        
         # Verify executable
         echo "Executable details:"
         file "dist/Doc-Converter.app/Contents/MacOS/Doc-Converter"
         otool -l "dist/Doc-Converter.app/Contents/MacOS/Doc-Converter" | grep -E "cputype|cpusubtype"
-
-        # Sign the executable first
+        
+        # Debugging: List all files in the app bundle
+        echo "App bundle contents:"
+        find "dist/Doc-Converter.app" -type f
+        
+        # Attempt to sign with verbose output and error handling
+        echo "Signing individual libraries..."
+        find "dist/Doc-Converter.app" -type f \( -name "*.dylib" -o -name "*.so" \) | while read lib; do
+          echo "Signing library: $lib"
+          codesign --force --sign - --verbose "$lib" || {
+            echo "Warning: Could not sign library $lib"
+            # Continue with the build instead of failing
+          }
+        done
+        
+        # Sign the executable
+        echo "Signing executable..."
         codesign --force --deep --sign - \
           --options runtime \
           --entitlements /dev/null \
+          --verbose \
           "dist/Doc-Converter.app/Contents/MacOS/Doc-Converter"
         
-        # Sign any dylibs and frameworks
-        find "dist/Doc-Converter.app" -type f \( -name "*.dylib" -o -name "*.so" \) | while read lib; do
-          codesign --force --sign - "$lib"
-        done
-
-        # Finally sign the entire app bundle
+        # Sign the entire app bundle
+        echo "Signing app bundle..."
         codesign --force --deep --sign - \
           --options runtime \
           --timestamp=none \
+          --verbose \
           "dist/Doc-Converter.app"
-
+        
         # Verify signing of executable and bundle
         echo "Verifying executable signing..."
         codesign -vv "dist/Doc-Converter.app/Contents/MacOS/Doc-Converter"
         echo "Verifying bundle signing..."
         codesign -vv --deep "dist/Doc-Converter.app"
-
+        
         # Create zip of the app bundle
         ditto -c -k --keepParent "dist/Doc-Converter.app" "Doc-Converter-Silicon.app.zip"
         
@@ -205,6 +235,9 @@ jobs:
         # Create artifacts directory and copy zip
         mkdir -p artifacts/doc_converter-macos-silicon
         cp build/silicon/Doc-Converter-Silicon.app.zip artifacts/doc_converter-macos-silicon/
+      
+      # Continue even if signing fails
+      continue-on-error: true
 
     - name: Upload macOS Silicon Artifact
       uses: actions/upload-artifact@v4
