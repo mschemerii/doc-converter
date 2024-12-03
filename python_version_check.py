@@ -5,17 +5,20 @@ import webbrowser
 import platform
 
 def check_python_version():
-    # Recommended Python version
-    RECOMMENDED_MAJOR = 3
-    RECOMMENDED_MINOR = 10
+    # Supported Python versions
+    MIN_MAJOR = 3
+    MIN_MINOR = 10
+    MAX_MINOR = 12
     
     # Current Python version
     current_major = sys.version_info.major
     current_minor = sys.version_info.minor
     
-    # Check if Python version is less than recommended
-    if (current_major < RECOMMENDED_MAJOR or 
-        (current_major == RECOMMENDED_MAJOR and current_minor < RECOMMENDED_MINOR)):
+    # Check if Python version is within supported range
+    if (current_major < MIN_MAJOR or 
+        current_major > MIN_MAJOR or 
+        current_minor < MIN_MINOR or 
+        current_minor > MAX_MINOR):
         
         # Create a root window (hidden)
         root = tk.Tk()
@@ -23,7 +26,7 @@ def check_python_version():
         
         # Construct version message
         current_version = f"{current_major}.{current_minor}"
-        recommended_version = f"{RECOMMENDED_MAJOR}.{RECOMMENDED_MINOR}"
+        recommended_versions = f"{MIN_MAJOR}.{MIN_MINOR} - {MIN_MAJOR}.{MAX_MINOR}"
         
         # Determine download URL based on OS
         os_name = platform.system().lower()
@@ -36,7 +39,7 @@ def check_python_version():
         
         # Construct message
         message = (
-            f"Python {recommended_version} is recommended.\n"
+            f"Python {recommended_versions} is recommended.\n"
             f"Current version: {current_version}\n\n"
             "Would you like to download the latest Python version?"
         )
@@ -51,9 +54,6 @@ def check_python_version():
         # Open download page if user agrees
         if response:
             webbrowser.open(download_url)
-        
-        # Close hidden root window
-        root.destroy()
         
         return False
     

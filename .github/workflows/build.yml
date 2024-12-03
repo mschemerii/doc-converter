@@ -7,19 +7,12 @@ on:
     branches: [ main ]
 
 jobs:
-  build-macos:
+  build-macos-intel:
+    runs-on: macos-14
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: macos-13
-            python-version: '3.10'
-            arch: x86_64
-          - os: macos-14
-            python-version: '3.10'
-            arch: arm64
-
-    runs-on: ${{ matrix.os }}
+        python-version: ['3.10', '3.11', '3.12']
 
     steps:
     - name: Upgrade Git
@@ -37,7 +30,7 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
-        architecture: ${{ matrix.arch }}
+        architecture: x86_64
         cache: 'pip'
         check-latest: true
 
@@ -56,7 +49,7 @@ jobs:
     - name: Install Tkinter
       run: |
         # Install Tkinter for macOS
-        brew install python-tk@3.10
+        brew install python-tk@${{ matrix.python-version }}
         python3 -m pip install tk
 
     - name: Install project dependencies
@@ -70,120 +63,116 @@ jobs:
     - name: Prepare Build Environment
       run: |
         # Create build directories with architecture-specific names
-        BUILD_DIR="build/${{ matrix.os }}-${{ matrix.arch }}"
+        BUILD_DIR="build/macos-intel-py${{ matrix.python-version }}"
         mkdir -p "$BUILD_DIR"
         
         # Set environment variables for consistent builds
         echo "PYTHONPATH=$PYTHONPATH:$(pwd)" >> "$GITHUB_ENV"
         echo "BUILD_DIR=$BUILD_DIR" >> "$GITHUB_ENV"
-        
-        # Debug: Print build directory
-        echo "Build directory: $BUILD_DIR"
-        ls -la build/
 
-    - name: Build macOS Executable
+    - name: Build macOS Intel Executable
       env:
-        MACOS_ARCH: ${{ matrix.arch }}
-        OS_VERSION: ${{ matrix.os }}
+        MACOS_ARCH: x86_64
+        PYTHON_VERSION: ${{ matrix.python-version }}
       run: |
         # Explicitly set build directory
-        BUILD_DIR="build/${OS_VERSION}-${MACOS_ARCH}"
+        BUILD_DIR="build/macos-intel-py${PYTHON_VERSION}"
         mkdir -p "$BUILD_DIR"
         
-        # Verify build directory
-        echo "Build directory: $BUILD_DIR"
-        if [ ! -d "$BUILD_DIR" ]; then
-          echo "Error: Build directory could not be created"
-          exit 1
-        fi
-
-        # Determine architecture-specific build parameters
-        if [ "$MACOS_ARCH" == "arm64" ]; then
-          ARCH_FLAGS="arch -arm64"
-          MIN_OS_VERSION="11.0"
-        else
-          ARCH_FLAGS=""
-          MIN_OS_VERSION="10.15"
-        fi
-
-        # Change to build directory
-        cd "$BUILD_DIR" || exit 1
-        
-        $ARCH_FLAGS python -m PyInstaller \
-          --name "Doc-Converter" \
-          --windowed \
-          --target-arch $MACOS_ARCH \
-          --add-data "../../assets:assets" \
-          --min-macos-version $MIN_OS_VERSION \
-          ../../doc_converter_gui.py
-
-        # Create proper app bundle structure
-        mkdir -p "Doc-Converter.app/Contents/MacOS"
-        mkdir -p "Doc-Converter.app/Contents/Resources"
-        mkdir -p "Doc-Converter.app/Contents/Frameworks"
-
-        # Find and move executable
-        EXECUTABLE=$(find dist -type f | xargs file | grep "Mach-O.*executable" | cut -d: -f1)
-        if [ -z "$EXECUTABLE" ]; then
-          echo "Error: No executable found"
-          find dist -type f | xargs file
-          exit 1
-        fi
-        
-        cp "$EXECUTABLE" "Doc-Converter.app/Contents/MacOS/Doc-Converter"
-        chmod +x "Doc-Converter.app/Contents/MacOS/Doc-Converter"
-        
-        # Copy supporting libraries
-        find dist -type f \( -name "*.so" -o -name "*.dylib" \) -exec cp {} "Doc-Converter.app/Contents/Frameworks/" \;
-        
-        # Create Info.plist
-        cat > "Doc-Converter.app/Contents/Info.plist" << EOF
-        <?xml version="1.0" encoding="UTF-8"?>
-        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-        <plist version="1.0">
-        <dict>
-            <key>CFBundleExecutable</key>
-            <string>Doc-Converter</string>
-            <key>CFBundleIdentifier</key>
-            <string>com.docconverter.app</string>
-            <key>CFBundleName</key>
-            <string>Doc-Converter</string>
-            <key>CFBundlePackageType</key>
-            <string>APPL</string>
-            <key>CFBundleShortVersionString</key>
-            <string>1.0</string>
-            <key>CFBundleVersion</key>
-            <string>1</string>
-            <key>LSMinimumSystemVersion</key>
-            <string>$MIN_OS_VERSION</string>
-            <key>NSHighResolutionCapable</key>
-            <true/>
-            <key>NSPrincipalClass</key>
-            <string>NSApplication</string>
-        </dict>
-        </plist>
-        EOF
-
-        # Code signing with ad-hoc identity
-        codesign --force --deep --sign - \
-          --options runtime \
-          --timestamp=none \
-          "Doc-Converter.app"
-
-        # Create distributable zip
-        ditto -c -k --keepParent "Doc-Converter.app" "Doc-Converter-${OS_VERSION}-${MACOS_ARCH}.app.zip"
-
-        # Verify zip file exists
-        if [ ! -f "Doc-Converter-${OS_VERSION}-${MACOS_ARCH}.app.zip" ]; then
-          echo "Error: Zip file was not created"
-          exit 1
-        fi
+        # Build command here (you'll need to add your specific build steps)
+        pyinstaller --clean --noconfirm --windowed \
+          --name "Doc-Converter-Intel-Py${{ matrix.python-version }}" \
+          doc_converter_gui.py
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: doc-converter-${{ matrix.os }}-${{ matrix.arch }}
-        path: build/${{ matrix.os }}-${{ matrix.arch }}/Doc-Converter-${{ matrix.os }}-${{ matrix.arch }}.app.zip
+        name: doc-converter-macos-intel-py${{ matrix.python-version }}
+        path: build/macos-intel-py${{ matrix.python-version }}/Doc-Converter-Intel-Py${{ matrix.python-version }}.app.zip
+        retention-days: 7
+
+  build-macos-silicon:
+    runs-on: macos-14
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+
+    steps:
+    - name: Upgrade Git
+      run: |
+        brew update
+        brew upgrade git
+        git --version
+
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+        submodules: false
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        architecture: arm64
+        cache: 'pip'
+        check-latest: true
+
+    - name: Install system dependencies
+      run: |
+        # Upgrade pip and setuptools to latest versions
+        python3 -m pip install --upgrade pip setuptools wheel
+        
+        # Install build dependencies with specific versions
+        python3 -m pip install \
+          'pyinstaller==6.11.1' \
+          'pyobjc-framework-Cocoa==10.2' \
+          'python-docx==1.0.1' \
+          'lxml==4.9.3'
+
+    - name: Install Tkinter
+      run: |
+        # Install Tkinter for macOS
+        brew install python-tk@${{ matrix.python-version }}
+        python3 -m pip install tk
+
+    - name: Install project dependencies
+      run: |
+        # Use --no-deps to prevent potential conflicts
+        python3 -m pip install -r requirements.txt --no-deps
+        
+        # Verify installed packages
+        python3 -m pip list
+
+    - name: Prepare Build Environment
+      run: |
+        # Create build directories with architecture-specific names
+        BUILD_DIR="build/macos-silicon-py${{ matrix.python-version }}"
+        mkdir -p "$BUILD_DIR"
+        
+        # Set environment variables for consistent builds
+        echo "PYTHONPATH=$PYTHONPATH:$(pwd)" >> "$GITHUB_ENV"
+        echo "BUILD_DIR=$BUILD_DIR" >> "$GITHUB_ENV"
+
+    - name: Build macOS Silicon Executable
+      env:
+        MACOS_ARCH: arm64
+        PYTHON_VERSION: ${{ matrix.python-version }}
+      run: |
+        # Explicitly set build directory
+        BUILD_DIR="build/macos-silicon-py${PYTHON_VERSION}"
+        mkdir -p "$BUILD_DIR"
+        
+        # Build command here (you'll need to add your specific build steps)
+        pyinstaller --clean --noconfirm --windowed \
+          --name "Doc-Converter-Silicon-Py${{ matrix.python-version }}" \
+          doc_converter_gui.py
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: doc-converter-macos-silicon-py${{ matrix.python-version }}
+        path: build/macos-silicon-py${{ matrix.python-version }}/Doc-Converter-Silicon-Py${{ matrix.python-version }}.app.zip
         retention-days: 7
 
   build-windows:
@@ -275,7 +264,7 @@ jobs:
         retention-days: 7
 
   release:
-    needs: [build-macos, build-windows]
+    needs: [build-macos-intel, build-macos-silicon, build-windows]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
