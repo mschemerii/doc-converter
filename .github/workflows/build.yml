@@ -59,18 +59,26 @@ jobs:
     
     - name: Build macOS Intel Executable
       run: |
-        # Create app bundle directory structure
-        mkdir -p "Doc-Converter.app/Contents/MacOS"
-        mkdir -p "Doc-Converter.app/Contents/Resources"
+        # Create temporary build directory
+        mkdir -p build/intel
+        cd build/intel
         
         # Build the executable with x86_64 architecture
         arch -x86_64 python -m PyInstaller \
           --name "Doc-Converter" \
           --windowed \
           --target-arch x86_64 \
-          --distpath "Doc-Converter.app/Contents/MacOS" \
-          doc_converter_gui.py
+          --distpath . \
+          ../../doc_converter_gui.py
 
+        # Create proper app bundle structure
+        mkdir -p "Doc-Converter.app/Contents/MacOS"
+        mkdir -p "Doc-Converter.app/Contents/Resources"
+        mkdir -p "Doc-Converter.app/Contents/Frameworks"
+
+        # Move files to correct locations
+        mv dist/Doc-Converter/* "Doc-Converter.app/Contents/MacOS/"
+        
         # Create Info.plist
         cat > "Doc-Converter.app/Contents/Info.plist" << EOF
         <?xml version="1.0" encoding="UTF-8"?>
@@ -107,7 +115,7 @@ jobs:
         codesign --force --sign - "Doc-Converter.app/Contents/MacOS/Doc-Converter"
         
         # Sign any dylibs and frameworks
-        find "Doc-Converter.app/Contents/MacOS" -name "*.dylib" -o -name "*.so" | while read lib; do
+        find "Doc-Converter.app" -type f -name "*.dylib" -o -name "*.so" | while read lib; do
           codesign --force --sign - "$lib"
         done
 
@@ -123,9 +131,12 @@ jobs:
         # Create zip of the app bundle
         ditto -c -k --keepParent "Doc-Converter.app" "Doc-Converter-Intel.app.zip"
         
+        # Move back to root directory
+        cd ../..
+        
         # Create artifacts directory and copy zip
         mkdir -p artifacts/doc_converter-macos-intel
-        cp Doc-Converter-Intel.app.zip artifacts/doc_converter-macos-intel/
+        cp build/intel/Doc-Converter-Intel.app.zip artifacts/doc_converter-macos-intel/
 
     - name: Upload macOS Intel Artifact
       uses: actions/upload-artifact@v4
@@ -151,18 +162,26 @@ jobs:
     
     - name: Build macOS Silicon Executable
       run: |
-        # Create app bundle directory structure
-        mkdir -p "Doc-Converter.app/Contents/MacOS"
-        mkdir -p "Doc-Converter.app/Contents/Resources"
+        # Create temporary build directory
+        mkdir -p build/silicon
+        cd build/silicon
         
         # Build the executable with arm64 architecture
         arch -arm64 python -m PyInstaller \
           --name "Doc-Converter" \
           --windowed \
           --target-arch arm64 \
-          --distpath "Doc-Converter.app/Contents/MacOS" \
-          doc_converter_gui.py
+          --distpath . \
+          ../../doc_converter_gui.py
 
+        # Create proper app bundle structure
+        mkdir -p "Doc-Converter.app/Contents/MacOS"
+        mkdir -p "Doc-Converter.app/Contents/Resources"
+        mkdir -p "Doc-Converter.app/Contents/Frameworks"
+
+        # Move files to correct locations
+        mv dist/Doc-Converter/* "Doc-Converter.app/Contents/MacOS/"
+        
         # Create Info.plist
         cat > "Doc-Converter.app/Contents/Info.plist" << EOF
         <?xml version="1.0" encoding="UTF-8"?>
@@ -199,7 +218,7 @@ jobs:
         codesign --force --sign - "Doc-Converter.app/Contents/MacOS/Doc-Converter"
         
         # Sign any dylibs and frameworks
-        find "Doc-Converter.app/Contents/MacOS" -name "*.dylib" -o -name "*.so" | while read lib; do
+        find "Doc-Converter.app" -type f -name "*.dylib" -o -name "*.so" | while read lib; do
           codesign --force --sign - "$lib"
         done
 
@@ -215,9 +234,12 @@ jobs:
         # Create zip of the app bundle
         ditto -c -k --keepParent "Doc-Converter.app" "Doc-Converter-Silicon.app.zip"
         
+        # Move back to root directory
+        cd ../..
+        
         # Create artifacts directory and copy zip
         mkdir -p artifacts/doc_converter-macos-silicon
-        cp Doc-Converter-Silicon.app.zip artifacts/doc_converter-macos-silicon/
+        cp build/silicon/Doc-Converter-Silicon.app.zip artifacts/doc_converter-macos-silicon/
 
     - name: Upload macOS Silicon Artifact
       uses: actions/upload-artifact@v4
