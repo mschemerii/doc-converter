@@ -202,8 +202,8 @@ jobs:
     
     - name: Set up Python and build tools
       run: |
-        dnf install -y python3.12 python3.12-pip rpm-build
-        alternatives --set python3 /usr/bin/python3.12
+        dnf install -y python3 python3-pip rpm-build
+        alternatives --set python3 /usr/bin/python3
     
     - name: Install dependencies
       run: |
@@ -211,10 +211,13 @@ jobs:
         python3 -m pip install -r requirements.txt
         python3 -m pip install pyinstaller
     
-    - name: Build Oracle Linux 8 RPM Package
+    - name: Prepare RPM Build
       run: |
-        # Prepare RPM build structure
+        # Create RPM build structure
         mkdir -p ~/rpmbuild/{SOURCES,SPECS}
+        
+        # Copy source files to SOURCES
+        cp doc_converter_gui.py requirements.txt ~/rpmbuild/SOURCES/
         
         # Create spec file
         cat > ~/rpmbuild/SPECS/doc-converter.spec << EOF
@@ -225,17 +228,23 @@ jobs:
         
         License:        MIT
         Source0:        doc_converter_gui.py
+        Source1:        requirements.txt
         
-        BuildRequires:  python3.12
-        Requires:       python3.12
+        BuildRequires:  python3
+        BuildRequires:  python3-pip
+        BuildRequires:  python3-devel
+        Requires:       python3
         
         %description
         A cross-platform document conversion tool
         
         %prep
-        %setup -c
+        cp %{SOURCE0} %{_builddir}/
+        cp %{SOURCE1} %{_builddir}/
         
         %build
+        python3 -m pip install -r requirements.txt
+        python3 -m pip install pyinstaller
         pyinstaller --name "Doc-Converter" --onefile doc_converter_gui.py
         
         %install
@@ -274,8 +283,8 @@ jobs:
     
     - name: Set up Python and build tools
       run: |
-        dnf install -y python3.12 python3.12-pip rpm-build
-        alternatives --set python3 /usr/bin/python3.12
+        dnf install -y python3 python3-pip rpm-build
+        alternatives --set python3 /usr/bin/python3
     
     - name: Install dependencies
       run: |
@@ -283,10 +292,13 @@ jobs:
         python3 -m pip install -r requirements.txt
         python3 -m pip install pyinstaller
     
-    - name: Build Oracle Linux 9 RPM Package
+    - name: Prepare RPM Build
       run: |
-        # Prepare RPM build structure
+        # Create RPM build structure
         mkdir -p ~/rpmbuild/{SOURCES,SPECS}
+        
+        # Copy source files to SOURCES
+        cp doc_converter_gui.py requirements.txt ~/rpmbuild/SOURCES/
         
         # Create spec file
         cat > ~/rpmbuild/SPECS/doc-converter.spec << EOF
@@ -297,17 +309,23 @@ jobs:
         
         License:        MIT
         Source0:        doc_converter_gui.py
+        Source1:        requirements.txt
         
-        BuildRequires:  python3.12
-        Requires:       python3.12
+        BuildRequires:  python3
+        BuildRequires:  python3-pip
+        BuildRequires:  python3-devel
+        Requires:       python3
         
         %description
         A cross-platform document conversion tool
         
         %prep
-        %setup -c
+        cp %{SOURCE0} %{_builddir}/
+        cp %{SOURCE1} %{_builddir}/
         
         %build
+        python3 -m pip install -r requirements.txt
+        python3 -m pip install pyinstaller
         pyinstaller --name "Doc-Converter" --onefile doc_converter_gui.py
         
         %install
@@ -345,29 +363,42 @@ jobs:
     - name: Set up Python and build tools
       run: |
         sudo apt-get update
-        sudo apt-get install -y python3.12 python3.12-dev python3-pip ruby-dev rubygems
+        sudo apt-get install -y python3.12 python3-pip python3-dev ruby-dev build-essential
         sudo gem install fpm
     
     - name: Install dependencies
       run: |
-        python3.12 -m pip install --upgrade pip
-        python3.12 -m pip install -r requirements.txt
-        python3.12 -m pip install pyinstaller
+        python3 -m pip install --upgrade pip
+        python3 -m pip install -r requirements.txt
+        python3 -m pip install pyinstaller
     
-    - name: Build Ubuntu 20.04 DEB Package
+    - name: Build Ubuntu DEB Package
       run: |
+        # Install FPM and other dependencies
+        sudo apt-get update
+        sudo apt-get install -y ruby-dev build-essential
+        sudo gem install fpm
+        
+        # Install Python dependencies
+        python3 -m pip install -r requirements.txt
+        python3 -m pip install pyinstaller
+        
         # Build executable
-        python3.12 -m PyInstaller --name "Doc-Converter" --onefile doc_converter_gui.py
+        pyinstaller --name "Doc-Converter" --onefile doc_converter_gui.py
         
-        # Create artifacts directory
-        mkdir -p artifacts/doc_converter-ubuntu-20-04
+        # Prepare package structure
+        mkdir -p package/usr/local/bin
+        cp dist/Doc-Converter package/usr/local/bin/doc-converter
         
-        # Use fpm to create .deb package
+        # Create DEB package
         fpm -s dir -t deb \
             -n doc-converter \
             -v 1.0 \
             -p artifacts/doc_converter-ubuntu-20-04/Doc-Converter-Ubuntu-20.04.deb \
-            dist/Doc-Converter=/usr/local/bin/doc-converter
+            --deb-no-default-config-files \
+            --depends python3 \
+            -C package \
+            usr/local/bin/doc-converter
     
     - name: Upload Ubuntu 20.04 Artifact
       uses: actions/upload-artifact@v4
@@ -383,29 +414,42 @@ jobs:
     - name: Set up Python and build tools
       run: |
         sudo apt-get update
-        sudo apt-get install -y python3.12 python3.12-dev python3-pip ruby-dev rubygems
+        sudo apt-get install -y python3.12 python3-pip python3-dev ruby-dev build-essential
         sudo gem install fpm
     
     - name: Install dependencies
       run: |
-        python3.12 -m pip install --upgrade pip
-        python3.12 -m pip install -r requirements.txt
-        python3.12 -m pip install pyinstaller
+        python3 -m pip install --upgrade pip
+        python3 -m pip install -r requirements.txt
+        python3 -m pip install pyinstaller
     
-    - name: Build Ubuntu 22.04 DEB Package
+    - name: Build Ubuntu DEB Package
       run: |
+        # Install FPM and other dependencies
+        sudo apt-get update
+        sudo apt-get install -y ruby-dev build-essential
+        sudo gem install fpm
+        
+        # Install Python dependencies
+        python3 -m pip install -r requirements.txt
+        python3 -m pip install pyinstaller
+        
         # Build executable
-        python3.12 -m PyInstaller --name "Doc-Converter" --onefile doc_converter_gui.py
+        pyinstaller --name "Doc-Converter" --onefile doc_converter_gui.py
         
-        # Create artifacts directory
-        mkdir -p artifacts/doc_converter-ubuntu-22-04
+        # Prepare package structure
+        mkdir -p package/usr/local/bin
+        cp dist/Doc-Converter package/usr/local/bin/doc-converter
         
-        # Use fpm to create .deb package
+        # Create DEB package
         fpm -s dir -t deb \
             -n doc-converter \
             -v 1.0 \
             -p artifacts/doc_converter-ubuntu-22-04/Doc-Converter-Ubuntu-22.04.deb \
-            dist/Doc-Converter=/usr/local/bin/doc-converter
+            --deb-no-default-config-files \
+            --depends python3 \
+            -C package \
+            usr/local/bin/doc-converter
     
     - name: Upload Ubuntu 22.04 Artifact
       uses: actions/upload-artifact@v4
@@ -421,29 +465,42 @@ jobs:
     - name: Set up Python and build tools
       run: |
         sudo apt-get update
-        sudo apt-get install -y python3.12 python3.12-dev python3-pip ruby-dev rubygems
+        sudo apt-get install -y python3.12 python3-pip python3-dev ruby-dev build-essential
         sudo gem install fpm
     
     - name: Install dependencies
       run: |
-        python3.12 -m pip install --upgrade pip
-        python3.12 -m pip install -r requirements.txt
-        python3.12 -m pip install pyinstaller
+        python3 -m pip install --upgrade pip
+        python3 -m pip install -r requirements.txt
+        python3 -m pip install pyinstaller
     
-    - name: Build Ubuntu 24.04 DEB Package
+    - name: Build Ubuntu DEB Package
       run: |
+        # Install FPM and other dependencies
+        sudo apt-get update
+        sudo apt-get install -y ruby-dev build-essential
+        sudo gem install fpm
+        
+        # Install Python dependencies
+        python3 -m pip install -r requirements.txt
+        python3 -m pip install pyinstaller
+        
         # Build executable
-        python3.12 -m PyInstaller --name "Doc-Converter" --onefile doc_converter_gui.py
+        pyinstaller --name "Doc-Converter" --onefile doc_converter_gui.py
         
-        # Create artifacts directory
-        mkdir -p artifacts/doc_converter-ubuntu-24-04
+        # Prepare package structure
+        mkdir -p package/usr/local/bin
+        cp dist/Doc-Converter package/usr/local/bin/doc-converter
         
-        # Use fpm to create .deb package
+        # Create DEB package
         fpm -s dir -t deb \
             -n doc-converter \
             -v 1.0 \
             -p artifacts/doc_converter-ubuntu-24-04/Doc-Converter-Ubuntu-24.04.deb \
-            dist/Doc-Converter=/usr/local/bin/doc-converter
+            --deb-no-default-config-files \
+            --depends python3 \
+            -C package \
+            usr/local/bin/doc-converter
     
     - name: Upload Ubuntu 24.04 Artifact
       uses: actions/upload-artifact@v4
