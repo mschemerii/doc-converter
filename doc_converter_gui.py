@@ -1,24 +1,40 @@
 #!/usr/bin/env python3
 # Executable GUI for Doc Converter
-# Last updated: 2023-03-08 14:30:00
+# Last updated: 2024-02-20 14:30:00
 
 import os
 import sys
-import tkinter as tk
-from tkinter import filedialog, messagebox, scrolledtext, ttk
+
+# Ensure tkinter is available
+try:
+    import tkinter as tk
+    from tkinter import filedialog, messagebox, scrolledtext, ttk
+except ImportError:
+    print("Error: tkinter is not installed. Please install python3-tk.")
+    sys.exit(1)
+
 import logging
 import threading
 import traceback
 
-# Import Python version check
-from python_version_check import check_python_version
+# Robust Python version check
+try:
+    from python_version_check import check_python_version
+except ImportError:
+    print("Error: python_version_check module not found.")
+    sys.exit(1)
 
 # Run version check immediately
 if not check_python_version():
     sys.exit(1)
 
-# Import the existing conversion script
-from doc_to_docx_converter import convert_doc_to_docx
+# Robust import of conversion modules
+try:
+    from doc_to_docx_converter import convert_doc_to_docx
+    from process_document import process_document
+except ImportError as e:
+    print(f"Error importing conversion modules: {e}")
+    sys.exit(1)
 
 class RedirectText:
     """Redirect print statements to a tkinter Text widget"""
@@ -189,9 +205,6 @@ class DocConverterApp:
     def run_conversion(self, input_file):
         """Perform the actual conversion"""
         try:
-            # Import the full document processing function
-            from process_document import process_document
-            
             # Perform full document processing
             success = process_document(input_file)
             

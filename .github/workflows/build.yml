@@ -58,24 +58,53 @@ jobs:
         python3 -m pip install pyinstaller
     
     - name: Build macOS Intel Executable
+      env:
+        # Explicitly set Python environment for x86_64
+        PYTHONPATH: /Users/runner/hostedtoolcache/Python/3.12.7/x64/lib/python3.12
+        PYTHON_ROOT: /Users/runner/hostedtoolcache/Python/3.12.7/x64
       run: |
         # Create temporary build directory
         mkdir -p build/intel
         cd build/intel
         
-        # Capture full PyInstaller output
-        python -m PyInstaller \
+        # Verify Python and library paths
+        echo "Python version:"
+        python3 --version
+        
+        echo "Python executable path:"
+        which python3
+        
+        echo "Python library paths:"
+        python3 -c "import sys; print('\n'.join(sys.path))"
+        
+        # List all installed Python packages
+        python3 -m pip list
+        
+        # Capture full PyInstaller output with verbose logging
+        python3 -m PyInstaller \
           --name "Doc-Converter" \
           --windowed \
           --target-arch x86_64 \
           --log-level=DEBUG \
           --clean \
           --noconfirm \
+          --add-data "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/lib-dynload/zlib.cpython-312-darwin.so:." \
+          --add-binary "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/lib-dynload/zlib.cpython-312-darwin.so:." \
           ../../doc_converter_gui.py \
           2>&1 | tee pyinstaller_build.log
 
         # Capture PyInstaller exit status
         PYINSTALLER_EXIT_STATUS=$?
+
+        # Debug: Print Python and library paths
+        echo "Python Path: $PYTHONPATH"
+        echo "Python Root: $PYTHON_ROOT"
+        python3 -c "import sys; print(sys.path)"
+        python3 -c "import zlib; print(zlib.__file__)"
+
+        # Print full PyInstaller log for detailed error analysis
+        echo "Full PyInstaller Build Log:"
+        cat pyinstaller_build.log
 
         # Print warnings file if it exists
         if [ -f "build/Doc-Converter/warn-Doc-Converter.txt" ]; then
@@ -92,7 +121,7 @@ jobs:
         # Check if PyInstaller build log contains errors
         if grep -q "ERROR" pyinstaller_build.log; then
           echo "PyInstaller build encountered errors:"
-          cat pyinstaller_build.log
+          grep "ERROR" pyinstaller_build.log
           exit 1
         fi
 
@@ -161,7 +190,7 @@ jobs:
 
         # Create artifacts directory and copy zip
         mkdir -p artifacts/doc_converter-macos-intel
-        cp build/intel/Doc-Converter-Intel.app.zip artifacts/doc_converter-macos-intel/
+        cp build/intel/Doc-Converter-Intel.app.zip artifacts/doc_converter-macos-intel/Doc-Converter-Intel.app.zip
 
         # Exit with PyInstaller's original exit status
         exit $PYINSTALLER_EXIT_STATUS
@@ -197,7 +226,7 @@ jobs:
         mkdir -p build/silicon
         cd build/silicon
         
-        # Build the executable with arm64 architecture
+        # Capture full PyInstaller output
         arch -arm64 python -m PyInstaller \
           --name "Doc-Converter" \
           --windowed \
@@ -205,68 +234,102 @@ jobs:
           --log-level=DEBUG \
           --clean \
           --noconfirm \
-          ../../doc_converter_gui.py
-        
-        # Verify the .app bundle exists
+          ../../doc_converter_gui.py \
+          2>&1 | tee pyinstaller_build.log
+
+        # Capture PyInstaller exit status
+        PYINSTALLER_EXIT_STATUS=$?
+
+        # Print warnings file if it exists
+        if [ -f "build/Doc-Converter/warn-Doc-Converter.txt" ]; then
+          echo "PyInstaller Warnings:"
+          cat "build/Doc-Converter/warn-Doc-Converter.txt"
+        fi
+
+        # Print cross-reference file for additional insights
+        if [ -f "build/Doc-Converter/xref-Doc-Converter.html" ]; then
+          echo "PyInstaller Cross-Reference:"
+          cat "build/Doc-Converter/xref-Doc-Converter.html"
+        fi
+
+        # Check if PyInstaller build log contains errors
+        if grep -q "ERROR" pyinstaller_build.log; then
+          echo "PyInstaller build encountered errors:"
+          cat pyinstaller_build.log
+          exit 1
+        fi
+
+        # Explicitly check for .app bundle and executable
         if [ ! -d "dist/Doc-Converter.app" ]; then
           echo "Error: Doc-Converter.app not found in dist directory"
           echo "Contents of dist directory:"
           find dist -type d
+          echo "PyInstaller build log:"
+          cat pyinstaller_build.log
           exit 1
         fi
-        
-        # Verify executable
+
+        # Verify executable architecture
         echo "Executable details:"
         file "dist/Doc-Converter.app/Contents/MacOS/Doc-Converter"
         otool -l "dist/Doc-Converter.app/Contents/MacOS/Doc-Converter" | grep -E "cputype|cpusubtype"
-        
+
+        # Ensure the executable is arm64
+        if ! otool -l "dist/Doc-Converter.app/Contents/MacOS/Doc-Converter" | grep -q "cputype 12"; then
+          echo "Error: Executable is not arm64"
+          exit 1
+        fi
+
+        # List all dependencies
+        echo "Dependency list:"
+        otool -L "dist/Doc-Converter.app/Contents/MacOS/Doc-Converter"
+
         # Debugging: List all files in the app bundle
         echo "App bundle contents:"
         find "dist/Doc-Converter.app" -type f
-        
-        # Attempt to sign with verbose output and error handling
-        echo "Signing individual libraries..."
-        find "dist/Doc-Converter.app" -type f \( -name "*.dylib" -o -name "*.so" \) | while read lib; do
-          echo "Signing library: $lib"
-          codesign --force --sign - --verbose "$lib" || {
-            echo "Warning: Could not sign library $lib"
-            # Continue with the build instead of failing
-          }
-        done
-        
-        # Sign the executable
-        echo "Signing executable..."
+
+        # Sign the executable first
         codesign --force --deep --sign - \
           --options runtime \
           --entitlements /dev/null \
           --verbose \
           "dist/Doc-Converter.app/Contents/MacOS/Doc-Converter"
-        
-        # Sign the entire app bundle
-        echo "Signing app bundle..."
+
+        # Sign any dylibs and frameworks
+        find "dist/Doc-Converter.app" -type f \( -name "*.dylib" -o -name "*.so" \) | while read lib; do
+          echo "Signing library: $lib"
+          codesign --force --sign - --verbose "$lib" || {
+            echo "Warning: Could not sign library $lib"
+          }
+        done
+
+        # Finally sign the entire app bundle
         codesign --force --deep --sign - \
           --options runtime \
           --timestamp=none \
           --verbose \
           "dist/Doc-Converter.app"
-        
+
         # Verify signing of executable and bundle
         echo "Verifying executable signing..."
         codesign -vv "dist/Doc-Converter.app/Contents/MacOS/Doc-Converter"
         echo "Verifying bundle signing..."
         codesign -vv --deep "dist/Doc-Converter.app"
-        
+
         # Create zip of the app bundle
         ditto -c -k --keepParent "dist/Doc-Converter.app" "Doc-Converter-Silicon.app.zip"
-        
+
         # Move back to root directory
         cd ../..
-        
+
         # Create artifacts directory and copy zip
         mkdir -p artifacts/doc_converter-macos-silicon
-        cp build/silicon/Doc-Converter-Silicon.app.zip artifacts/doc_converter-macos-silicon/
+        cp Doc-Converter-Silicon.app.zip artifacts/doc_converter-macos-silicon/Doc-Converter-Silicon.app.zip
+
+        # Exit with PyInstaller's original exit status
+        exit $PYINSTALLER_EXIT_STATUS
       
-      # Continue even if signing fails
+      # Continue even if build fails to capture logs
       continue-on-error: true
 
     - name: Upload macOS Silicon Artifact
