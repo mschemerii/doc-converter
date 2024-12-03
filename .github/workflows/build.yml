@@ -80,16 +80,25 @@ jobs:
           --distpath "$BUILD_DIR" \
           doc_converter_gui.py
 
-    - name: Verify Build Artifacts
+    - name: Prepare macOS Intel Artifact
       run: |
-        # List contents of build directory
-        ls -la build/macos-intel-py3.10
+        # Navigate to build directory
+        cd build/macos-intel-py3.10
+        
+        # Ensure .app is complete
+        chmod +x "Doc-Converter-Intel.app/Contents/MacOS/Doc-Converter-Intel"
+        
+        # Create a zip of the entire .app bundle
+        zip -r "../Doc-Converter-Intel.zip" "Doc-Converter-Intel.app"
+        
+        # Verify zip contents
+        unzip -l "../Doc-Converter-Intel.zip"
 
-    - name: Upload Artifacts
+    - name: Upload macOS Intel Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: doc-converter-macos-intel
-        path: build/macos-intel-py3.10/Doc-Converter-Intel.app
+        path: build/Doc-Converter-Intel.zip
         retention-days: 7
 
   build-macos-silicon:
@@ -166,16 +175,25 @@ jobs:
           --distpath "$BUILD_DIR" \
           doc_converter_gui.py
 
-    - name: Verify Build Artifacts
+    - name: Prepare macOS Silicon Artifact
       run: |
-        # List contents of build directory
-        ls -la build/macos-silicon-py3.10
+        # Navigate to build directory
+        cd build/macos-silicon-py3.10
+        
+        # Ensure .app is complete
+        chmod +x "Doc-Converter-Silicon.app/Contents/MacOS/Doc-Converter-Silicon"
+        
+        # Create a zip of the entire .app bundle
+        zip -r "../Doc-Converter-Silicon.zip" "Doc-Converter-Silicon.app"
+        
+        # Verify zip contents
+        unzip -l "../Doc-Converter-Silicon.zip"
 
-    - name: Upload Artifacts
+    - name: Upload macOS Silicon Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: doc-converter-macos-silicon
-        path: build/macos-silicon-py3.10/Doc-Converter-Silicon.app
+        path: build/Doc-Converter-Silicon.zip
         retention-days: 7
 
   build-windows:
@@ -237,8 +255,24 @@ jobs:
     - name: Verify Build Artifacts
       shell: pwsh
       run: |
-        # List contents of build directory with full details
+        # Detailed directory listing and debugging
+        Write-Host "Current working directory:"
+        Get-Location
+
+        Write-Host "`nBuild directory contents:"
         Get-ChildItem -Path "build\windows-${{ matrix.architecture }}" -Recurse | Format-Table -AutoSize
+
+        Write-Host "`nSearching for executable:"
+        $exeFiles = Get-ChildItem -Path "build" -Recurse -Include "*.exe"
+        
+        if ($exeFiles.Count -eq 0) {
+          Write-Error "No executable found in build directory"
+          exit 1
+        }
+        
+        $exeFiles | ForEach-Object {
+          Write-Host "Found executable: $($_.FullName)"
+        }
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
