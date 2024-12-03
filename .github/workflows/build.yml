@@ -193,7 +193,7 @@ jobs:
         name: doc_converter-macos-silicon
         path: artifacts/doc_converter-macos-silicon/Doc-Converter-Silicon.app.zip
 
-  upload-artifacts:
+  create-release:
     needs: 
       - build-windows
       - build-macos-intel
@@ -205,30 +205,11 @@ jobs:
           path: artifacts
           merge-multiple: true
       
-      - name: Display structure of downloaded files
-        run: ls -R artifacts
-      
-      - name: Upload artifacts to release
-        uses: actions/upload-artifact@v4
-        with:
-          name: doc-converter-all-platforms
-          path: artifacts
-
-  create-release:
-    needs: 
-      - upload-artifacts
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: doc-converter-all-platforms
-          path: artifacts
-      
       - name: Create Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
             artifacts/doc_converter-windows/Doc-Converter.exe
-            artifacts/doc_converter-macos-intel/Doc-Converter
-            artifacts/doc_converter-macos-silicon/Doc-Converter
+            artifacts/doc_converter-macos-intel/Doc-Converter-Intel.app.zip
+            artifacts/doc_converter-macos-silicon/Doc-Converter-Silicon.app.zip
