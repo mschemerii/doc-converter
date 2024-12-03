@@ -31,21 +31,21 @@ jobs:
         pip install pyinstaller python-docx lxml
 
     - name: Build macOS Intel Executable
-      env:
-        MACOS_ARCH: x86_64
       run: |
-        # Explicitly set build directory
-        BUILD_DIR="build/macos-intel-py3.10"
-        mkdir -p "$BUILD_DIR"
+        # Prepare build environment
+        python -m pip install -r requirements.txt
         
-        # Build command with additional flags for macOS
-        pyinstaller --clean --noconfirm --windowed \
-          --name "Doc-Converter-Intel" \
-          --distpath "$BUILD_DIR" \
-          --add-binary "/System/Library/Frameworks/Tk.framework/Tk:Tk" \
-          --add-binary "/System/Library/Frameworks/Tcl.framework/Tcl:Tcl" \
-          --osx-bundle-identifier "com.mschemer.docconverter" \
-          doc_converter_gui.py
+        # Create build directory
+        mkdir -p build/macos-intel-py3.10
+        
+        # Build Intel executable
+        pyinstaller --clean --noconfirm \
+          --name "Doc-Converter-MacOS-Intel" \
+          --add-data "resources:resources" \
+          --windowed \
+          --target-architecture x86_64 \
+          --distpath build/macos-intel-py3.10 \
+          main.py
 
     - name: Prepare macOS Intel Artifact
       run: |
@@ -53,75 +53,65 @@ jobs:
         cd build/macos-intel-py3.10
         
         # Verify .app bundle structure
-        if [ ! -d "Doc-Converter-Intel.app" ]; then
+        if [ ! -d "Doc-Converter-MacOS-Intel.app" ]; then
           echo "Error: .app bundle not found"
           exit 1
         fi
         
         # Check for executable
-        if [ ! -x "Doc-Converter-Intel.app/Contents/MacOS/Doc-Converter-Intel" ]; then
+        if [ ! -x "Doc-Converter-MacOS-Intel.app/Contents/MacOS/Doc-Converter-MacOS-Intel" ]; then
           echo "Error: Executable not found or not executable"
           exit 1
         fi
         
-        # Create Info.plist if it doesn't exist
-        PLIST="Doc-Converter-Intel.app/Contents/Info.plist"
-        if [ ! -f "$PLIST" ]; then
-          echo "Creating new Info.plist"
-          /usr/libexec/PlistBuddy -c "Add :CFBundlePackageType string APPL" "$PLIST"
-          /usr/libexec/PlistBuddy -c "Add :CFBundleExecutable string Doc-Converter-Intel" "$PLIST"
-          /usr/libexec/PlistBuddy -c "Add :CFBundleName string 'Doc Converter'" "$PLIST"
-        fi
+        # Create or update Info.plist
+        PLIST="Doc-Converter-MacOS-Intel.app/Contents/Info.plist"
         
-        # Set or add Info.plist entries
-        /usr/libexec/PlistBuddy -c "Add :CFBundleIdentifier string com.mschemer.docconverter" "$PLIST" || \
-        /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier com.mschemer.docconverter" "$PLIST"
-        
-        /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string 'Doc Converter'" "$PLIST" || \
-        /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName 'Doc Converter'" "$PLIST"
-        
-        /usr/libexec/PlistBuddy -c "Add :CFBundleVersion string 1.0.0" "$PLIST" || \
-        /usr/libexec/PlistBuddy -c "Set :CFBundleVersion 1.0.0" "$PLIST"
-        
-        /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string 1.0.0" "$PLIST" || \
-        /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.0.0" "$PLIST"
-        
-        /usr/libexec/PlistBuddy -c "Add :NSHumanReadableCopyright string ' 2024 M. Schemer'" "$PLIST" || \
-        /usr/libexec/PlistBuddy -c "Set :NSHumanReadableCopyright ' 2024 M. Schemer'" "$PLIST"
+        # Create a new Info.plist with all required entries
+        /usr/libexec/PlistBuddy -c "Clear dict" "$PLIST"
+        /usr/libexec/PlistBuddy -c "Add :CFBundlePackageType string APPL" "$PLIST"
+        /usr/libexec/PlistBuddy -c "Add :CFBundleExecutable string Doc-Converter-MacOS-Intel" "$PLIST"
+        /usr/libexec/PlistBuddy -c "Add :CFBundleName string 'Doc Converter'" "$PLIST"
+        /usr/libexec/PlistBuddy -c "Add :CFBundleIdentifier string com.mschemer.docconverter" "$PLIST"
+        /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string 'Doc Converter'" "$PLIST"
+        /usr/libexec/PlistBuddy -c "Add :CFBundleVersion string 1.0.0" "$PLIST"
+        /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string 1.0.0" "$PLIST"
+        /usr/libexec/PlistBuddy -c "Add :NSHumanReadableCopyright string ' 2024 M. Schemer'" "$PLIST"
+        /usr/libexec/PlistBuddy -c "Add :CFBundleInfoDictionaryVersion string 6.0" "$PLIST"
+        /usr/libexec/PlistBuddy -c "Add :CFBundleSignature string ????" "$PLIST"
         
         # Repair .app bundle permissions
-        chmod -R 755 "Doc-Converter-Intel.app"
+        chmod -R 755 "Doc-Converter-MacOS-Intel.app"
         
         # Create ad-hoc signing certificate
         security create-keychain -p "" build.keychain
         security default-keychain -s build.keychain
         security unlock-keychain -p "" build.keychain
         
-        # Ad-hoc sign the application with deep signing and entitlements
+        # Ad-hoc sign the application with deep signing
         codesign --force --deep \
           --sign - \
           --options runtime \
-          --entitlements /dev/null \
-          "Doc-Converter-Intel.app"
+          "Doc-Converter-MacOS-Intel.app"
         
         # Verify code signing
-        codesign --verify --verbose --strict "Doc-Converter-Intel.app"
+        codesign --verify --verbose --strict "Doc-Converter-MacOS-Intel.app"
         
         # Create a tar.gz of the entire .app bundle with full path preservation
-        tar -czvf "../Doc-Converter-Intel.tar.gz" "Doc-Converter-Intel.app"
+        tar -czvf "../Doc-Converter-MacOS-Intel.tar.gz" "Doc-Converter-MacOS-Intel.app"
         
         # Verify tar contents
-        tar -tzvf "../Doc-Converter-Intel.tar.gz"
+        tar -tzvf "../Doc-Converter-MacOS-Intel.tar.gz"
         
         # Additional diagnostics
-        ls -la "Doc-Converter-Intel.app/Contents/MacOS"
-        otool -L "Doc-Converter-Intel.app/Contents/MacOS/Doc-Converter-Intel"
+        ls -la "Doc-Converter-MacOS-Intel.app/Contents/MacOS"
+        otool -L "Doc-Converter-MacOS-Intel.app/Contents/MacOS/Doc-Converter-MacOS-Intel"
 
     - name: Upload macOS Intel Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: doc-converter-macos-intel
-        path: build/Doc-Converter-Intel.tar.gz
+        path: build/Doc-Converter-MacOS-Intel.tar.gz
         retention-days: 7
 
   build-macos-silicon:
@@ -143,21 +133,21 @@ jobs:
         pip install pyinstaller python-docx lxml
 
     - name: Build macOS Silicon Executable
-      env:
-        MACOS_ARCH: arm64
       run: |
-        # Explicitly set build directory
-        BUILD_DIR="build/macos-silicon-py3.10"
-        mkdir -p "$BUILD_DIR"
+        # Prepare build environment
+        python -m pip install -r requirements.txt
         
-        # Build command with additional flags for macOS
-        pyinstaller --clean --noconfirm --windowed \
-          --name "Doc-Converter-Silicon" \
-          --distpath "$BUILD_DIR" \
-          --add-binary "/System/Library/Frameworks/Tk.framework/Tk:Tk" \
-          --add-binary "/System/Library/Frameworks/Tcl.framework/Tcl:Tcl" \
-          --osx-bundle-identifier "com.mschemer.docconverter" \
-          doc_converter_gui.py
+        # Create build directory
+        mkdir -p build/macos-silicon-py3.10
+        
+        # Build Silicon executable
+        pyinstaller --clean --noconfirm \
+          --name "Doc-Converter-MacOS-Silicon" \
+          --add-data "resources:resources" \
+          --windowed \
+          --target-architecture arm64 \
+          --distpath build/macos-silicon-py3.10 \
+          main.py
 
     - name: Prepare macOS Silicon Artifact
       run: |
@@ -165,75 +155,65 @@ jobs:
         cd build/macos-silicon-py3.10
         
         # Verify .app bundle structure
-        if [ ! -d "Doc-Converter-Silicon.app" ]; then
+        if [ ! -d "Doc-Converter-MacOS-Silicon.app" ]; then
           echo "Error: .app bundle not found"
           exit 1
         fi
         
         # Check for executable
-        if [ ! -x "Doc-Converter-Silicon.app/Contents/MacOS/Doc-Converter-Silicon" ]; then
+        if [ ! -x "Doc-Converter-MacOS-Silicon.app/Contents/MacOS/Doc-Converter-MacOS-Silicon" ]; then
           echo "Error: Executable not found or not executable"
           exit 1
         fi
         
-        # Create Info.plist if it doesn't exist
-        PLIST="Doc-Converter-Silicon.app/Contents/Info.plist"
-        if [ ! -f "$PLIST" ]; then
-          echo "Creating new Info.plist"
-          /usr/libexec/PlistBuddy -c "Add :CFBundlePackageType string APPL" "$PLIST"
-          /usr/libexec/PlistBuddy -c "Add :CFBundleExecutable string Doc-Converter-Silicon" "$PLIST"
-          /usr/libexec/PlistBuddy -c "Add :CFBundleName string 'Doc Converter'" "$PLIST"
-        fi
+        # Create or update Info.plist
+        PLIST="Doc-Converter-MacOS-Silicon.app/Contents/Info.plist"
         
-        # Set or add Info.plist entries
-        /usr/libexec/PlistBuddy -c "Add :CFBundleIdentifier string com.mschemer.docconverter" "$PLIST" || \
-        /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier com.mschemer.docconverter" "$PLIST"
-        
-        /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string 'Doc Converter'" "$PLIST" || \
-        /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName 'Doc Converter'" "$PLIST"
-        
-        /usr/libexec/PlistBuddy -c "Add :CFBundleVersion string 1.0.0" "$PLIST" || \
-        /usr/libexec/PlistBuddy -c "Set :CFBundleVersion 1.0.0" "$PLIST"
-        
-        /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string 1.0.0" "$PLIST" || \
-        /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.0.0" "$PLIST"
-        
-        /usr/libexec/PlistBuddy -c "Add :NSHumanReadableCopyright string ' 2024 M. Schemer'" "$PLIST" || \
-        /usr/libexec/PlistBuddy -c "Set :NSHumanReadableCopyright ' 2024 M. Schemer'" "$PLIST"
+        # Create a new Info.plist with all required entries
+        /usr/libexec/PlistBuddy -c "Clear dict" "$PLIST"
+        /usr/libexec/PlistBuddy -c "Add :CFBundlePackageType string APPL" "$PLIST"
+        /usr/libexec/PlistBuddy -c "Add :CFBundleExecutable string Doc-Converter-MacOS-Silicon" "$PLIST"
+        /usr/libexec/PlistBuddy -c "Add :CFBundleName string 'Doc Converter'" "$PLIST"
+        /usr/libexec/PlistBuddy -c "Add :CFBundleIdentifier string com.mschemer.docconverter" "$PLIST"
+        /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string 'Doc Converter'" "$PLIST"
+        /usr/libexec/PlistBuddy -c "Add :CFBundleVersion string 1.0.0" "$PLIST"
+        /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string 1.0.0" "$PLIST"
+        /usr/libexec/PlistBuddy -c "Add :NSHumanReadableCopyright string ' 2024 M. Schemer'" "$PLIST"
+        /usr/libexec/PlistBuddy -c "Add :CFBundleInfoDictionaryVersion string 6.0" "$PLIST"
+        /usr/libexec/PlistBuddy -c "Add :CFBundleSignature string ????" "$PLIST"
         
         # Repair .app bundle permissions
-        chmod -R 755 "Doc-Converter-Silicon.app"
+        chmod -R 755 "Doc-Converter-MacOS-Silicon.app"
         
         # Create ad-hoc signing certificate
         security create-keychain -p "" build.keychain
         security default-keychain -s build.keychain
         security unlock-keychain -p "" build.keychain
         
-        # Ad-hoc sign the application with deep signing and entitlements
+        # Ad-hoc sign the application with deep signing
         codesign --force --deep \
           --sign - \
           --options runtime \
-          --entitlements /dev/null \
-          "Doc-Converter-Silicon.app"
+          "Doc-Converter-MacOS-Silicon.app"
         
         # Verify code signing
-        codesign --verify --verbose --strict "Doc-Converter-Silicon.app"
+        codesign --verify --verbose --strict "Doc-Converter-MacOS-Silicon.app"
         
         # Create a tar.gz of the entire .app bundle with full path preservation
-        tar -czvf "../Doc-Converter-Silicon.tar.gz" "Doc-Converter-Silicon.app"
+        tar -czvf "../Doc-Converter-MacOS-Silicon.tar.gz" "Doc-Converter-MacOS-Silicon.app"
         
         # Verify tar contents
-        tar -tzvf "../Doc-Converter-Silicon.tar.gz"
+        tar -tzvf "../Doc-Converter-MacOS-Silicon.tar.gz"
         
         # Additional diagnostics
-        ls -la "Doc-Converter-Silicon.app/Contents/MacOS"
-        otool -L "Doc-Converter-Silicon.app/Contents/MacOS/Doc-Converter-Silicon"
+        ls -la "Doc-Converter-MacOS-Silicon.app/Contents/MacOS"
+        otool -L "Doc-Converter-MacOS-Silicon.app/Contents/MacOS/Doc-Converter-MacOS-Silicon"
 
     - name: Upload macOS Silicon Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: doc-converter-macos-silicon
-        path: build/Doc-Converter-Silicon.tar.gz
+        path: build/Doc-Converter-MacOS-Silicon.tar.gz
         retention-days: 7
 
   build-windows:
@@ -287,7 +267,7 @@ jobs:
         New-Item -Path "build\windows-${{ matrix.architecture }}" -ItemType Directory -Force
 
         # Build executable
-        pyinstaller --clean --noconfirm --windowed `
+        pyinstaller --clean --noconfirm `
           --name "Doc-Converter-Windows-${{ matrix.architecture }}" `
           --distpath "build\windows-${{ matrix.architecture }}" `
           doc_converter_gui.py
@@ -345,8 +325,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         files: |
-          artifacts/Doc-Converter-Intel.tar.gz
-          artifacts/Doc-Converter-Silicon.tar.gz
+          artifacts/Doc-Converter-MacOS-Intel.tar.gz
+          artifacts/Doc-Converter-MacOS-Silicon.tar.gz
           artifacts/Doc-Converter-Windows-x64.zip
         generate_release_notes: true
         tag_name: v${{ github.sha }}
