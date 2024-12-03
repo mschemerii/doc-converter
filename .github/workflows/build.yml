@@ -15,7 +15,8 @@ jobs:
   build-macos-intel:
     runs-on: macos-13
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
       with:
         fetch-depth: 1
         submodules: false
@@ -87,10 +88,14 @@ jobs:
         security default-keychain -s build.keychain
         security unlock-keychain -p "" build.keychain
         
-        # Ad-hoc sign the application with deep signing
+        # Import Apple Developer CA certificate
+        security import /Library/Developer/CommandLineTools/Certificates/Apple_Development.cer -k build.keychain -T /usr/bin/codesign
+        
+        # Ad-hoc sign the application with deep signing and entitlements
         codesign --force --deep \
           --sign - \
           --options runtime \
+          --entitlements macos_entitlements.xml \
           "Doc-Converter-MacOS-Intel.app"
         
         # Verify code signing
@@ -116,7 +121,8 @@ jobs:
   build-macos-silicon:
     runs-on: macos-14
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
       with:
         fetch-depth: 1
         submodules: false
@@ -188,10 +194,14 @@ jobs:
         security default-keychain -s build.keychain
         security unlock-keychain -p "" build.keychain
         
-        # Ad-hoc sign the application with deep signing
+        # Import Apple Developer CA certificate
+        security import /Library/Developer/CommandLineTools/Certificates/Apple_Development.cer -k build.keychain -T /usr/bin/codesign
+        
+        # Ad-hoc sign the application with deep signing and entitlements
         codesign --force --deep \
           --sign - \
           --options runtime \
+          --entitlements macos_entitlements.xml \
           "Doc-Converter-MacOS-Silicon.app"
         
         # Verify code signing
@@ -222,7 +232,8 @@ jobs:
           - architecture: x64
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
       with:
         fetch-depth: 1
         submodules: false
