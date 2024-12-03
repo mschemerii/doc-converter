@@ -7,7 +7,7 @@ import platform
 def check_python_version():
     # Recommended Python version
     RECOMMENDED_MAJOR = 3
-    RECOMMENDED_MINOR = 12
+    RECOMMENDED_MINOR = 10
     
     # Current Python version
     current_major = sys.version_info.major
@@ -61,4 +61,5 @@ def check_python_version():
 
 # Optional: Run check when imported
 if __name__ == '__main__':
-    check_python_version()
+    if not check_python_version():
+        sys.exit(1)  # Exit with error code if version check fails

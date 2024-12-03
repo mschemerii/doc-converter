@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Executable GUI for Doc Converter
-# Last updated: 2023-03-08 14:30:00
+# Last updated: 2024-03-14
 
 import os
 import sys
@@ -10,11 +10,22 @@ import logging
 import threading
 import traceback
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s: %(message)s',
+    handlers=[
+        logging.FileHandler('doc_converter.log', mode='a'),
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+
 # Import Python version check
 from python_version_check import check_python_version
 
 # Run version check immediately
 if not check_python_version():
+    logging.error("Python version check failed. Exiting.")
     sys.exit(1)
 
 # Import the existing conversion script
@@ -26,8 +37,11 @@ class RedirectText:
         self.output = text_widget
     
     def write(self, string):
-        self.output.insert(tk.END, string)
-        self.output.see(tk.END)
+        try:
+            self.output.insert(tk.END, string)
+            self.output.see(tk.END)
+        except Exception as e:
+            logging.error(f"Error writing to text widget: {e}")
     
     def flush(self):
         pass

@@ -6,12 +6,28 @@ import subprocess
 from pathlib import Path
 import tempfile
 import time
+import logging
+import traceback
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s: %(message)s',
+    handlers=[
+        logging.FileHandler('doc_converter.log', mode='a'),
+        logging.StreamHandler(sys.stdout)
+    ]
+)
 
 def convert_using_windows_com(doc_path, output_path):
     """Convert a .doc file to .docx using Microsoft Word COM interface on Windows"""
-    import win32com.client
-    import pythoncom
-    
+    try:
+        import win32com.client
+        import pythoncom
+    except ImportError:
+        logging.error("pywin32 not installed. Cannot convert using Windows COM.")
+        raise
+
     # Initialize COM in the current thread
     pythoncom.CoInitialize()
     
@@ -30,6 +46,13 @@ def convert_using_windows_com(doc_path, output_path):
             # Close the document
             doc.Close()
             
+            logging.info(f"Successfully converted {doc_path} to {output_path}")
+            
+        except Exception as e:
+            logging.error(f"Error converting document using Windows COM: {e}")
+            logging.error(traceback.format_exc())
+            raise
+            
         finally:
             # Quit Word application
             word.Quit()
@@ -38,126 +61,81 @@ def convert_using_windows_com(doc_path, output_path):
         # Clean up COM
         pythoncom.CoUninitialize()
 
-def write_applescript(doc_path, output_path):
-    """Create the AppleScript file for Word conversion"""
-    script = f'''
-    tell application "Microsoft Word"
-        activate
-        set input_path to "{doc_path}"
-        set output_path to "{output_path}"
-        
-        open input_path
-        
-        tell active document
-            save as file name output_path file format format document
-            close saving no
-        end tell
-    end tell
-    '''
-    
-    # Create a temporary file for the AppleScript
-    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.scpt', mode='w')
-    temp_file.write(script)
-    temp_file.close()
-    return temp_file.name
-
 def convert_using_pandoc(doc_path, output_path):
     """Convert a .doc file to .docx using Pandoc on Linux"""
     try:
         import pypandoc
         
-        # Ensure Pandoc is installed
-        try:
-            subprocess.run(['pandoc', '--version'], 
-                           stdout=subprocess.PIPE, 
-                           stderr=subprocess.PIPE, 
-                           check=True)
-        except (subprocess.CalledProcessError, FileNotFoundError):
-            print("Error: Pandoc is not installed. Please install Pandoc on your Linux system.")
-            print("For Ubuntu/Debian: sudo apt-get install pandoc")
-            print("For Oracle Linux: sudo yum install pandoc")
-            sys.exit(1)
+        # Ensure output is .docx
+        if not output_path.lower().endswith('.docx'):
+            output_path = os.path.splitext(output_path)[0] + '.docx'
         
         # Convert using Pandoc
-        pypandoc.convert_file(doc_path, 'docx', outputfile=output_path)
+        pypandoc.convert_file(
+            doc_path, 
+            'docx', 
+            outputfile=output_path
+        )
         
-        # Verify file was created
-        if not os.path.exists(output_path):
-            raise Exception("Conversion failed: Output file was not created")
+        logging.info(f"Successfully converted {doc_path} to {output_path} using Pandoc")
         
     except ImportError:
-        print("Error: pypandoc is not installed. Please install it using 'pip install pypandoc'")
-        sys.exit(1)
+        logging.error("Pandoc or pypandoc not installed. Cannot convert using Pandoc.")
+        raise
     except Exception as e:
-        print(f"Pandoc conversion error: {str(e)}")
-        sys.exit(1)
+        logging.error(f"Error converting document using Pandoc: {e}")
+        logging.error(traceback.format_exc())
+        raise
 
 def convert_doc_to_docx(doc_path):
     """
     Convert a .doc file to .docx using available methods
     Supports Windows, macOS, and Linux
     """
-    # Convert path to absolute path
-    doc_path = os.path.abspath(doc_path)
-    
-    # Check if file exists
+    # Validate input file
     if not os.path.exists(doc_path):
-        raise FileNotFoundError(f"File not found: {doc_path}")
+        logging.error(f"Input file not found: {doc_path}")
+        raise FileNotFoundError(f"Input file not found: {doc_path}")
     
-    # Check if it's a .doc file
-    if not doc_path.lower().endswith('.doc'):
-        raise ValueError("Input file must be a .doc file")
+    # Determine output path
+    output_path = os.path.splitext(doc_path)[0] + '.docx'
     
-    # Create output path
-    output_path = str(Path(doc_path).with_suffix('.docx'))
-    
-    system = platform.system()
+    # Determine conversion method based on platform
+    os_name = platform.system().lower()
     
     try:
-        if system == 'Windows':
+        if os_name == 'windows':
             convert_using_windows_com(doc_path, output_path)
-        elif system == 'Darwin':  # macOS
-            # Create AppleScript file
-            script_path = write_applescript(doc_path, output_path)
-            
-            try:
-                result = subprocess.run(
-                    ['osascript', script_path],
-                    capture_output=True,
-                    text=True,
-                    check=True
-                )
-            finally:
-                # Clean up the temporary script file
-                os.unlink(script_path)
-        elif system == 'Linux':
+        elif os_name == 'darwin':  # macOS
+            # Implement macOS-specific conversion (e.g., AppleScript)
+            logging.warning("macOS conversion not fully implemented")
+            raise NotImplementedError("macOS conversion not yet supported")
+        elif os_name == 'linux':
             convert_using_pandoc(doc_path, output_path)
         else:
-            raise Exception(f"Unsupported operating system: {system}")
-        
-        # Wait briefly and check if the output file was created
-        time.sleep(1)
-        if not os.path.exists(output_path):
-            raise Exception("Conversion failed: Output file was not created")
+            logging.error(f"Unsupported operating system: {os_name}")
+            raise OSError(f"Conversion not supported on {os_name}")
         
         return output_path
-            
-    except subprocess.CalledProcessError as e:
-        raise Exception(f"Conversion failed: {e.stderr}")
+    
     except Exception as e:
-        raise Exception(f"Conversion failed: {str(e)}")
+        logging.critical(f"Conversion failed for {doc_path}: {e}")
+        logging.critical(traceback.format_exc())
+        raise
 
 def main():
-    if len(sys.argv) != 2:
-        print("Usage: python doc_to_docx_converter.py <path_to_doc_file>")
+    """Command-line interface for document conversion"""
+    if len(sys.argv) < 2:
+        logging.error("Usage: python doc_to_docx_converter.py <input_file.doc>")
         sys.exit(1)
     
+    input_file = sys.argv[1]
+    
     try:
-        input_file = sys.argv[1]
         output_file = convert_doc_to_docx(input_file)
-        print(f"Successfully converted file to: {output_file}")
+        print(f"Successfully converted {input_file} to {output_file}")
     except Exception as e:
-        print(f"Error: {str(e)}")
+        print(f"Conversion failed: {e}")
         sys.exit(1)
 
 if __name__ == "__main__":
