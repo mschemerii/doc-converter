@@ -224,14 +224,29 @@ jobs:
       - name: List artifacts
         run: find artifacts -type f
 
+      - name: Extract tag or branch name
+        id: get_ref
+        run: |
+          # Remove refs/heads/ or refs/tags/ prefix
+          REF_NAME="${GITHUB_REF#refs/heads/}"
+          REF_NAME="${REF_NAME#refs/tags/}"
+          
+          # If on main branch, use a timestamp-based tag
+          if [[ "$GITHUB_REF" == "refs/heads/main" ]]; then
+            REF_NAME="v$(date +'%Y.%m.%d-%H%M%S')"
+          fi
+          
+          echo "tag_name=$REF_NAME" >> "$GITHUB_OUTPUT"
+          echo "Release tag will be: $REF_NAME"
+
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
+          tag_name: ${{ steps.get_ref.outputs.tag_name }}
+          release_name: Release ${{ steps.get_ref.outputs.tag_name }}
           draft: false
           prerelease: false
 
