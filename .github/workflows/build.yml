@@ -64,7 +64,7 @@ jobs:
         mkdir -p "Doc-Converter.app/Contents/Resources"
         
         # Build the executable
-        pyinstaller --name "Doc-Converter" --windowed --add-data "assets:assets" doc_converter_gui.py
+        pyinstaller --name "Doc-Converter" --windowed doc_converter_gui.py
         
         # Copy the built executable to the app bundle
         cp dist/Doc-Converter "Doc-Converter.app/Contents/MacOS/Doc-Converter"
