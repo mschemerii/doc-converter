@@ -17,16 +17,16 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
-      tag_name: ${{ steps.get_tag.outputs.tag_name }}
+      tag_name: ${{ steps.tag.outputs.tag_name }}
     steps:
     - uses: actions/checkout@v4
     
-    - name: Get tag
-      id: get_tag
+    - name: Generate unique release tag
+      id: tag
       run: |
-        # Get the latest tag or use a default
-        TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.1.0")
-        echo "tag_name=$TAG" >> $GITHUB_OUTPUT
+        # Generate a unique tag based on timestamp
+        TAG_NAME="v$(date +'%Y.%m.%d-%H%M%S')"
+        echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
     
     - name: Create Release
       id: create_release
@@ -34,8 +34,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ steps.get_tag.outputs.tag_name }}
-        release_name: Release ${{ steps.get_tag.outputs.tag_name }}
+        tag_name: ${{ steps.tag.outputs.tag_name }}
+        release_name: Release ${{ steps.tag.outputs.tag_name }}
         draft: false
         prerelease: false
 
@@ -193,86 +193,6 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install pyinstaller
-    
-    - name: Build macOS Silicon
-      run: |
-        pyinstaller --clean --onefile --target-architecture arm64 --name Doc-Converter doc_converter_gui.py
-        
-        # Create .app bundle structure
-        mkdir -p "dist/Doc-Converter.app/Contents/MacOS"
-        mv "dist/Doc-Converter" "dist/Doc-Converter.app/Contents/MacOS/Doc-Converter"
-        
-        mkdir -p artifacts/doc_converter-macos-silicon
-        cp -R "dist/Doc-Converter.app" "artifacts/doc_converter-macos-silicon/Doc-Converter.app"
-    
-    - name: Prepare macOS Silicon Artifact for Upload
-      run: |
-        set -x  # Enable verbose debugging output
-        
-        # Define artifact directory
-        MACOS_SILICON_ARTIFACT_DIR="artifacts/doc_converter-macos-silicon"
-        
-        # Verify artifact directory exists
-        if [ ! -d "$MACOS_SILICON_ARTIFACT_DIR" ]; then
-          echo "ERROR: Artifact directory $MACOS_SILICON_ARTIFACT_DIR does not exist"
-          echo "Contents of artifacts directory:"
-          ls -la artifacts/
-          exit 1
-        fi
-        
-        # Find the executable
-        EXECUTABLE=$(find "$MACOS_SILICON_ARTIFACT_DIR" -type f \( -name "Doc-Converter" -o -name "doc-converter" \) | head -n 1)
-        
-        if [ -z "$EXECUTABLE" ]; then
-          echo "ERROR: No executable found in $MACOS_SILICON_ARTIFACT_DIR"
-          echo "Attempting broader search:"
-          find . -type f \( -name "Doc-Converter" -o -name "doc-converter" \)
-          exit 1
-        fi
-        
-        echo "Found executable: $EXECUTABLE"
-        
-        # Create clean .app bundle structure
-        APP_NAME="Doc-Converter-Silicon.app"
-        rm -rf "$APP_NAME"
-        mkdir -p "$APP_NAME/Contents/MacOS"
-        mkdir -p "$APP_NAME/Contents/Resources"
-        
-        # Copy executable and set permissions
-        cp "$EXECUTABLE" "$APP_NAME/Contents/MacOS/Doc-Converter"
-        chmod 755 "$APP_NAME/Contents/MacOS/Doc-Converter"
-        
-        # Create Info.plist
-        echo '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict><key>CFBundleExecutable</key><string>Doc-Converter</string><key>CFBundleIdentifier</key><string>com.docconverter.macos</string><key>CFBundleName</key><string>Doc-Converter</string><key>CFBundlePackageType</key><string>APPL</string><key>CFBundleShortVersionString</key><string>1.0</string><key>CFBundleVersion</key><string>1</string><key>LSMinimumSystemVersion</key><string>10.10</string><key>NSHighResolutionCapable</key><true/></dict></plist>' > "$APP_NAME/Contents/Info.plist"
-        
-        # Create PkgInfo
-        echo "APPL????" > "$APP_NAME/Contents/PkgInfo"
-        
-        # Set bundle permissions
-        find "$APP_NAME" -type d -exec chmod 755 {} \;
-        find "$APP_NAME" -type f -exec chmod 644 {} \;
-        chmod 755 "$APP_NAME/Contents/MacOS/Doc-Converter"
-        
-        # Create zip with preserving permissions
-        rm -f "$MACOS_SILICON_ARTIFACT_DIR/$APP_NAME.zip"
-        ditto -c -k --keepParent "$APP_NAME" "$MACOS_SILICON_ARTIFACT_DIR/$APP_NAME.zip"
-        
-        # Verify archive
-        echo "Archive contents:"
-        unzip -l "$MACOS_SILICON_ARTIFACT_DIR/$APP_NAME.zip"
-        
-        echo "Archive permissions:"
-        ls -la "$MACOS_SILICON_ARTIFACT_DIR/$APP_NAME.zip"
-    
-    - name: Upload macOS Silicon Artifact
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ needs.create-release.outputs.upload_url }}
-        asset_path: artifacts/doc_converter-macos-silicon/Doc-Converter-Silicon.app.zip
-        asset_name: Doc-Converter-Silicon-${{ needs.create-release.outputs.tag_name }}.app.zip
-        asset_content_type: application/zip
 
   build-oracle-linux-8:
     runs-on: ubuntu-latest
