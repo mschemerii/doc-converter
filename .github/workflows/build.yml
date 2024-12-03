@@ -102,7 +102,18 @@ jobs:
         # Repair .app bundle permissions
         chmod -R 755 "Doc-Converter-Intel.app"
         
-        # Create a zip of the entire .app bundle with full path preservation
+        # Create ad-hoc code signing certificate
+        security create-keychain -p "" build.keychain
+        security default-keychain -s build.keychain
+        security unlock-keychain -p "" build.keychain
+        
+        # Ad-hoc sign the application
+        codesign --force --deep --sign - "Doc-Converter-Intel.app"
+        
+        # Verify code signing
+        codesign --verify --verbose "Doc-Converter-Intel.app"
+        
+        # Create a tar.gz of the entire .app bundle with full path preservation
         tar -czvf "../Doc-Converter-Intel.tar.gz" "Doc-Converter-Intel.app"
         
         # Verify tar contents
@@ -215,7 +226,18 @@ jobs:
         # Repair .app bundle permissions
         chmod -R 755 "Doc-Converter-Silicon.app"
         
-        # Create a zip of the entire .app bundle with full path preservation
+        # Create ad-hoc code signing certificate
+        security create-keychain -p "" build.keychain
+        security default-keychain -s build.keychain
+        security unlock-keychain -p "" build.keychain
+        
+        # Ad-hoc sign the application
+        codesign --force --deep --sign - "Doc-Converter-Silicon.app"
+        
+        # Verify code signing
+        codesign --verify --verbose "Doc-Converter-Silicon.app"
+        
+        # Create a tar.gz of the entire .app bundle with full path preservation
         tar -czvf "../Doc-Converter-Silicon.tar.gz" "Doc-Converter-Silicon.app"
         
         # Verify tar contents
@@ -323,3 +345,24 @@ jobs:
     if: github.ref == 'refs/heads/main'
     steps:
     - uses: actions/checkout@v4
+
+    - name: Download Artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+        merge-multiple: true
+
+    - name: List Artifacts
+      run: |
+        echo "Listing downloaded artifacts:"
+        ls -la artifacts/
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          artifacts/Doc-Converter-Intel.tar.gz
+          artifacts/Doc-Converter-Silicon.tar.gz
+          artifacts/Doc-Converter-Windows-x64.zip
+        generate_release_notes: true
+        tag_name: v${{ github.sha }}
