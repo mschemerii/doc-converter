@@ -218,19 +218,27 @@ jobs:
         mkdir build\windows-${{ matrix.architecture }}
 
     - name: Build Windows Executable
+      shell: pwsh
       run: |
-        # Create build directory explicitly
-        mkdir -p "build\windows-${{ matrix.architecture }}"
+        # Remove existing build directory if it exists
+        if (Test-Path "build\windows-${{ matrix.architecture }}") {
+          Remove-Item -Path "build\windows-${{ matrix.architecture }}" -Recurse -Force
+        }
         
+        # Create clean build directory
+        New-Item -Path "build\windows-${{ matrix.architecture }}" -ItemType Directory -Force
+
+        # Build executable
         pyinstaller --clean --noconfirm --windowed `
           --name "Doc-Converter-Windows-${{ matrix.architecture }}" `
           --distpath "build\windows-${{ matrix.architecture }}" `
           doc_converter_gui.py
 
     - name: Verify Build Artifacts
+      shell: pwsh
       run: |
         # List contents of build directory with full details
-        powershell -Command "Get-ChildItem -Path 'build\windows-${{ matrix.architecture }}' -Recurse | Format-Table -AutoSize"
+        Get-ChildItem -Path "build\windows-${{ matrix.architecture }}" -Recurse | Format-Table -AutoSize
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
