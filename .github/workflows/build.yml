@@ -3,8 +3,13 @@ name: Build and Release Doc Converter
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
+
+# Add permissions for creating releases
+permissions:
+  contents: write
+  packages: write
+  pull-requests: read
+  actions: read
 
 jobs:
   build-macos-intel:
@@ -359,6 +364,8 @@ jobs:
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         files: |
           artifacts/Doc-Converter-Intel.tar.gz
