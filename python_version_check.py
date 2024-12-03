@@ -5,20 +5,17 @@ import webbrowser
 import platform
 
 def check_python_version():
-    # Supported Python versions
+    # Minimum supported Python version
     MIN_MAJOR = 3
     MIN_MINOR = 10
-    MAX_MINOR = 12
     
     # Current Python version
     current_major = sys.version_info.major
     current_minor = sys.version_info.minor
     
-    # Check if Python version is within supported range
+    # Check if Python version is less than minimum supported
     if (current_major < MIN_MAJOR or 
-        current_major > MIN_MAJOR or 
-        current_minor < MIN_MINOR or 
-        current_minor > MAX_MINOR):
+        (current_major == MIN_MAJOR and current_minor < MIN_MINOR)):
         
         # Create a root window (hidden)
         root = tk.Tk()
@@ -26,7 +23,7 @@ def check_python_version():
         
         # Construct version message
         current_version = f"{current_major}.{current_minor}"
-        recommended_versions = f"{MIN_MAJOR}.{MIN_MINOR} - {MIN_MAJOR}.{MAX_MINOR}"
+        recommended_version = f"{MIN_MAJOR}.{MIN_MINOR}+"
         
         # Determine download URL based on OS
         os_name = platform.system().lower()
@@ -39,7 +36,7 @@ def check_python_version():
         
         # Construct message
         message = (
-            f"Python {recommended_versions} is recommended.\n"
+            f"Python {recommended_version} is recommended.\n"
             f"Current version: {current_version}\n\n"
             "Would you like to download the latest Python version?"
         )
