@@ -263,16 +263,16 @@ jobs:
         rpmbuild -bb ~/rpmbuild/SPECS/doc-converter.spec
         
         # Create artifacts directory
-        mkdir -p artifacts/doc_converter-ol8
+        mkdir -p artifacts/doc_converter-oracle-linux-8
         
         # Copy RPM to artifacts
-        cp ~/rpmbuild/RPMS/x86_64/doc-converter-1.0-1.el8.x86_64.rpm artifacts/doc_converter-ol8/Doc-Converter-OL8.rpm
+        cp ~/rpmbuild/RPMS/x86_64/doc-converter-1.0-1.el8.x86_64.rpm artifacts/doc_converter-oracle-linux-8/Doc-Converter-Oracle-Linux-8.rpm
     
     - name: Upload Oracle Linux 8 Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: doc_converter-ol8
-        path: artifacts/doc_converter-ol8/Doc-Converter-OL8.rpm
+        name: doc_converter-oracle-linux-8
+        path: artifacts/doc_converter-oracle-linux-8/Doc-Converter-Oracle-Linux-8.rpm
 
   build-oracle-linux-9:
     runs-on: ubuntu-latest
@@ -344,16 +344,16 @@ jobs:
         rpmbuild -bb ~/rpmbuild/SPECS/doc-converter.spec
         
         # Create artifacts directory
-        mkdir -p artifacts/doc_converter-ol9
+        mkdir -p artifacts/doc_converter-oracle-linux-9
         
         # Copy RPM to artifacts
-        cp ~/rpmbuild/RPMS/x86_64/doc-converter-1.0-1.el9.x86_64.rpm artifacts/doc_converter-ol9/Doc-Converter-OL9.rpm
+        cp ~/rpmbuild/RPMS/x86_64/doc-converter-1.0-1.el9.x86_64.rpm artifacts/doc_converter-oracle-linux-9/Doc-Converter-Oracle-Linux-9.rpm
     
     - name: Upload Oracle Linux 9 Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: doc_converter-ol9
-        path: artifacts/doc_converter-ol9/Doc-Converter-OL9.rpm
+        name: doc_converter-oracle-linux-9
+        path: artifacts/doc_converter-oracle-linux-9/Doc-Converter-Oracle-Linux-9.rpm
 
   build-ubuntu-20-04:
     runs-on: ubuntu-20.04
@@ -362,18 +362,23 @@ jobs:
     
     - name: Set up Python and build tools
       run: |
+        sudo add-apt-repository ppa:deadsnakes/ppa -y
         sudo apt-get update
-        sudo apt-get install -y python3.12 python3-pip python3-dev ruby-dev build-essential
+        sudo apt-get install -y python3.12 python3.12-dev python3.12-distutils python3.12-venv python3-pip ruby-dev build-essential
+        sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1
+        sudo update-alternatives --set python3 /usr/bin/python3.12
+        curl -sS https://bootstrap.pypa.io/get-pip.py | python3.12
+        python3.12 -m pip install --upgrade pip
         sudo gem install fpm
     
     - name: Install dependencies
       run: |
-        python3 -m pip install --upgrade pip
         python3 -m pip install -r requirements.txt
         python3 -m pip install pyinstaller
     
     - name: Build Ubuntu DEB Package
       run: |
+        mkdir -p artifacts/doc_converter-ubuntu-20-04
         # Install FPM and other dependencies
         sudo apt-get update
         sudo apt-get install -y ruby-dev build-essential
@@ -413,18 +418,23 @@ jobs:
     
     - name: Set up Python and build tools
       run: |
+        sudo add-apt-repository ppa:deadsnakes/ppa -y
         sudo apt-get update
-        sudo apt-get install -y python3.12 python3-pip python3-dev ruby-dev build-essential
+        sudo apt-get install -y python3.12 python3.12-dev python3.12-distutils python3.12-venv python3-pip ruby-dev build-essential
+        sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1
+        sudo update-alternatives --set python3 /usr/bin/python3.12
+        curl -sS https://bootstrap.pypa.io/get-pip.py | python3.12
+        python3.12 -m pip install --upgrade pip
         sudo gem install fpm
     
     - name: Install dependencies
       run: |
-        python3 -m pip install --upgrade pip
         python3 -m pip install -r requirements.txt
         python3 -m pip install pyinstaller
     
     - name: Build Ubuntu DEB Package
       run: |
+        mkdir -p artifacts/doc_converter-ubuntu-22-04
         # Install FPM and other dependencies
         sudo apt-get update
         sudo apt-get install -y ruby-dev build-essential
@@ -464,18 +474,23 @@ jobs:
     
     - name: Set up Python and build tools
       run: |
+        sudo add-apt-repository ppa:deadsnakes/ppa -y
         sudo apt-get update
-        sudo apt-get install -y python3.12 python3-pip python3-dev ruby-dev build-essential
+        sudo apt-get install -y python3.12 python3.12-dev python3.12-distutils python3.12-venv python3-pip ruby-dev build-essential
+        sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1
+        sudo update-alternatives --set python3 /usr/bin/python3.12
+        curl -sS https://bootstrap.pypa.io/get-pip.py | python3.12
+        python3.12 -m pip install --upgrade pip
         sudo gem install fpm
     
     - name: Install dependencies
       run: |
-        python3 -m pip install --upgrade pip
         python3 -m pip install -r requirements.txt
         python3 -m pip install pyinstaller
     
     - name: Build Ubuntu DEB Package
       run: |
+        mkdir -p artifacts/doc_converter-ubuntu-24-04
         # Install FPM and other dependencies
         sudo apt-get update
         sudo apt-get install -y ruby-dev build-essential
@@ -555,22 +570,22 @@ jobs:
     - name: Download Oracle Linux 8 Artifact
       uses: actions/download-artifact@v4
       with:
-        name: doc_converter-ol8
-        path: artifacts/doc_converter-ol8
+        name: doc_converter-oracle-linux-8
+        path: artifacts/doc_converter-oracle-linux-8
 
     - name: Rename Oracle Linux 8 Artifact
       run: |
-        mv artifacts/doc_converter-ol8/Doc-Converter artifacts/doc_converter-ol8/Doc-Converter-OL8-${{ steps.generate_tag.outputs.tag_name }}.rpm
+        mv artifacts/doc_converter-oracle-linux-8/Doc-Converter artifacts/doc_converter-oracle-linux-8/Doc-Converter-Oracle-Linux-8-${{ steps.generate_tag.outputs.tag_name }}.rpm
 
     - name: Download Oracle Linux 9 Artifact
       uses: actions/download-artifact@v4
       with:
-        name: doc_converter-ol9
-        path: artifacts/doc_converter-ol9
+        name: doc_converter-oracle-linux-9
+        path: artifacts/doc_converter-oracle-linux-9
 
     - name: Rename Oracle Linux 9 Artifact
       run: |
-        mv artifacts/doc_converter-ol9/Doc-Converter artifacts/doc_converter-ol9/Doc-Converter-OL9-${{ steps.generate_tag.outputs.tag_name }}.rpm
+        mv artifacts/doc_converter-oracle-linux-9/Doc-Converter artifacts/doc_converter-oracle-linux-9/Doc-Converter-Oracle-Linux-9-${{ steps.generate_tag.outputs.tag_name }}.rpm
 
     - name: Download Ubuntu 24.04 Artifact
       uses: actions/download-artifact@v4
@@ -661,8 +676,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: artifacts/doc_converter-ol8/Doc-Converter-OL8-${{ needs.upload-artifacts.outputs.tag_name }}.rpm
-        asset_name: Doc-Converter-OL8-${{ needs.upload-artifacts.outputs.tag_name }}.rpm
+        asset_path: artifacts/doc_converter-oracle-linux-8/Doc-Converter-Oracle-Linux-8-${{ needs.upload-artifacts.outputs.tag_name }}.rpm
+        asset_name: Doc-Converter-Oracle-Linux-8-${{ needs.upload-artifacts.outputs.tag_name }}.rpm
         asset_content_type: application/octet-stream
 
     - name: Upload Oracle Linux 9 Artifact
@@ -671,8 +686,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: artifacts/doc_converter-ol9/Doc-Converter-OL9-${{ needs.upload-artifacts.outputs.tag_name }}.rpm
-        asset_name: Doc-Converter-OL9-${{ needs.upload-artifacts.outputs.tag_name }}.rpm
+        asset_path: artifacts/doc_converter-oracle-linux-9/Doc-Converter-Oracle-Linux-9-${{ needs.upload-artifacts.outputs.tag_name }}.rpm
+        asset_name: Doc-Converter-Oracle-Linux-9-${{ needs.upload-artifacts.outputs.tag_name }}.rpm
         asset_content_type: application/octet-stream
 
     - name: Upload Ubuntu 24.04 Artifact
