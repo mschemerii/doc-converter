@@ -37,6 +37,25 @@ jobs:
         python -m pip install --upgrade pip
         pip install pyinstaller python-docx lxml
 
+    - name: Prepare code signing certificate
+      env:
+        # Code signing variables
+        MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+        MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+        KEYCHAIN_PASSWORD: temp_keychain_password
+      run: |
+        # Create a temporary keychain
+        security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+        security default-keychain -s build.keychain
+        security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+        
+        # Import the certificate
+        echo "$MACOS_CERTIFICATE" | base64 --decode > certificate.p12
+        security import certificate.p12 -k build.keychain -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+        
+        # Set key partition list to eliminate UI prompt
+        security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" build.keychain
+
     - name: Build macOS Intel Executable
       run: |
         # Prepare build environment
@@ -89,9 +108,15 @@ jobs:
         # Repair .app bundle permissions
         chmod -R 755 "Doc-Converter-MacOS-Intel.app"
         
-        # Simplify code signing process
-        codesign --force --deep --sign - --options runtime --entitlements /tmp/macos_entitlements.xml "Doc-Converter-MacOS-Intel.app"
-        codesign --verify --verbose "Doc-Converter-MacOS-Intel.app"
+        # Code sign the application
+        codesign --force --deep \
+          --sign "Developer ID Application: Michael Schemer" \
+          --options runtime \
+          --entitlements /tmp/macos_entitlements.xml \
+          "Doc-Converter-MacOS-Intel.app"
+        
+        # Verify code signing
+        codesign --verify --verbose --strict "Doc-Converter-MacOS-Intel.app"
         
         # Create a tar.gz of the entire .app bundle with full path preservation
         tar -czvf "../Doc-Converter-MacOS-Intel.tar.gz" "Doc-Converter-MacOS-Intel.app"
@@ -134,6 +159,25 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install pyinstaller python-docx lxml
+
+    - name: Prepare code signing certificate
+      env:
+        # Code signing variables
+        MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+        MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+        KEYCHAIN_PASSWORD: temp_keychain_password
+      run: |
+        # Create a temporary keychain
+        security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+        security default-keychain -s build.keychain
+        security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+        
+        # Import the certificate
+        echo "$MACOS_CERTIFICATE" | base64 --decode > certificate.p12
+        security import certificate.p12 -k build.keychain -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+        
+        # Set key partition list to eliminate UI prompt
+        security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" build.keychain
 
     - name: Build macOS Silicon Executable
       run: |
@@ -187,9 +231,15 @@ jobs:
         # Repair .app bundle permissions
         chmod -R 755 "Doc-Converter-MacOS-Silicon.app"
         
-        # Simplify code signing process
-        codesign --force --deep --sign - --options runtime --entitlements /tmp/macos_entitlements.xml "Doc-Converter-MacOS-Silicon.app"
-        codesign --verify --verbose "Doc-Converter-MacOS-Silicon.app"
+        # Code sign the application
+        codesign --force --deep \
+          --sign "Developer ID Application: Michael Schemer" \
+          --options runtime \
+          --entitlements /tmp/macos_entitlements.xml \
+          "Doc-Converter-MacOS-Silicon.app"
+        
+        # Verify code signing
+        codesign --verify --verbose --strict "Doc-Converter-MacOS-Silicon.app"
         
         # Create a tar.gz of the entire .app bundle with full path preservation
         tar -czvf "../Doc-Converter-MacOS-Silicon.tar.gz" "Doc-Converter-MacOS-Silicon.app"
