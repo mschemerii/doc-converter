@@ -74,10 +74,12 @@ jobs:
         BUILD_DIR="build/macos-intel-py3.10"
         mkdir -p "$BUILD_DIR"
         
-        # Build command here with arch specification
+        # Build command with additional flags for macOS
         pyinstaller --clean --noconfirm --windowed \
           --name "Doc-Converter-Intel" \
           --distpath "$BUILD_DIR" \
+          --add-binary "/System/Library/Frameworks/Tk.framework/Tk:Tk" \
+          --add-binary "/System/Library/Frameworks/Tcl.framework/Tcl:Tcl" \
           doc_converter_gui.py
 
     - name: Prepare macOS Intel Artifact
@@ -85,20 +87,36 @@ jobs:
         # Navigate to build directory
         cd build/macos-intel-py3.10
         
-        # Ensure .app is complete
-        chmod +x "Doc-Converter-Intel.app/Contents/MacOS/Doc-Converter-Intel"
+        # Verify .app bundle structure
+        if [ ! -d "Doc-Converter-Intel.app" ]; then
+          echo "Error: .app bundle not found"
+          exit 1
+        fi
         
-        # Create a zip of the entire .app bundle
-        zip -r "../Doc-Converter-Intel.zip" "Doc-Converter-Intel.app"
+        # Check for executable
+        if [ ! -x "Doc-Converter-Intel.app/Contents/MacOS/Doc-Converter-Intel" ]; then
+          echo "Error: Executable not found or not executable"
+          exit 1
+        fi
         
-        # Verify zip contents
-        unzip -l "../Doc-Converter-Intel.zip"
+        # Repair .app bundle permissions
+        chmod -R 755 "Doc-Converter-Intel.app"
+        
+        # Create a zip of the entire .app bundle with full path preservation
+        tar -czvf "../Doc-Converter-Intel.tar.gz" "Doc-Converter-Intel.app"
+        
+        # Verify tar contents
+        tar -tzvf "../Doc-Converter-Intel.tar.gz"
+        
+        # Additional diagnostics
+        ls -la "Doc-Converter-Intel.app/Contents/MacOS"
+        otool -L "Doc-Converter-Intel.app/Contents/MacOS/Doc-Converter-Intel"
 
     - name: Upload macOS Intel Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: doc-converter-macos-intel
-        path: build/Doc-Converter-Intel.zip
+        path: build/Doc-Converter-Intel.tar.gz
         retention-days: 7
 
   build-macos-silicon:
@@ -169,10 +187,12 @@ jobs:
         BUILD_DIR="build/macos-silicon-py3.10"
         mkdir -p "$BUILD_DIR"
         
-        # Build command here
+        # Build command with additional flags for macOS
         pyinstaller --clean --noconfirm --windowed \
           --name "Doc-Converter-Silicon" \
           --distpath "$BUILD_DIR" \
+          --add-binary "/System/Library/Frameworks/Tk.framework/Tk:Tk" \
+          --add-binary "/System/Library/Frameworks/Tcl.framework/Tcl:Tcl" \
           doc_converter_gui.py
 
     - name: Prepare macOS Silicon Artifact
@@ -180,20 +200,36 @@ jobs:
         # Navigate to build directory
         cd build/macos-silicon-py3.10
         
-        # Ensure .app is complete
-        chmod +x "Doc-Converter-Silicon.app/Contents/MacOS/Doc-Converter-Silicon"
+        # Verify .app bundle structure
+        if [ ! -d "Doc-Converter-Silicon.app" ]; then
+          echo "Error: .app bundle not found"
+          exit 1
+        fi
         
-        # Create a zip of the entire .app bundle
-        zip -r "../Doc-Converter-Silicon.zip" "Doc-Converter-Silicon.app"
+        # Check for executable
+        if [ ! -x "Doc-Converter-Silicon.app/Contents/MacOS/Doc-Converter-Silicon" ]; then
+          echo "Error: Executable not found or not executable"
+          exit 1
+        fi
         
-        # Verify zip contents
-        unzip -l "../Doc-Converter-Silicon.zip"
+        # Repair .app bundle permissions
+        chmod -R 755 "Doc-Converter-Silicon.app"
+        
+        # Create a zip of the entire .app bundle with full path preservation
+        tar -czvf "../Doc-Converter-Silicon.tar.gz" "Doc-Converter-Silicon.app"
+        
+        # Verify tar contents
+        tar -tzvf "../Doc-Converter-Silicon.tar.gz"
+        
+        # Additional diagnostics
+        ls -la "Doc-Converter-Silicon.app/Contents/MacOS"
+        otool -L "Doc-Converter-Silicon.app/Contents/MacOS/Doc-Converter-Silicon"
 
     - name: Upload macOS Silicon Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: doc-converter-macos-silicon
-        path: build/Doc-Converter-Silicon.zip
+        path: build/Doc-Converter-Silicon.tar.gz
         retention-days: 7
 
   build-windows:
@@ -252,33 +288,32 @@ jobs:
           --distpath "build\windows-${{ matrix.architecture }}" `
           doc_converter_gui.py
 
-    - name: Verify Build Artifacts
+    - name: Prepare Windows Artifact
       shell: pwsh
       run: |
-        # Detailed directory listing and debugging
-        Write-Host "Current working directory:"
-        Get-Location
-
-        Write-Host "`nBuild directory contents:"
-        Get-ChildItem -Path "build\windows-${{ matrix.architecture }}" -Recurse | Format-Table -AutoSize
-
-        Write-Host "`nSearching for executable:"
-        $exeFiles = Get-ChildItem -Path "build" -Recurse -Include "*.exe"
+        # Navigate to build directory
+        Set-Location "build\windows-${{ matrix.architecture }}"
+        
+        # Find the executable
+        $exeFiles = Get-ChildItem -Path . -Recurse -Include "*.exe"
         
         if ($exeFiles.Count -eq 0) {
           Write-Error "No executable found in build directory"
           exit 1
         }
         
-        $exeFiles | ForEach-Object {
-          Write-Host "Found executable: $($_.FullName)"
-        }
+        # Compress the executable
+        Compress-Archive -Path $exeFiles[0].FullName -DestinationPath "..\Doc-Converter-Windows-${{ matrix.architecture }}.zip"
+        
+        # List contents of zip for verification
+        Expand-Archive -Path "..\Doc-Converter-Windows-${{ matrix.architecture }}.zip" -DestinationPath ".\extracted" -Force
+        Get-ChildItem -Path ".\extracted"
 
-    - name: Upload Artifacts
+    - name: Upload Windows Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: doc-converter-windows-${{ matrix.architecture }}
-        path: build\windows-${{ matrix.architecture }}\Doc-Converter-Windows-${{ matrix.architecture }}.exe
+        path: build\Doc-Converter-Windows-${{ matrix.architecture }}.zip
         retention-days: 7
         if-no-files-found: error
 
