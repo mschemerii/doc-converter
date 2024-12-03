@@ -64,42 +64,42 @@ jobs:
         cd build/intel
         
         # Build the executable with x86_64 architecture
-        arch -x86_64 python -m PyInstaller \
+        python -m PyInstaller \
           --name "Doc-Converter" \
           --windowed \
           --target-arch x86_64 \
+          --log-level=DEBUG \
           ../../doc_converter_gui.py
 
-        # Debug: List contents of dist directory
-        echo "Contents of dist directory:"
-        find dist -type d
-        find dist -type f
-
-        # Check if the .app bundle exists
-        if [ -d "dist/Doc-Converter.app" ]; then
-          # If .app bundle exists, use it directly
-          cp -R "dist/Doc-Converter.app" "Doc-Converter.app"
-        elif [ -d "dist/Doc-Converter/Doc-Converter.app" ]; then
-          # If nested .app bundle exists, copy it
-          cp -R "dist/Doc-Converter/Doc-Converter.app" "Doc-Converter.app"
-        else
-          echo "Error: No .app bundle found in dist directory"
+        # Explicitly check for .app bundle and executable
+        if [ ! -d "dist/Doc-Converter.app" ]; then
+          echo "Error: Doc-Converter.app not found in dist directory"
+          echo "Contents of dist directory:"
+          find dist -type d
+          echo "PyInstaller build log:"
+          cat build/Doc-Converter/build/warnings.txt || true
           exit 1
         fi
 
-        # Verify executable
+        # Verify executable architecture
         echo "Executable details:"
-        file "Doc-Converter.app/Contents/MacOS/Doc-Converter"
-        otool -l "Doc-Converter.app/Contents/MacOS/Doc-Converter" | grep -E "cputype|cpusubtype"
+        file "dist/Doc-Converter.app/Contents/MacOS/Doc-Converter"
+        otool -l "dist/Doc-Converter.app/Contents/MacOS/Doc-Converter" | grep -E "cputype|cpusubtype"
+
+        # Ensure the executable is x86_64
+        if ! otool -l "dist/Doc-Converter.app/Contents/MacOS/Doc-Converter" | grep -q "cputype 7"; then
+          echo "Error: Executable is not x86_64"
+          exit 1
+        fi
 
         # Sign the executable first
         codesign --force --deep --sign - \
           --options runtime \
           --entitlements /dev/null \
-          "Doc-Converter.app/Contents/MacOS/Doc-Converter"
+          "dist/Doc-Converter.app/Contents/MacOS/Doc-Converter"
         
         # Sign any dylibs and frameworks
-        find "Doc-Converter.app" -type f \( -name "*.dylib" -o -name "*.so" \) | while read lib; do
+        find "dist/Doc-Converter.app" -type f \( -name "*.dylib" -o -name "*.so" \) | while read lib; do
           codesign --force --sign - "$lib"
         done
 
@@ -107,16 +107,16 @@ jobs:
         codesign --force --deep --sign - \
           --options runtime \
           --timestamp=none \
-          "Doc-Converter.app"
+          "dist/Doc-Converter.app"
 
         # Verify signing of executable and bundle
         echo "Verifying executable signing..."
-        codesign -vv "Doc-Converter.app/Contents/MacOS/Doc-Converter"
+        codesign -vv "dist/Doc-Converter.app/Contents/MacOS/Doc-Converter"
         echo "Verifying bundle signing..."
-        codesign -vv --deep "Doc-Converter.app"
+        codesign -vv --deep "dist/Doc-Converter.app"
 
         # Create zip of the app bundle
-        ditto -c -k --keepParent "Doc-Converter.app" "Doc-Converter-Intel.app.zip"
+        ditto -c -k --keepParent "dist/Doc-Converter.app" "Doc-Converter-Intel.app.zip"
         
         # Move back to root directory
         cd ../..
@@ -160,36 +160,27 @@ jobs:
           --target-arch arm64 \
           ../../doc_converter_gui.py
 
-        # Debug: List contents of dist directory
-        echo "Contents of dist directory:"
-        find dist -type d
-        find dist -type f
-
-        # Check if the .app bundle exists
-        if [ -d "dist/Doc-Converter.app" ]; then
-          # If .app bundle exists, use it directly
-          cp -R "dist/Doc-Converter.app" "Doc-Converter.app"
-        elif [ -d "dist/Doc-Converter/Doc-Converter.app" ]; then
-          # If nested .app bundle exists, copy it
-          cp -R "dist/Doc-Converter/Doc-Converter.app" "Doc-Converter.app"
-        else
-          echo "Error: No .app bundle found in dist directory"
+        # Verify the .app bundle exists
+        if [ ! -d "dist/Doc-Converter.app" ]; then
+          echo "Error: Doc-Converter.app not found in dist directory"
+          echo "Contents of dist directory:"
+          find dist -type d
           exit 1
         fi
 
         # Verify executable
         echo "Executable details:"
-        file "Doc-Converter.app/Contents/MacOS/Doc-Converter"
-        otool -l "Doc-Converter.app/Contents/MacOS/Doc-Converter" | grep -E "cputype|cpusubtype"
+        file "dist/Doc-Converter.app/Contents/MacOS/Doc-Converter"
+        otool -l "dist/Doc-Converter.app/Contents/MacOS/Doc-Converter" | grep -E "cputype|cpusubtype"
 
         # Sign the executable first
         codesign --force --deep --sign - \
           --options runtime \
           --entitlements /dev/null \
-          "Doc-Converter.app/Contents/MacOS/Doc-Converter"
+          "dist/Doc-Converter.app/Contents/MacOS/Doc-Converter"
         
         # Sign any dylibs and frameworks
-        find "Doc-Converter.app" -type f \( -name "*.dylib" -o -name "*.so" \) | while read lib; do
+        find "dist/Doc-Converter.app" -type f \( -name "*.dylib" -o -name "*.so" \) | while read lib; do
           codesign --force --sign - "$lib"
         done
 
@@ -197,16 +188,16 @@ jobs:
         codesign --force --deep --sign - \
           --options runtime \
           --timestamp=none \
-          "Doc-Converter.app"
+          "dist/Doc-Converter.app"
 
         # Verify signing of executable and bundle
         echo "Verifying executable signing..."
-        codesign -vv "Doc-Converter.app/Contents/MacOS/Doc-Converter"
+        codesign -vv "dist/Doc-Converter.app/Contents/MacOS/Doc-Converter"
         echo "Verifying bundle signing..."
-        codesign -vv --deep "Doc-Converter.app"
+        codesign -vv --deep "dist/Doc-Converter.app"
 
         # Create zip of the app bundle
-        ditto -c -k --keepParent "Doc-Converter.app" "Doc-Converter-Silicon.app.zip"
+        ditto -c -k --keepParent "dist/Doc-Converter.app" "Doc-Converter-Silicon.app.zip"
         
         # Move back to root directory
         cd ../..
