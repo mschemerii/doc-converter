@@ -85,7 +85,7 @@ jobs:
             <key>CFBundleVersion</key>
             <string>1</string>
             <key>LSMinimumSystemVersion</key>
-            <string>10.15</string>
+            <string>14.0</string>
             <key>NSHighResolutionCapable</key>
             <true/>
             <key>NSPrincipalClass</key>
@@ -109,7 +109,6 @@ jobs:
         mkdir -p artifacts/doc_converter-macos-intel
         
         # Create zip with preserving permissions
-        rm -f "artifacts/doc_converter-macos-intel/$APP_NAME.zip"
         ditto -c -k --keepParent "$APP_NAME" "artifacts/doc_converter-macos-intel/$APP_NAME.zip"
     
     - name: Upload macOS Intel Artifact
@@ -162,7 +161,7 @@ jobs:
             <key>CFBundleVersion</key>
             <string>1</string>
             <key>LSMinimumSystemVersion</key>
-            <string>11.0</string>
+            <string>14.0</string>
             <key>NSHighResolutionCapable</key>
             <true/>
             <key>NSPrincipalClass</key>
@@ -186,7 +185,6 @@ jobs:
         mkdir -p artifacts/doc_converter-macos-silicon
         
         # Create zip with preserving permissions
-        rm -f "artifacts/doc_converter-macos-silicon/$APP_NAME.zip"
         ditto -c -k --keepParent "$APP_NAME" "artifacts/doc_converter-macos-silicon/$APP_NAME.zip"
     
     - name: Upload macOS Silicon Artifact
@@ -202,33 +200,70 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Install system dependencies
+    - name: Set up Python and build tools
       run: |
-        dnf update -y
-        dnf install -y python3 python3-pip gcc make
-
-    - name: List Python version
-      run: |
-        python3 --version
-        pip3 --version
-
-    - name: Install project dependencies
+        dnf install -y python3.12 python3.12-pip rpm-build
+        alternatives --set python3 /usr/bin/python3.12
+    
+    - name: Install dependencies
       run: |
         python3 -m pip install --upgrade pip
         python3 -m pip install -r requirements.txt
         python3 -m pip install pyinstaller
     
-    - name: Build Oracle Linux 8 Executable
+    - name: Build Oracle Linux 8 RPM Package
       run: |
-        python3 -m PyInstaller --name "Doc-Converter" --onefile doc_converter_gui.py
+        # Prepare RPM build structure
+        mkdir -p ~/rpmbuild/{SOURCES,SPECS}
+        
+        # Create spec file
+        cat > ~/rpmbuild/SPECS/doc-converter.spec << EOF
+        Name:           doc-converter
+        Version:        1.0
+        Release:        1%{?dist}
+        Summary:        Document Converter Application
+        
+        License:        MIT
+        Source0:        doc_converter_gui.py
+        
+        BuildRequires:  python3.12
+        Requires:       python3.12
+        
+        %description
+        A cross-platform document conversion tool
+        
+        %prep
+        %setup -c
+        
+        %build
+        pyinstaller --name "Doc-Converter" --onefile doc_converter_gui.py
+        
+        %install
+        mkdir -p %{buildroot}/usr/local/bin
+        cp dist/Doc-Converter %{buildroot}/usr/local/bin/doc-converter
+        
+        %files
+        /usr/local/bin/doc-converter
+        
+        %changelog
+        * $(date +"%a %b %d %Y") Doc Converter Team <team@docconverter.com> - 1.0-1
+        - Initial RPM release
+        EOF
+        
+        # Build RPM
+        rpmbuild -bb ~/rpmbuild/SPECS/doc-converter.spec
+        
+        # Create artifacts directory
         mkdir -p artifacts/doc_converter-ol8
-        cp dist/Doc-Converter artifacts/doc_converter-ol8/
+        
+        # Copy RPM to artifacts
+        cp ~/rpmbuild/RPMS/x86_64/doc-converter-1.0-1.el8.x86_64.rpm artifacts/doc_converter-ol8/Doc-Converter-OL8.rpm
     
-    - name: Upload artifact
+    - name: Upload Oracle Linux 8 Artifact
       uses: actions/upload-artifact@v4
       with:
         name: doc_converter-ol8
-        path: artifacts/doc_converter-ol8/Doc-Converter
+        path: artifacts/doc_converter-ol8/Doc-Converter-OL8.rpm
 
   build-oracle-linux-9:
     runs-on: ubuntu-latest
@@ -237,168 +272,184 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Install system dependencies
+    - name: Set up Python and build tools
       run: |
-        dnf update -y
-        dnf install -y python3 python3-pip gcc make
-
-    - name: List Python version
-      run: |
-        python3 --version
-        pip3 --version
-
-    - name: Install project dependencies
+        dnf install -y python3.12 python3.12-pip rpm-build
+        alternatives --set python3 /usr/bin/python3.12
+    
+    - name: Install dependencies
       run: |
         python3 -m pip install --upgrade pip
         python3 -m pip install -r requirements.txt
         python3 -m pip install pyinstaller
     
-    - name: Build Oracle Linux 9 Executable
+    - name: Build Oracle Linux 9 RPM Package
       run: |
-        python3 -m PyInstaller --name "Doc-Converter" --onefile doc_converter_gui.py
+        # Prepare RPM build structure
+        mkdir -p ~/rpmbuild/{SOURCES,SPECS}
+        
+        # Create spec file
+        cat > ~/rpmbuild/SPECS/doc-converter.spec << EOF
+        Name:           doc-converter
+        Version:        1.0
+        Release:        1%{?dist}
+        Summary:        Document Converter Application
+        
+        License:        MIT
+        Source0:        doc_converter_gui.py
+        
+        BuildRequires:  python3.12
+        Requires:       python3.12
+        
+        %description
+        A cross-platform document conversion tool
+        
+        %prep
+        %setup -c
+        
+        %build
+        pyinstaller --name "Doc-Converter" --onefile doc_converter_gui.py
+        
+        %install
+        mkdir -p %{buildroot}/usr/local/bin
+        cp dist/Doc-Converter %{buildroot}/usr/local/bin/doc-converter
+        
+        %files
+        /usr/local/bin/doc-converter
+        
+        %changelog
+        * $(date +"%a %b %d %Y") Doc Converter Team <team@docconverter.com> - 1.0-1
+        - Initial RPM release
+        EOF
+        
+        # Build RPM
+        rpmbuild -bb ~/rpmbuild/SPECS/doc-converter.spec
+        
+        # Create artifacts directory
         mkdir -p artifacts/doc_converter-ol9
-        cp dist/Doc-Converter artifacts/doc_converter-ol9/
+        
+        # Copy RPM to artifacts
+        cp ~/rpmbuild/RPMS/x86_64/doc-converter-1.0-1.el9.x86_64.rpm artifacts/doc_converter-ol9/Doc-Converter-OL9.rpm
     
-    - name: Upload artifact
+    - name: Upload Oracle Linux 9 Artifact
       uses: actions/upload-artifact@v4
       with:
         name: doc_converter-ol9
-        path: artifacts/doc_converter-ol9/Doc-Converter
-
-  build-ubuntu-24-04:
-    runs-on: ubuntu-24.04
-    steps:
-    - uses: actions/checkout@v4
-    - name: List pre-installed Python versions
-      run: |
-        # List system Python versions
-        echo "System Python versions:"
-        ls /usr/bin/python*
-        
-        # Check Python versions
-        for python in python python3 python3.9 python3.10 python3.11 python3.12; do
-          if command -v $python &> /dev/null; then
-            echo "Version of $python:"
-            $python --version
-          fi
-        done
-        
-        # List all Python installations
-        echo "Python executable paths:"
-        which -a python python3
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.12.x'
-    - name: Verify Python version
-      run: |
-        python --version
-        python -c "import sys; print(sys.executable)"
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pyinstaller
-    - name: Build Ubuntu 24.04 Executable
-      run: |
-        pyinstaller --name "Doc-Converter" --onefile doc_converter_gui.py
-        mkdir -p artifacts/doc_converter-ubuntu-24-04
-        cp dist/Doc-Converter artifacts/doc_converter-ubuntu-24-04/
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: doc_converter-ubuntu-24-04
-        path: artifacts/doc_converter-ubuntu-24-04/Doc-Converter
-
-  build-ubuntu-22-04:
-    runs-on: ubuntu-22.04
-    steps:
-    - uses: actions/checkout@v4
-    - name: List pre-installed Python versions
-      run: |
-        # List system Python versions
-        echo "System Python versions:"
-        ls /usr/bin/python*
-        
-        # Check Python versions
-        for python in python python3 python3.9 python3.10 python3.11 python3.12; do
-          if command -v $python &> /dev/null; then
-            echo "Version of $python:"
-            $python --version
-          fi
-        done
-        
-        # List all Python installations
-        echo "Python executable paths:"
-        which -a python python3
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.12.x'
-    - name: Verify Python version
-      run: |
-        python --version
-        python -c "import sys; print(sys.executable)"
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pyinstaller
-    - name: Build Ubuntu 22.04 Executable
-      run: |
-        pyinstaller --name "Doc-Converter" --onefile doc_converter_gui.py
-        mkdir -p artifacts/doc_converter-ubuntu-22-04
-        cp dist/Doc-Converter artifacts/doc_converter-ubuntu-22-04/
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: doc_converter-ubuntu-22-04
-        path: artifacts/doc_converter-ubuntu-22-04/Doc-Converter
+        path: artifacts/doc_converter-ol9/Doc-Converter-OL9.rpm
 
   build-ubuntu-20-04:
     runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v4
-    - name: List pre-installed Python versions
+    
+    - name: Set up Python and build tools
       run: |
-        # List system Python versions
-        echo "System Python versions:"
-        ls /usr/bin/python*
-        
-        # Check Python versions
-        for python in python python3 python3.9 python3.10 python3.11 python3.12; do
-          if command -v $python &> /dev/null; then
-            echo "Version of $python:"
-            $python --version
-          fi
-        done
-        
-        # List all Python installations
-        echo "Python executable paths:"
-        which -a python python3
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.12.x'
-    - name: Verify Python version
-      run: |
-        python --version
-        python -c "import sys; print(sys.executable)"
+        sudo apt-get update
+        sudo apt-get install -y python3.12 python3.12-dev python3-pip ruby-dev rubygems
+        sudo gem install fpm
+    
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pyinstaller
-    - name: Build Ubuntu 20.04 Executable
+        python3.12 -m pip install --upgrade pip
+        python3.12 -m pip install -r requirements.txt
+        python3.12 -m pip install pyinstaller
+    
+    - name: Build Ubuntu 20.04 DEB Package
       run: |
-        pyinstaller --name "Doc-Converter" --onefile doc_converter_gui.py
+        # Build executable
+        python3.12 -m PyInstaller --name "Doc-Converter" --onefile doc_converter_gui.py
+        
+        # Create artifacts directory
         mkdir -p artifacts/doc_converter-ubuntu-20-04
-        cp dist/Doc-Converter artifacts/doc_converter-ubuntu-20-04/
-    - name: Upload artifact
+        
+        # Use fpm to create .deb package
+        fpm -s dir -t deb \
+            -n doc-converter \
+            -v 1.0 \
+            -p artifacts/doc_converter-ubuntu-20-04/Doc-Converter-Ubuntu-20.04.deb \
+            dist/Doc-Converter=/usr/local/bin/doc-converter
+    
+    - name: Upload Ubuntu 20.04 Artifact
       uses: actions/upload-artifact@v4
       with:
         name: doc_converter-ubuntu-20-04
-        path: artifacts/doc_converter-ubuntu-20-04/Doc-Converter
+        path: artifacts/doc_converter-ubuntu-20-04/Doc-Converter-Ubuntu-20.04.deb
+
+  build-ubuntu-22-04:
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python and build tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y python3.12 python3.12-dev python3-pip ruby-dev rubygems
+        sudo gem install fpm
+    
+    - name: Install dependencies
+      run: |
+        python3.12 -m pip install --upgrade pip
+        python3.12 -m pip install -r requirements.txt
+        python3.12 -m pip install pyinstaller
+    
+    - name: Build Ubuntu 22.04 DEB Package
+      run: |
+        # Build executable
+        python3.12 -m PyInstaller --name "Doc-Converter" --onefile doc_converter_gui.py
+        
+        # Create artifacts directory
+        mkdir -p artifacts/doc_converter-ubuntu-22-04
+        
+        # Use fpm to create .deb package
+        fpm -s dir -t deb \
+            -n doc-converter \
+            -v 1.0 \
+            -p artifacts/doc_converter-ubuntu-22-04/Doc-Converter-Ubuntu-22.04.deb \
+            dist/Doc-Converter=/usr/local/bin/doc-converter
+    
+    - name: Upload Ubuntu 22.04 Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: doc_converter-ubuntu-22-04
+        path: artifacts/doc_converter-ubuntu-22-04/Doc-Converter-Ubuntu-22.04.deb
+
+  build-ubuntu-24-04:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python and build tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y python3.12 python3.12-dev python3-pip ruby-dev rubygems
+        sudo gem install fpm
+    
+    - name: Install dependencies
+      run: |
+        python3.12 -m pip install --upgrade pip
+        python3.12 -m pip install -r requirements.txt
+        python3.12 -m pip install pyinstaller
+    
+    - name: Build Ubuntu 24.04 DEB Package
+      run: |
+        # Build executable
+        python3.12 -m PyInstaller --name "Doc-Converter" --onefile doc_converter_gui.py
+        
+        # Create artifacts directory
+        mkdir -p artifacts/doc_converter-ubuntu-24-04
+        
+        # Use fpm to create .deb package
+        fpm -s dir -t deb \
+            -n doc-converter \
+            -v 1.0 \
+            -p artifacts/doc_converter-ubuntu-24-04/Doc-Converter-Ubuntu-24.04.deb \
+            dist/Doc-Converter=/usr/local/bin/doc-converter
+    
+    - name: Upload Ubuntu 24.04 Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: doc_converter-ubuntu-24-04
+        path: artifacts/doc_converter-ubuntu-24-04/Doc-Converter-Ubuntu-24.04.deb
 
   upload-artifacts:
     needs: 
@@ -424,7 +475,7 @@ jobs:
         if [[ "$TAG" == "refs/heads"* ]]; then
           TAG=$(date +'v%Y.%m.%d-%H%M%S')
         fi
-        echo "tag_name=$TAG" >> $GITHUB_OUTPUT
+        echo "tag_name=$TAG" >> "$GITHUB_OUTPUT"
     
     - name: Download Windows Artifact
       uses: actions/download-artifact@v4
@@ -450,11 +501,19 @@ jobs:
         name: doc_converter-ol8
         path: artifacts/doc_converter-ol8
 
+    - name: Rename Oracle Linux 8 Artifact
+      run: |
+        mv artifacts/doc_converter-ol8/Doc-Converter artifacts/doc_converter-ol8/Doc-Converter-OL8-${{ steps.generate_tag.outputs.tag_name }}.rpm
+
     - name: Download Oracle Linux 9 Artifact
       uses: actions/download-artifact@v4
       with:
         name: doc_converter-ol9
         path: artifacts/doc_converter-ol9
+
+    - name: Rename Oracle Linux 9 Artifact
+      run: |
+        mv artifacts/doc_converter-ol9/Doc-Converter artifacts/doc_converter-ol9/Doc-Converter-OL9-${{ steps.generate_tag.outputs.tag_name }}.rpm
 
     - name: Download Ubuntu 24.04 Artifact
       uses: actions/download-artifact@v4
@@ -462,17 +521,29 @@ jobs:
         name: doc_converter-ubuntu-24-04
         path: artifacts/doc_converter-ubuntu-24-04
 
+    - name: Rename Ubuntu 24.04 Artifact
+      run: |
+        mv artifacts/doc_converter-ubuntu-24-04/Doc-Converter artifacts/doc_converter-ubuntu-24-04/Doc-Converter-Ubuntu-24.04-${{ steps.generate_tag.outputs.tag_name }}.deb
+
     - name: Download Ubuntu 22.04 Artifact
       uses: actions/download-artifact@v4
       with:
         name: doc_converter-ubuntu-22-04
         path: artifacts/doc_converter-ubuntu-22-04
 
+    - name: Rename Ubuntu 22.04 Artifact
+      run: |
+        mv artifacts/doc_converter-ubuntu-22-04/Doc-Converter artifacts/doc_converter-ubuntu-22-04/Doc-Converter-Ubuntu-22.04-${{ steps.generate_tag.outputs.tag_name }}.deb
+
     - name: Download Ubuntu 20.04 Artifact
       uses: actions/download-artifact@v4
       with:
         name: doc_converter-ubuntu-20-04
         path: artifacts/doc_converter-ubuntu-20-04
+
+    - name: Rename Ubuntu 20.04 Artifact
+      run: |
+        mv artifacts/doc_converter-ubuntu-20-04/Doc-Converter artifacts/doc_converter-ubuntu-20-04/Doc-Converter-Ubuntu-20.04-${{ steps.generate_tag.outputs.tag_name }}.deb
 
     - name: List Downloaded Artifacts
       run: |
@@ -483,11 +554,9 @@ jobs:
     needs: 
       - upload-artifacts
     runs-on: ubuntu-latest
-    outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
@@ -498,11 +567,6 @@ jobs:
         release_name: Release ${{ needs.upload-artifacts.outputs.tag_name }}
         draft: false
         prerelease: false
-
-    - name: Download artifacts
-      uses: actions/download-artifact@v4
-      with:
-        path: artifacts
 
     - name: Upload Windows Artifact
       uses: actions/upload-release-asset@v1
@@ -534,14 +598,34 @@ jobs:
         asset_name: Doc-Converter-Silicon-${{ needs.upload-artifacts.outputs.tag_name }}.app.zip
         asset_content_type: application/zip
 
+    - name: Upload Oracle Linux 8 Artifact
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: artifacts/doc_converter-ol8/Doc-Converter-OL8-${{ needs.upload-artifacts.outputs.tag_name }}.rpm
+        asset_name: Doc-Converter-OL8-${{ needs.upload-artifacts.outputs.tag_name }}.rpm
+        asset_content_type: application/octet-stream
+
+    - name: Upload Oracle Linux 9 Artifact
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: artifacts/doc_converter-ol9/Doc-Converter-OL9-${{ needs.upload-artifacts.outputs.tag_name }}.rpm
+        asset_name: Doc-Converter-OL9-${{ needs.upload-artifacts.outputs.tag_name }}.rpm
+        asset_content_type: application/octet-stream
+
     - name: Upload Ubuntu 24.04 Artifact
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: artifacts/doc_converter-ubuntu-24-04/Doc-Converter
-        asset_name: Doc-Converter-Ubuntu-24-04-${{ needs.upload-artifacts.outputs.tag_name }}
+        asset_path: artifacts/doc_converter-ubuntu-24-04/Doc-Converter-Ubuntu-24.04-${{ needs.upload-artifacts.outputs.tag_name }}.deb
+        asset_name: Doc-Converter-Ubuntu-24.04-${{ needs.upload-artifacts.outputs.tag_name }}.deb
         asset_content_type: application/octet-stream
 
     - name: Upload Ubuntu 22.04 Artifact
@@ -550,8 +634,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: artifacts/doc_converter-ubuntu-22-04/Doc-Converter
-        asset_name: Doc-Converter-Ubuntu-22-04-${{ needs.upload-artifacts.outputs.tag_name }}
+        asset_path: artifacts/doc_converter-ubuntu-22-04/Doc-Converter-Ubuntu-22.04-${{ needs.upload-artifacts.outputs.tag_name }}.deb
+        asset_name: Doc-Converter-Ubuntu-22.04-${{ needs.upload-artifacts.outputs.tag_name }}.deb
         asset_content_type: application/octet-stream
 
     - name: Upload Ubuntu 20.04 Artifact
@@ -560,6 +644,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: artifacts/doc_converter-ubuntu-20-04/Doc-Converter
-        asset_name: Doc-Converter-Ubuntu-20-04-${{ needs.upload-artifacts.outputs.tag_name }}
+        asset_path: artifacts/doc_converter-ubuntu-20-04/Doc-Converter-Ubuntu-20.04-${{ needs.upload-artifacts.outputs.tag_name }}.deb
+        asset_name: Doc-Converter-Ubuntu-20.04-${{ needs.upload-artifacts.outputs.tag_name }}.deb
         asset_content_type: application/octet-stream

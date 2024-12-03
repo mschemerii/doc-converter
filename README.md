@@ -43,12 +43,28 @@ The application now includes an intelligent Python version check:
 3. The application will start with the Document Converter interface
 
 ### macOS
-1. Download `Doc Converter.app` from the latest release
-2. Right-click (or Control-click) the `.app` and select "Open"
-   - If macOS warns about an unverified developer, click "Open"
-3. The first time you run the app, you may need to grant permissions
-   - Go to System Preferences > Security & Privacy > General
-   - Click "Open Anyway" for the Doc Converter application
+1. Download `Doc-Converter-Intel.app` (for Intel Macs) or `Doc-Converter-Silicon.app` (for Apple Silicon Macs) from the latest release
+2. Running the App for the First Time:
+   - Right-click (or Control-click) the `.app` and select "Open"
+   - If macOS displays a security warning saying the app is from an unidentified developer:
+     * Click "Open" to bypass the initial warning
+     * You may need to go to System Preferences > Security & Privacy > General
+     * Click "Open Anyway" for the Doc Converter application
+
+#### Alternative Methods to Run the App
+- **Terminal Method**: If you're comfortable with the command line, you can remove the quarantine attribute:
+  ```bash
+  # For Intel Macs
+  xattr -d com.apple.quarantine /path/to/Doc-Converter-Intel.app
+  
+  # For Apple Silicon Macs
+  xattr -d com.apple.quarantine /path/to/Doc-Converter-Silicon.app
+  ```
+
+#### Troubleshooting
+- If the app doesn't open, ensure you have Python 3.12 installed
+- Check System Preferences > Security & Privacy settings
+- Verify that you have the necessary permissions to run applications
 
 ### Linux (Ubuntu/Debian)
 1. Download the appropriate `.deb` file for your Ubuntu version
