@@ -13,80 +13,35 @@ permissions:
   actions: write
 
 jobs:
-  create-release:
-    runs-on: ubuntu-latest
-    outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
-      tag_name: ${{ steps.tag.outputs.tag_name }}
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Get tag
-      id: tag
-      run: |
-        # Use the pushed tag if it exists, otherwise use a timestamp
-        TAG=${GITHUB_REF#refs/tags/}
-        if [[ "$TAG" == "refs/heads"* ]]; then
-          TAG=$(date +'v%Y.%m.%d-%H%M%S')
-        fi
-        echo "tag_name=$TAG" >> $GITHUB_OUTPUT
-    
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ steps.tag.outputs.tag_name }}
-        release_name: Release ${{ steps.tag.outputs.tag_name }}
-        draft: false
-        prerelease: false
-
   build-windows:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v4
-    - name: List pre-installed Python versions
-      shell: pwsh
-      run: |
-        # Get current Python version
-        $pythonVersions = python -c "import sys; print(sys.version)"
-        Write-Host "Current Python version: $pythonVersions"
-        
-        # List Python installations
-        $env:Path -split ';' | Where-Object { $_ -like '*Python*' } | ForEach-Object {
-          $pythonPath = $_
-          Write-Host "Checking Python installations in $pythonPath"
-          Get-ChildItem "$pythonPath\python*.exe" | ForEach-Object { 
-            & $_.FullName --version
-          }
-        }
+    
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v4
       with:
-        python-version: '3.12.x'
-    - name: Verify Python version
-      run: |
-        python --version
-        python -c "import sys; print(sys.executable)"
+        python-version: '3.12'
+    
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install pyinstaller
-    - name: Build executable
+    
+    - name: Build Windows Executable
       run: |
-        pyinstaller --name "Doc-Converter" --windowed --onefile doc_converter_gui.py
+        pyinstaller --name "Doc-Converter" --onefile --windowed doc_converter_gui.py
         mkdir -p artifacts/doc_converter-windows
-        cp dist/Doc-Converter.exe artifacts/doc_converter-windows/
-    - name: Upload artifact
+        cp dist/Doc-Converter.exe artifacts/doc_converter-windows/Doc-Converter.exe
+    
+    - name: Upload Windows Artifact
       uses: actions/upload-artifact@v4
       with:
         name: doc_converter-windows
         path: artifacts/doc_converter-windows/Doc-Converter.exe
 
   build-macos-intel:
-    needs: create-release
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v4
@@ -98,51 +53,63 @@ jobs:
     
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install pyinstaller
+        python3 -m pip install --upgrade pip
+        python3 -m pip install -r requirements.txt
+        python3 -m pip install pyinstaller
     
-    - name: Build macOS Intel
+    - name: Build macOS Intel App
       run: |
-        pyinstaller --clean --onefile --target-architecture x86_64 --name Doc-Converter doc_converter_gui.py
-        
-        # Create .app bundle structure
-        mkdir -p "dist/Doc-Converter.app/Contents/MacOS"
-        mv "dist/Doc-Converter" "dist/Doc-Converter.app/Contents/MacOS/Doc-Converter"
-        
-        mkdir -p artifacts/doc_converter-macos-intel
-        cp -R "dist/Doc-Converter.app" "artifacts/doc_converter-macos-intel/Doc-Converter.app"
-    
-    - name: Prepare macOS Intel Artifact for Upload
-      run: |
-        # Create clean .app bundle structure
+        # Create app bundle
         APP_NAME="Doc-Converter-Intel.app"
-        rm -rf "$APP_NAME"
         mkdir -p "$APP_NAME/Contents/MacOS"
         mkdir -p "$APP_NAME/Contents/Resources"
         
-        # Copy executable and set permissions
-        cp "artifacts/doc_converter-macos-intel/Doc-Converter.app/Contents/MacOS/Doc-Converter" "$APP_NAME/Contents/MacOS/Doc-Converter"
-        chmod 755 "$APP_NAME/Contents/MacOS/Doc-Converter"
-        
         # Create Info.plist
-        echo '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict><key>CFBundleExecutable</key><string>Doc-Converter</string><key>CFBundleIdentifier</key><string>com.docconverter.macos</string><key>CFBundleName</key><string>Doc-Converter</string><key>CFBundlePackageType</key><string>APPL</string><key>CFBundleShortVersionString</key><string>1.0</string><key>CFBundleVersion</key><string>1</string><key>LSMinimumSystemVersion</key><string>10.10</string><key>NSHighResolutionCapable</key><true/></dict></plist>' > "$APP_NAME/Contents/Info.plist"
+        cat > "$APP_NAME/Contents/Info.plist" << EOF
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>CFBundleExecutable</key>
+            <string>Doc-Converter</string>
+            <key>CFBundleIconFile</key>
+            <string>AppIcon</string>
+            <key>CFBundleIdentifier</key>
+            <string>com.docconverter.app</string>
+            <key>CFBundleName</key>
+            <string>Doc Converter</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
+            <key>CFBundleShortVersionString</key>
+            <string>1.0</string>
+            <key>CFBundleVersion</key>
+            <string>1</string>
+            <key>NSPrincipalClass</key>
+            <string>NSApplication</string>
+        </dict>
+        </plist>
+        EOF
+        
+        # Build executable
+        python3 -m PyInstaller --name "Doc-Converter" --onefile --windowed doc_converter_gui.py
+        
+        # Move executable to app bundle
+        cp dist/Doc-Converter "$APP_NAME/Contents/MacOS/"
+        
+        # Create artifacts directory
+        mkdir -p artifacts/doc_converter-macos-intel
         
         # Create zip with preserving permissions
         rm -f "artifacts/doc_converter-macos-intel/$APP_NAME.zip"
         ditto -c -k --keepParent "$APP_NAME" "artifacts/doc_converter-macos-intel/$APP_NAME.zip"
     
     - name: Upload macOS Intel Artifact
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: actions/upload-artifact@v4
       with:
-        upload_url: ${{ needs.create-release.outputs.upload_url }}
-        asset_path: artifacts/doc_converter-macos-intel/Doc-Converter-Intel.app.zip
-        asset_name: Doc-Converter-Intel-${{ needs.create-release.outputs.tag_name }}.app.zip
-        asset_content_type: application/zip
+        name: doc_converter-macos-intel
+        path: artifacts/doc_converter-macos-intel/Doc-Converter-Intel.app.zip
 
   build-macos-silicon:
-    needs: create-release
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v4
@@ -154,48 +121,61 @@ jobs:
     
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install pyinstaller
+        python3 -m pip install --upgrade pip
+        python3 -m pip install -r requirements.txt
+        python3 -m pip install pyinstaller
     
-    - name: Build macOS Silicon
+    - name: Build macOS Silicon App
       run: |
-        pyinstaller --clean --onefile --target-architecture arm64 --name Doc-Converter doc_converter_gui.py
-        
-        # Create .app bundle structure
-        mkdir -p "dist/Doc-Converter.app/Contents/MacOS"
-        mv "dist/Doc-Converter" "dist/Doc-Converter.app/Contents/MacOS/Doc-Converter"
-        
-        mkdir -p artifacts/doc_converter-macos-silicon
-        cp -R "dist/Doc-Converter.app" "artifacts/doc_converter-macos-silicon/Doc-Converter.app"
-    
-    - name: Prepare macOS Silicon Artifact for Upload
-      run: |
-        # Create clean .app bundle structure
+        # Create app bundle
         APP_NAME="Doc-Converter-Silicon.app"
-        rm -rf "$APP_NAME"
         mkdir -p "$APP_NAME/Contents/MacOS"
         mkdir -p "$APP_NAME/Contents/Resources"
         
-        # Copy executable and set permissions
-        cp "artifacts/doc_converter-macos-silicon/Doc-Converter.app/Contents/MacOS/Doc-Converter" "$APP_NAME/Contents/MacOS/Doc-Converter"
-        chmod 755 "$APP_NAME/Contents/MacOS/Doc-Converter"
-        
         # Create Info.plist
-        echo '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict><key>CFBundleExecutable</key><string>Doc-Converter</string><key>CFBundleIdentifier</key><string>com.docconverter.macos</string><key>CFBundleName</key><string>Doc-Converter</string><key>CFBundlePackageType</key><string>APPL</string><key>CFBundleShortVersionString</key><string>1.0</string><key>CFBundleVersion</key><string>1</string><key>LSMinimumSystemVersion</key><string>10.10</string><key>NSHighResolutionCapable</key><true/></dict></plist>' > "$APP_NAME/Contents/Info.plist"
+        cat > "$APP_NAME/Contents/Info.plist" << EOF
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>CFBundleExecutable</key>
+            <string>Doc-Converter</string>
+            <key>CFBundleIconFile</key>
+            <string>AppIcon</string>
+            <key>CFBundleIdentifier</key>
+            <string>com.docconverter.app</string>
+            <key>CFBundleName</key>
+            <string>Doc Converter</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
+            <key>CFBundleShortVersionString</key>
+            <string>1.0</string>
+            <key>CFBundleVersion</key>
+            <string>1</string>
+            <key>NSPrincipalClass</key>
+            <string>NSApplication</string>
+        </dict>
+        </plist>
+        EOF
+        
+        # Build executable
+        arch -arm64 python3 -m PyInstaller --name "Doc-Converter" --onefile --windowed doc_converter_gui.py
+        
+        # Move executable to app bundle
+        cp dist/Doc-Converter "$APP_NAME/Contents/MacOS/"
+        
+        # Create artifacts directory
+        mkdir -p artifacts/doc_converter-macos-silicon
         
         # Create zip with preserving permissions
         rm -f "artifacts/doc_converter-macos-silicon/$APP_NAME.zip"
         ditto -c -k --keepParent "$APP_NAME" "artifacts/doc_converter-macos-silicon/$APP_NAME.zip"
     
     - name: Upload macOS Silicon Artifact
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: actions/upload-artifact@v4
       with:
-        upload_url: ${{ needs.create-release.outputs.upload_url }}
-        asset_path: artifacts/doc_converter-macos-silicon/Doc-Converter-Silicon.app.zip
-        asset_name: Doc-Converter-Silicon-${{ needs.create-release.outputs.tag_name }}.app.zip
-        asset_content_type: application/zip
+        name: doc_converter-macos-silicon
+        path: artifacts/doc_converter-macos-silicon/Doc-Converter-Silicon.app.zip
 
   build-oracle-linux-8:
     runs-on: ubuntu-latest
@@ -220,7 +200,7 @@ jobs:
         python3 -m pip install -r requirements.txt
         python3 -m pip install pyinstaller
     
-    - name: Build executable
+    - name: Build Oracle Linux 8 Executable
       run: |
         python3 -m PyInstaller --name "Doc-Converter" --onefile doc_converter_gui.py
         mkdir -p artifacts/doc_converter-ol8
@@ -255,7 +235,7 @@ jobs:
         python3 -m pip install -r requirements.txt
         python3 -m pip install pyinstaller
     
-    - name: Build executable
+    - name: Build Oracle Linux 9 Executable
       run: |
         python3 -m PyInstaller --name "Doc-Converter" --onefile doc_converter_gui.py
         mkdir -p artifacts/doc_converter-ol9
@@ -301,7 +281,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install pyinstaller
-    - name: Build executable
+    - name: Build Ubuntu 24.04 Executable
       run: |
         pyinstaller --name "Doc-Converter" --onefile doc_converter_gui.py
         mkdir -p artifacts/doc_converter-ubuntu-24-04
@@ -346,7 +326,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install pyinstaller
-    - name: Build executable
+    - name: Build Ubuntu 22.04 Executable
       run: |
         pyinstaller --name "Doc-Converter" --onefile doc_converter_gui.py
         mkdir -p artifacts/doc_converter-ubuntu-22-04
@@ -391,7 +371,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install pyinstaller
-    - name: Build executable
+    - name: Build Ubuntu 20.04 Executable
       run: |
         pyinstaller --name "Doc-Converter" --onefile doc_converter_gui.py
         mkdir -p artifacts/doc_converter-ubuntu-20-04
@@ -404,7 +384,6 @@ jobs:
 
   upload-artifacts:
     needs: 
-      - create-release
       - build-windows
       - build-macos-intel
       - build-macos-silicon
@@ -414,8 +393,47 @@ jobs:
       - build-ubuntu-22-04
       - build-ubuntu-24-04
     runs-on: ubuntu-latest
+    outputs:
+      tag_name: ${{ steps.generate_tag.outputs.tag_name }}
     steps:
+    - uses: actions/checkout@v4
+    
+    - name: Generate unique tag
+      id: generate_tag
+      run: |
+        # Use the pushed tag if it exists, otherwise use a timestamp
+        TAG=${GITHUB_REF#refs/tags/}
+        if [[ "$TAG" == "refs/heads"* ]]; then
+          TAG=$(date +'v%Y.%m.%d-%H%M%S')
+        fi
+        echo "tag_name=$TAG" >> $GITHUB_OUTPUT
+    
     - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+
+  create-release:
+    needs: 
+      - upload-artifacts
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ needs.upload-artifacts.outputs.tag_name }}
+        release_name: Release ${{ needs.upload-artifacts.outputs.tag_name }}
+        draft: false
+        prerelease: false
+
+    - name: Download artifacts
       uses: actions/download-artifact@v4
       with:
         path: artifacts
@@ -425,39 +443,39 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: artifacts/doc_converter-windows/Doc-Converter.exe
-        asset_name: Doc-Converter-Windows-${{ needs.create-release.outputs.tag_name }}.exe
+        asset_name: Doc-Converter-Windows-${{ needs.upload-artifacts.outputs.tag_name }}.exe
         asset_content_type: application/octet-stream
 
-    - name: Upload Oracle Linux 8 Artifact
+    - name: Upload macOS Intel Artifact
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ needs.create-release.outputs.upload_url }}
-        asset_path: artifacts/doc_converter-ol8/Doc-Converter
-        asset_name: Doc-Converter-OL8-${{ needs.create-release.outputs.tag_name }}
-        asset_content_type: application/octet-stream
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: artifacts/doc_converter-macos-intel/Doc-Converter-Intel.app.zip
+        asset_name: Doc-Converter-Intel-${{ needs.upload-artifacts.outputs.tag_name }}.app.zip
+        asset_content_type: application/zip
 
-    - name: Upload Oracle Linux 9 Artifact
+    - name: Upload macOS Silicon Artifact
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ needs.create-release.outputs.upload_url }}
-        asset_path: artifacts/doc_converter-ol9/Doc-Converter
-        asset_name: Doc-Converter-OL9-${{ needs.create-release.outputs.tag_name }}
-        asset_content_type: application/octet-stream
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: artifacts/doc_converter-macos-silicon/Doc-Converter-Silicon.app.zip
+        asset_name: Doc-Converter-Silicon-${{ needs.upload-artifacts.outputs.tag_name }}.app.zip
+        asset_content_type: application/zip
 
     - name: Upload Ubuntu 24.04 Artifact
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: artifacts/doc_converter-ubuntu-24-04/Doc-Converter
-        asset_name: Doc-Converter-Ubuntu-24-04-${{ needs.create-release.outputs.tag_name }}
+        asset_name: Doc-Converter-Ubuntu-24-04-${{ needs.upload-artifacts.outputs.tag_name }}
         asset_content_type: application/octet-stream
 
     - name: Upload Ubuntu 22.04 Artifact
@@ -465,9 +483,9 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: artifacts/doc_converter-ubuntu-22-04/Doc-Converter
-        asset_name: Doc-Converter-Ubuntu-22-04-${{ needs.create-release.outputs.tag_name }}
+        asset_name: Doc-Converter-Ubuntu-22-04-${{ needs.upload-artifacts.outputs.tag_name }}
         asset_content_type: application/octet-stream
 
     - name: Upload Ubuntu 20.04 Artifact
@@ -475,7 +493,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: artifacts/doc_converter-ubuntu-20-04/Doc-Converter
-        asset_name: Doc-Converter-Ubuntu-20-04-${{ needs.create-release.outputs.tag_name }}
+        asset_name: Doc-Converter-Ubuntu-20-04-${{ needs.upload-artifacts.outputs.tag_name }}
         asset_content_type: application/octet-stream
