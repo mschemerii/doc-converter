@@ -74,6 +74,21 @@ jobs:
           ../../doc_converter_gui.py \
           2>&1 | tee pyinstaller_build.log
 
+        # Capture PyInstaller exit status
+        PYINSTALLER_EXIT_STATUS=$?
+
+        # Print warnings file if it exists
+        if [ -f "build/Doc-Converter/warn-Doc-Converter.txt" ]; then
+          echo "PyInstaller Warnings:"
+          cat "build/Doc-Converter/warn-Doc-Converter.txt"
+        fi
+
+        # Print cross-reference file for additional insights
+        if [ -f "build/Doc-Converter/xref-Doc-Converter.html" ]; then
+          echo "PyInstaller Cross-Reference:"
+          cat "build/Doc-Converter/xref-Doc-Converter.html"
+        fi
+
         # Check if PyInstaller build log contains errors
         if grep -q "ERROR" pyinstaller_build.log; then
           echo "PyInstaller build encountered errors:"
@@ -106,21 +121,30 @@ jobs:
         echo "Dependency list:"
         otool -L "dist/Doc-Converter.app/Contents/MacOS/Doc-Converter"
 
+        # Debugging: List all files in the app bundle
+        echo "App bundle contents:"
+        find "dist/Doc-Converter.app" -type f
+
         # Sign the executable first
         codesign --force --deep --sign - \
           --options runtime \
           --entitlements /dev/null \
+          --verbose \
           "dist/Doc-Converter.app/Contents/MacOS/Doc-Converter"
-        
+
         # Sign any dylibs and frameworks
         find "dist/Doc-Converter.app" -type f \( -name "*.dylib" -o -name "*.so" \) | while read lib; do
-          codesign --force --sign - "$lib"
+          echo "Signing library: $lib"
+          codesign --force --sign - --verbose "$lib" || {
+            echo "Warning: Could not sign library $lib"
+          }
         done
 
         # Finally sign the entire app bundle
         codesign --force --deep --sign - \
           --options runtime \
           --timestamp=none \
+          --verbose \
           "dist/Doc-Converter.app"
 
         # Verify signing of executable and bundle
@@ -131,13 +155,19 @@ jobs:
 
         # Create zip of the app bundle
         ditto -c -k --keepParent "dist/Doc-Converter.app" "Doc-Converter-Intel.app.zip"
-        
+
         # Move back to root directory
         cd ../..
-        
+
         # Create artifacts directory and copy zip
         mkdir -p artifacts/doc_converter-macos-intel
         cp build/intel/Doc-Converter-Intel.app.zip artifacts/doc_converter-macos-intel/
+
+        # Exit with PyInstaller's original exit status
+        exit $PYINSTALLER_EXIT_STATUS
+      
+      # Continue even if build fails to capture logs
+      continue-on-error: true
 
     - name: Upload macOS Intel Artifact
       uses: actions/upload-artifact@v4
