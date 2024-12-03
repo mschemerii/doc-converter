@@ -103,11 +103,22 @@ jobs:
         </plist>
         EOF
 
-        # Sign with ad-hoc signature
-        codesign --force --deep --sign - "Doc-Converter.app"
+        # Sign the executable first
+        codesign --force --sign - "Doc-Converter.app/Contents/MacOS/Doc-Converter"
+        
+        # Sign any dylibs and frameworks
+        find "Doc-Converter.app/Contents/MacOS" -name "*.dylib" -o -name "*.so" | while read lib; do
+          codesign --force --sign - "$lib"
+        done
 
-        # Verify signing
-        codesign -vv --deep --strict "Doc-Converter.app"
+        # Finally sign the entire app bundle
+        codesign --force --deep --sign - --timestamp=none "Doc-Converter.app"
+
+        # Verify signing of executable and bundle
+        echo "Verifying executable signing..."
+        codesign -vv "Doc-Converter.app/Contents/MacOS/Doc-Converter"
+        echo "Verifying bundle signing..."
+        codesign -vv --deep "Doc-Converter.app"
 
         # Create zip of the app bundle
         ditto -c -k --keepParent "Doc-Converter.app" "Doc-Converter-Intel.app.zip"
@@ -115,7 +126,7 @@ jobs:
         # Create artifacts directory and copy zip
         mkdir -p artifacts/doc_converter-macos-intel
         cp Doc-Converter-Intel.app.zip artifacts/doc_converter-macos-intel/
-    
+
     - name: Upload macOS Intel Artifact
       uses: actions/upload-artifact@v4
       with:
@@ -138,15 +149,22 @@ jobs:
         python3 -m pip install -r requirements.txt
         python3 -m pip install pyinstaller
     
-    - name: Build macOS Silicon App
+    - name: Build macOS Silicon Executable
       run: |
-        # Create app bundle
-        APP_NAME="Doc-Converter-Silicon.app"
-        mkdir -p "$APP_NAME/Contents/MacOS"
-        mkdir -p "$APP_NAME/Contents/Resources"
+        # Create app bundle directory structure
+        mkdir -p "Doc-Converter.app/Contents/MacOS"
+        mkdir -p "Doc-Converter.app/Contents/Resources"
         
+        # Build the executable with arm64 architecture
+        arch -arm64 python -m PyInstaller \
+          --name "Doc-Converter" \
+          --windowed \
+          --target-arch arm64 \
+          --distpath "Doc-Converter.app/Contents/MacOS" \
+          doc_converter_gui.py
+
         # Create Info.plist
-        cat > "$APP_NAME/Contents/Info.plist" << EOF
+        cat > "Doc-Converter.app/Contents/Info.plist" << EOF
         <?xml version="1.0" encoding="UTF-8"?>
         <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
         <plist version="1.0">
@@ -156,42 +174,51 @@ jobs:
             <key>CFBundleIconFile</key>
             <string>AppIcon</string>
             <key>CFBundleIdentifier</key>
-            <string>com.docconverter.app.silicon</string>
+            <string>com.docconverter.app</string>
             <key>CFBundleName</key>
-            <string>Doc Converter</string>
+            <string>Doc-Converter</string>
             <key>CFBundlePackageType</key>
             <string>APPL</string>
             <key>CFBundleShortVersionString</key>
             <string>1.0</string>
             <key>CFBundleVersion</key>
             <string>1</string>
+            <key>LSArchitecturePriority</key>
+            <array>
+                <string>arm64</string>
+            </array>
             <key>LSMinimumSystemVersion</key>
-            <string>14.0</string>
+            <string>11.0</string>
             <key>NSHighResolutionCapable</key>
             <true/>
-            <key>NSPrincipalClass</key>
-            <string>NSApplication</string>
         </dict>
         </plist>
         EOF
+
+        # Sign the executable first
+        codesign --force --sign - "Doc-Converter.app/Contents/MacOS/Doc-Converter"
         
-        # Build executable for arm64 architecture
-        arch -arm64 python3 -m PyInstaller \
-            --name "Doc-Converter" \
-            --onefile \
-            --windowed \
-            --target-architecture arm64 \
-            doc_converter_gui.py
+        # Sign any dylibs and frameworks
+        find "Doc-Converter.app/Contents/MacOS" -name "*.dylib" -o -name "*.so" | while read lib; do
+          codesign --force --sign - "$lib"
+        done
+
+        # Finally sign the entire app bundle
+        codesign --force --deep --sign - --timestamp=none "Doc-Converter.app"
+
+        # Verify signing of executable and bundle
+        echo "Verifying executable signing..."
+        codesign -vv "Doc-Converter.app/Contents/MacOS/Doc-Converter"
+        echo "Verifying bundle signing..."
+        codesign -vv --deep "Doc-Converter.app"
+
+        # Create zip of the app bundle
+        ditto -c -k --keepParent "Doc-Converter.app" "Doc-Converter-Silicon.app.zip"
         
-        # Move executable to app bundle
-        cp dist/Doc-Converter "$APP_NAME/Contents/MacOS/"
-        
-        # Create artifacts directory
+        # Create artifacts directory and copy zip
         mkdir -p artifacts/doc_converter-macos-silicon
-        
-        # Create zip with preserving permissions
-        ditto -c -k --keepParent "$APP_NAME" "artifacts/doc_converter-macos-silicon/$APP_NAME.zip"
-    
+        cp Doc-Converter-Silicon.app.zip artifacts/doc_converter-macos-silicon/
+
     - name: Upload macOS Silicon Artifact
       uses: actions/upload-artifact@v4
       with:
