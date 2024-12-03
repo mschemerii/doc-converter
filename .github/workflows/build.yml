@@ -53,19 +53,24 @@ jobs:
     
     - name: Install dependencies
       run: |
-        python3 -m pip install --upgrade pip
-        python3 -m pip install -r requirements.txt
-        python3 -m pip install pyinstaller
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pyinstaller
     
-    - name: Build macOS Intel App
+    - name: Build macOS Intel Executable
       run: |
-        # Create app bundle
-        APP_NAME="Doc-Converter-Intel.app"
-        mkdir -p "$APP_NAME/Contents/MacOS"
-        mkdir -p "$APP_NAME/Contents/Resources"
+        # Create app bundle directory structure
+        mkdir -p "Doc-Converter.app/Contents/MacOS"
+        mkdir -p "Doc-Converter.app/Contents/Resources"
+        
+        # Build the executable
+        pyinstaller --name "Doc-Converter" --windowed --add-data "assets:assets" doc_converter_gui.py
+        
+        # Copy the built executable to the app bundle
+        cp dist/Doc-Converter "Doc-Converter.app/Contents/MacOS/Doc-Converter"
         
         # Create Info.plist
-        cat > "$APP_NAME/Contents/Info.plist" << EOF
+        cat > "Doc-Converter.app/Contents/Info.plist" << EOF
         <?xml version="1.0" encoding="UTF-8"?>
         <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
         <plist version="1.0">
@@ -75,41 +80,29 @@ jobs:
             <key>CFBundleIconFile</key>
             <string>AppIcon</string>
             <key>CFBundleIdentifier</key>
-            <string>com.docconverter.app.intel</string>
+            <string>com.docconverter.app</string>
             <key>CFBundleName</key>
-            <string>Doc Converter</string>
+            <string>Doc-Converter</string>
             <key>CFBundlePackageType</key>
             <string>APPL</string>
             <key>CFBundleShortVersionString</key>
             <string>1.0</string>
             <key>CFBundleVersion</key>
             <string>1</string>
-            <key>LSMinimumSystemVersion</key>
-            <string>14.0</string>
             <key>NSHighResolutionCapable</key>
             <true/>
-            <key>NSPrincipalClass</key>
-            <string>NSApplication</string>
         </dict>
         </plist>
         EOF
         
-        # Build executable for x86_64 architecture
-        arch -x86_64 python3 -m PyInstaller \
-            --name "Doc-Converter" \
-            --onefile \
-            --windowed \
-            --target-architecture x86_64 \
-            doc_converter_gui.py
-        
-        # Move executable to app bundle
-        cp dist/Doc-Converter "$APP_NAME/Contents/MacOS/"
+        # Create zip of the app bundle
+        zip -r Doc-Converter-Intel.app.zip Doc-Converter.app
         
         # Create artifacts directory
         mkdir -p artifacts/doc_converter-macos-intel
         
-        # Create zip with preserving permissions
-        ditto -c -k --keepParent "$APP_NAME" "artifacts/doc_converter-macos-intel/$APP_NAME.zip"
+        # Copy zip to artifacts
+        cp Doc-Converter-Intel.app.zip artifacts/doc_converter-macos-intel/Doc-Converter-Intel.app.zip
     
     - name: Upload macOS Intel Artifact
       uses: actions/upload-artifact@v4
