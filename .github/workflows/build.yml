@@ -41,11 +41,10 @@ jobs:
         # Build Intel executable
         pyinstaller --clean --noconfirm \
           --name "Doc-Converter-MacOS-Intel" \
-          --add-data "resources:resources" \
           --windowed \
           --target-architecture x86_64 \
           --distpath build/macos-intel-py3.10 \
-          main.py
+          doc_converter_gui.py
 
     - name: Prepare macOS Intel Artifact
       run: |
@@ -143,11 +142,10 @@ jobs:
         # Build Silicon executable
         pyinstaller --clean --noconfirm \
           --name "Doc-Converter-MacOS-Silicon" \
-          --add-data "resources:resources" \
           --windowed \
           --target-architecture arm64 \
           --distpath build/macos-silicon-py3.10 \
-          main.py
+          doc_converter_gui.py
 
     - name: Prepare macOS Silicon Artifact
       run: |
