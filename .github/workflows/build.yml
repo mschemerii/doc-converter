@@ -373,19 +373,49 @@ jobs:
 
     - name: Prepare macOS Intel Artifact for Upload
       run: |
+        # Extensive debugging of artifact location and structure
+        echo "Current workspace:"
+        pwd
+        
+        echo "Listing all directories in artifacts:"
+        find artifacts -type d
+        
+        echo "Detailed listing of doc_converter-macos-intel:"
+        ls -laR "artifacts/doc_converter-macos-intel"
+        
+        echo "Find command on artifacts:"
+        find artifacts -name "Doc-Converter*"
+        
+        # Verify artifact contents
         MACOS_INTEL_ARTIFACT_DIR="artifacts/doc_converter-macos-intel"
         
-        # Recreate proper .app bundle structure
+        echo "Checking artifact directory contents:"
+        if [ -d "$MACOS_INTEL_ARTIFACT_DIR" ]; then
+          echo "Directory exists"
+          ls -la "$MACOS_INTEL_ARTIFACT_DIR"
+        else
+          echo "ERROR: Artifact directory does not exist"
+          exit 1
+        fi
+        
+        # Attempt to locate the executable
+        echo "Searching for executable:"
+        find "$MACOS_INTEL_ARTIFACT_DIR" -type f -name "Doc-Converter"
+        
+        # Create proper .app bundle structure
         mkdir -p "Doc-Converter-Intel.app/Contents/MacOS"
         mkdir -p "Doc-Converter-Intel.app/Contents/Resources"
         
-        # Copy contents from existing artifact
-        cp -R "$MACOS_INTEL_ARTIFACT_DIR/Doc-Converter.app/Contents/MacOS/Doc-Converter" "Doc-Converter-Intel.app/Contents/MacOS/"
+        # Find and copy executable
+        EXECUTABLE=$(find "$MACOS_INTEL_ARTIFACT_DIR" -type f -name "Doc-Converter" | head -n 1)
         
-        # Copy Info.plist if it exists
-        if [ -f "$MACOS_INTEL_ARTIFACT_DIR/Doc-Converter.app/Contents/Info.plist" ]; then
-          cp "$MACOS_INTEL_ARTIFACT_DIR/Doc-Converter.app/Contents/Info.plist" "Doc-Converter-Intel.app/Contents/"
+        if [ -z "$EXECUTABLE" ]; then
+          echo "ERROR: No executable found"
+          exit 1
         fi
+        
+        echo "Found executable: $EXECUTABLE"
+        cp "$EXECUTABLE" "Doc-Converter-Intel.app/Contents/MacOS/Doc-Converter"
         
         # Create zip of the .app bundle
         zip -r "artifacts/doc_converter-macos-intel/Doc-Converter-Intel.zip" "Doc-Converter-Intel.app"
@@ -410,19 +440,49 @@ jobs:
 
     - name: Prepare macOS Silicon Artifact for Upload
       run: |
+        # Extensive debugging of artifact location and structure
+        echo "Current workspace:"
+        pwd
+        
+        echo "Listing all directories in artifacts:"
+        find artifacts -type d
+        
+        echo "Detailed listing of doc_converter-macos-silicon:"
+        ls -laR "artifacts/doc_converter-macos-silicon"
+        
+        echo "Find command on artifacts:"
+        find artifacts -name "Doc-Converter*"
+        
+        # Verify artifact contents
         MACOS_SILICON_ARTIFACT_DIR="artifacts/doc_converter-macos-silicon"
         
-        # Recreate proper .app bundle structure
+        echo "Checking artifact directory contents:"
+        if [ -d "$MACOS_SILICON_ARTIFACT_DIR" ]; then
+          echo "Directory exists"
+          ls -la "$MACOS_SILICON_ARTIFACT_DIR"
+        else
+          echo "ERROR: Artifact directory does not exist"
+          exit 1
+        fi
+        
+        # Attempt to locate the executable
+        echo "Searching for executable:"
+        find "$MACOS_SILICON_ARTIFACT_DIR" -type f -name "Doc-Converter"
+        
+        # Create proper .app bundle structure
         mkdir -p "Doc-Converter-Silicon.app/Contents/MacOS"
         mkdir -p "Doc-Converter-Silicon.app/Contents/Resources"
         
-        # Copy contents from existing artifact
-        cp -R "$MACOS_SILICON_ARTIFACT_DIR/Doc-Converter.app/Contents/MacOS/Doc-Converter" "Doc-Converter-Silicon.app/Contents/MacOS/"
+        # Find and copy executable
+        EXECUTABLE=$(find "$MACOS_SILICON_ARTIFACT_DIR" -type f -name "Doc-Converter" | head -n 1)
         
-        # Copy Info.plist if it exists
-        if [ -f "$MACOS_SILICON_ARTIFACT_DIR/Doc-Converter.app/Contents/Info.plist" ]; then
-          cp "$MACOS_SILICON_ARTIFACT_DIR/Doc-Converter.app/Contents/Info.plist" "Doc-Converter-Silicon.app/Contents/"
+        if [ -z "$EXECUTABLE" ]; then
+          echo "ERROR: No executable found"
+          exit 1
         fi
+        
+        echo "Found executable: $EXECUTABLE"
+        cp "$EXECUTABLE" "Doc-Converter-Silicon.app/Contents/MacOS/Doc-Converter"
         
         # Create zip of the .app bundle
         zip -r "artifacts/doc_converter-macos-silicon/Doc-Converter-Silicon.zip" "Doc-Converter-Silicon.app"
