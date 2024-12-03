@@ -21,11 +21,14 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Generate unique release tag
+    - name: Get tag
       id: tag
       run: |
-        # Generate a timestamp-based tag if no tag exists
-        TAG=$(git describe --tags --abbrev=0 2>/dev/null || date +'v%Y.%m.%d-%H%M%S')
+        # Use the pushed tag if it exists, otherwise use a timestamp
+        TAG=${GITHUB_REF#refs/tags/}
+        if [[ "$TAG" == "refs/heads"* ]]; then
+          TAG=$(date +'v%Y.%m.%d-%H%M%S')
+        fi
         echo "tag_name=$TAG" >> $GITHUB_OUTPUT
     
     - name: Create Release
@@ -398,3 +401,81 @@ jobs:
       with:
         name: doc_converter-ubuntu-20-04
         path: artifacts/doc_converter-ubuntu-20-04/Doc-Converter
+
+  upload-artifacts:
+    needs: 
+      - create-release
+      - build-windows
+      - build-macos-intel
+      - build-macos-silicon
+      - build-oracle-linux-8
+      - build-oracle-linux-9
+      - build-ubuntu-20-04
+      - build-ubuntu-22-04
+      - build-ubuntu-24-04
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+
+    - name: Upload Windows Artifact
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: artifacts/doc_converter-windows/Doc-Converter.exe
+        asset_name: Doc-Converter-Windows-${{ needs.create-release.outputs.tag_name }}.exe
+        asset_content_type: application/octet-stream
+
+    - name: Upload Oracle Linux 8 Artifact
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: artifacts/doc_converter-ol8/Doc-Converter
+        asset_name: Doc-Converter-OL8-${{ needs.create-release.outputs.tag_name }}
+        asset_content_type: application/octet-stream
+
+    - name: Upload Oracle Linux 9 Artifact
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: artifacts/doc_converter-ol9/Doc-Converter
+        asset_name: Doc-Converter-OL9-${{ needs.create-release.outputs.tag_name }}
+        asset_content_type: application/octet-stream
+
+    - name: Upload Ubuntu 24.04 Artifact
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: artifacts/doc_converter-ubuntu-24-04/Doc-Converter
+        asset_name: Doc-Converter-Ubuntu-24-04-${{ needs.create-release.outputs.tag_name }}
+        asset_content_type: application/octet-stream
+
+    - name: Upload Ubuntu 22.04 Artifact
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: artifacts/doc_converter-ubuntu-22-04/Doc-Converter
+        asset_name: Doc-Converter-Ubuntu-22-04-${{ needs.create-release.outputs.tag_name }}
+        asset_content_type: application/octet-stream
+
+    - name: Upload Ubuntu 20.04 Artifact
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: artifacts/doc_converter-ubuntu-20-04/Doc-Converter
+        asset_name: Doc-Converter-Ubuntu-20-04-${{ needs.create-release.outputs.tag_name }}
+        asset_content_type: application/octet-stream
