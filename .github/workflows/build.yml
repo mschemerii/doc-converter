@@ -53,9 +53,9 @@ jobs:
     
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pyinstaller
+        python3 -m pip install --upgrade pip
+        python3 -m pip install -r requirements.txt
+        python3 -m pip install pyinstaller
     
     - name: Build macOS Intel Executable
       run: |
@@ -75,16 +75,20 @@ jobs:
         mkdir -p "Doc-Converter.app/Contents/Resources"
         mkdir -p "Doc-Converter.app/Contents/Frameworks"
 
-        # Move files to correct locations
         # Find the executable and move it
         EXECUTABLE=$(find dist -type f -perm +111 | grep -v '\.so$' | head -n 1)
         if [ -z "$EXECUTABLE" ]; then
           echo "Error: No executable found"
+          echo "Listing dist directory contents:"
+          ls -la dist
+          echo "Listing all executable files:"
+          find dist -type f -perm +111
           exit 1
         fi
         
-        # Move executable and other files
+        # Move executable and set correct permissions
         cp "$EXECUTABLE" "Doc-Converter.app/Contents/MacOS/Doc-Converter"
+        chmod +x "Doc-Converter.app/Contents/MacOS/Doc-Converter"
         
         # Copy all .so and .dylib files to Frameworks
         find dist -type f \( -name "*.so" -o -name "*.dylib" \) -exec cp {} "Doc-Converter.app/Contents/Frameworks/" \;
@@ -109,6 +113,8 @@ jobs:
             <string>1.0</string>
             <key>CFBundleVersion</key>
             <string>1</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
             <key>LSArchitecturePriority</key>
             <array>
                 <string>x86_64</string>
@@ -117,20 +123,33 @@ jobs:
             <string>10.15</string>
             <key>NSHighResolutionCapable</key>
             <true/>
+            <key>NSPrincipalClass</key>
+            <string>NSApplication</string>
         </dict>
         </plist>
         EOF
 
+        # Verify executable
+        echo "Executable details:"
+        file "Doc-Converter.app/Contents/MacOS/Doc-Converter"
+        otool -l "Doc-Converter.app/Contents/MacOS/Doc-Converter" | grep -E "cputype|cpusubtype"
+
         # Sign the executable first
-        codesign --force --sign - "Doc-Converter.app/Contents/MacOS/Doc-Converter"
+        codesign --force --deep --sign - \
+          --options runtime \
+          --entitlements /dev/null \
+          "Doc-Converter.app/Contents/MacOS/Doc-Converter"
         
         # Sign any dylibs and frameworks
-        find "Doc-Converter.app" -type f -name "*.dylib" -o -name "*.so" | while read lib; do
+        find "Doc-Converter.app" -type f \( -name "*.dylib" -o -name "*.so" \) | while read lib; do
           codesign --force --sign - "$lib"
         done
 
         # Finally sign the entire app bundle
-        codesign --force --deep --sign - --timestamp=none "Doc-Converter.app"
+        codesign --force --deep --sign - \
+          --options runtime \
+          --timestamp=none \
+          "Doc-Converter.app"
 
         # Verify signing of executable and bundle
         echo "Verifying executable signing..."
@@ -188,16 +207,20 @@ jobs:
         mkdir -p "Doc-Converter.app/Contents/Resources"
         mkdir -p "Doc-Converter.app/Contents/Frameworks"
 
-        # Move files to correct locations
         # Find the executable and move it
         EXECUTABLE=$(find dist -type f -perm +111 | grep -v '\.so$' | head -n 1)
         if [ -z "$EXECUTABLE" ]; then
           echo "Error: No executable found"
+          echo "Listing dist directory contents:"
+          ls -la dist
+          echo "Listing all executable files:"
+          find dist -type f -perm +111
           exit 1
         fi
         
-        # Move executable and other files
+        # Move executable and set correct permissions
         cp "$EXECUTABLE" "Doc-Converter.app/Contents/MacOS/Doc-Converter"
+        chmod +x "Doc-Converter.app/Contents/MacOS/Doc-Converter"
         
         # Copy all .so and .dylib files to Frameworks
         find dist -type f \( -name "*.so" -o -name "*.dylib" \) -exec cp {} "Doc-Converter.app/Contents/Frameworks/" \;
@@ -222,6 +245,8 @@ jobs:
             <string>1.0</string>
             <key>CFBundleVersion</key>
             <string>1</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
             <key>LSArchitecturePriority</key>
             <array>
                 <string>arm64</string>
@@ -230,20 +255,33 @@ jobs:
             <string>11.0</string>
             <key>NSHighResolutionCapable</key>
             <true/>
+            <key>NSPrincipalClass</key>
+            <string>NSApplication</string>
         </dict>
         </plist>
         EOF
 
+        # Verify executable
+        echo "Executable details:"
+        file "Doc-Converter.app/Contents/MacOS/Doc-Converter"
+        otool -l "Doc-Converter.app/Contents/MacOS/Doc-Converter" | grep -E "cputype|cpusubtype"
+
         # Sign the executable first
-        codesign --force --sign - "Doc-Converter.app/Contents/MacOS/Doc-Converter"
+        codesign --force --deep --sign - \
+          --options runtime \
+          --entitlements /dev/null \
+          "Doc-Converter.app/Contents/MacOS/Doc-Converter"
         
         # Sign any dylibs and frameworks
-        find "Doc-Converter.app" -type f -name "*.dylib" -o -name "*.so" | while read lib; do
+        find "Doc-Converter.app" -type f \( -name "*.dylib" -o -name "*.so" \) | while read lib; do
           codesign --force --sign - "$lib"
         done
 
         # Finally sign the entire app bundle
-        codesign --force --deep --sign - --timestamp=none "Doc-Converter.app"
+        codesign --force --deep --sign - \
+          --options runtime \
+          --timestamp=none \
+          "Doc-Converter.app"
 
         # Verify signing of executable and bundle
         echo "Verifying executable signing..."
