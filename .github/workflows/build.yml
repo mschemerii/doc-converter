@@ -66,12 +66,14 @@ jobs:
         
         # Create Info.plist with additional metadata
         PLIST="Doc-Converter-Intel.app/Contents/Info.plist"
-        /usr/libexec/PlistBuddy -c "Add :CFBundleIdentifier string com.mschemer.docconverter" "$PLIST"
-        /usr/libexec/PlistBuddy -c "Add :CFBundleName string 'Doc Converter'" "$PLIST"
-        /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string 'Doc Converter'" "$PLIST"
-        /usr/libexec/PlistBuddy -c "Add :CFBundleVersion string 1.0.0" "$PLIST"
-        /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string 1.0.0" "$PLIST"
-        /usr/libexec/PlistBuddy -c "Add :NSHumanReadableCopyright string ' 2024 M. Schemer'" "$PLIST"
+        
+        # Use Set commands instead of Add to modify existing entries
+        /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier com.mschemer.docconverter" "$PLIST"
+        /usr/libexec/PlistBuddy -c "Set :CFBundleName 'Doc Converter'" "$PLIST"
+        /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName 'Doc Converter'" "$PLIST"
+        /usr/libexec/PlistBuddy -c "Set :CFBundleVersion 1.0.0" "$PLIST"
+        /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.0.0" "$PLIST"
+        /usr/libexec/PlistBuddy -c "Set :NSHumanReadableCopyright ' 2024 M. Schemer'" "$PLIST"
         
         # Repair .app bundle permissions
         chmod -R 755 "Doc-Converter-Intel.app"
@@ -162,12 +164,14 @@ jobs:
         
         # Create Info.plist with additional metadata
         PLIST="Doc-Converter-Silicon.app/Contents/Info.plist"
-        /usr/libexec/PlistBuddy -c "Add :CFBundleIdentifier string com.mschemer.docconverter" "$PLIST"
-        /usr/libexec/PlistBuddy -c "Add :CFBundleName string 'Doc Converter'" "$PLIST"
-        /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string 'Doc Converter'" "$PLIST"
-        /usr/libexec/PlistBuddy -c "Add :CFBundleVersion string 1.0.0" "$PLIST"
-        /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string 1.0.0" "$PLIST"
-        /usr/libexec/PlistBuddy -c "Add :NSHumanReadableCopyright string ' 2024 M. Schemer'" "$PLIST"
+        
+        # Use Set commands instead of Add to modify existing entries
+        /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier com.mschemer.docconverter" "$PLIST"
+        /usr/libexec/PlistBuddy -c "Set :CFBundleName 'Doc Converter'" "$PLIST"
+        /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName 'Doc Converter'" "$PLIST"
+        /usr/libexec/PlistBuddy -c "Set :CFBundleVersion 1.0.0" "$PLIST"
+        /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.0.0" "$PLIST"
+        /usr/libexec/PlistBuddy -c "Set :NSHumanReadableCopyright ' 2024 M. Schemer'" "$PLIST"
         
         # Repair .app bundle permissions
         chmod -R 755 "Doc-Converter-Silicon.app"
