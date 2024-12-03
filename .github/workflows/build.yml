@@ -70,64 +70,22 @@ jobs:
           --target-arch x86_64 \
           ../../doc_converter_gui.py
 
-        # Create proper app bundle structure
-        mkdir -p "Doc-Converter.app/Contents/MacOS"
-        mkdir -p "Doc-Converter.app/Contents/Resources"
-        mkdir -p "Doc-Converter.app/Contents/Frameworks"
+        # Debug: List contents of dist directory
+        echo "Contents of dist directory:"
+        find dist -type d
+        find dist -type f
 
-        # Find the executable and move it
-        EXECUTABLE=$(find dist -type f -perm +111 | grep -v '\.so$' | head -n 1)
-        if [ -z "$EXECUTABLE" ]; then
-          echo "Error: No executable found"
-          echo "Listing dist directory contents:"
-          ls -la dist
-          echo "Listing all executable files:"
-          find dist -type f -perm +111
+        # Check if the .app bundle exists
+        if [ -d "dist/Doc-Converter.app" ]; then
+          # If .app bundle exists, use it directly
+          cp -R "dist/Doc-Converter.app" "Doc-Converter.app"
+        elif [ -d "dist/Doc-Converter/Doc-Converter.app" ]; then
+          # If nested .app bundle exists, copy it
+          cp -R "dist/Doc-Converter/Doc-Converter.app" "Doc-Converter.app"
+        else
+          echo "Error: No .app bundle found in dist directory"
           exit 1
         fi
-        
-        # Move executable and set correct permissions
-        cp "$EXECUTABLE" "Doc-Converter.app/Contents/MacOS/Doc-Converter"
-        chmod +x "Doc-Converter.app/Contents/MacOS/Doc-Converter"
-        
-        # Copy all .so and .dylib files to Frameworks
-        find dist -type f \( -name "*.so" -o -name "*.dylib" \) -exec cp {} "Doc-Converter.app/Contents/Frameworks/" \;
-        
-        # Create Info.plist
-        cat > "Doc-Converter.app/Contents/Info.plist" << EOF
-        <?xml version="1.0" encoding="UTF-8"?>
-        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-        <plist version="1.0">
-        <dict>
-            <key>CFBundleExecutable</key>
-            <string>Doc-Converter</string>
-            <key>CFBundleIconFile</key>
-            <string>AppIcon</string>
-            <key>CFBundleIdentifier</key>
-            <string>com.docconverter.app</string>
-            <key>CFBundleName</key>
-            <string>Doc-Converter</string>
-            <key>CFBundlePackageType</key>
-            <string>APPL</string>
-            <key>CFBundleShortVersionString</key>
-            <string>1.0</string>
-            <key>CFBundleVersion</key>
-            <string>1</string>
-            <key>CFBundlePackageType</key>
-            <string>APPL</string>
-            <key>LSArchitecturePriority</key>
-            <array>
-                <string>x86_64</string>
-            </array>
-            <key>LSMinimumSystemVersion</key>
-            <string>10.15</string>
-            <key>NSHighResolutionCapable</key>
-            <true/>
-            <key>NSPrincipalClass</key>
-            <string>NSApplication</string>
-        </dict>
-        </plist>
-        EOF
 
         # Verify executable
         echo "Executable details:"
@@ -202,63 +160,22 @@ jobs:
           --target-arch arm64 \
           ../../doc_converter_gui.py
 
-        # Create proper app bundle structure
-        mkdir -p "Doc-Converter.app/Contents/MacOS"
-        mkdir -p "Doc-Converter.app/Contents/Resources"
-        mkdir -p "Doc-Converter.app/Contents/Frameworks"
+        # Debug: List contents of dist directory
+        echo "Contents of dist directory:"
+        find dist -type d
+        find dist -type f
 
-        # Find the executable and move it
-        # Use file type to identify the correct executable
-        EXECUTABLE=$(find dist -type f | xargs file | grep "Mach-O 64-bit executable" | cut -d: -f1)
-        if [ -z "$EXECUTABLE" ]; then
-          echo "Error: No executable found"
-          echo "Listing dist directory contents:"
-          ls -la dist
-          echo "Listing all files:"
-          find dist -type f | xargs file
+        # Check if the .app bundle exists
+        if [ -d "dist/Doc-Converter.app" ]; then
+          # If .app bundle exists, use it directly
+          cp -R "dist/Doc-Converter.app" "Doc-Converter.app"
+        elif [ -d "dist/Doc-Converter/Doc-Converter.app" ]; then
+          # If nested .app bundle exists, copy it
+          cp -R "dist/Doc-Converter/Doc-Converter.app" "Doc-Converter.app"
+        else
+          echo "Error: No .app bundle found in dist directory"
           exit 1
         fi
-        
-        # Move executable and set correct permissions
-        cp "$EXECUTABLE" "Doc-Converter.app/Contents/MacOS/Doc-Converter"
-        chmod +x "Doc-Converter.app/Contents/MacOS/Doc-Converter"
-        
-        # Copy all .so and .dylib files to Frameworks
-        find dist -type f \( -name "*.so" -o -name "*.dylib" \) -exec cp {} "Doc-Converter.app/Contents/Frameworks/" \;
-        
-        # Create Info.plist
-        cat > "Doc-Converter.app/Contents/Info.plist" << EOF
-        <?xml version="1.0" encoding="UTF-8"?>
-        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-        <plist version="1.0">
-        <dict>
-            <key>CFBundleExecutable</key>
-            <string>Doc-Converter</string>
-            <key>CFBundleIconFile</key>
-            <string>AppIcon</string>
-            <key>CFBundleIdentifier</key>
-            <string>com.docconverter.app</string>
-            <key>CFBundleName</key>
-            <string>Doc-Converter</string>
-            <key>CFBundlePackageType</key>
-            <string>APPL</string>
-            <key>CFBundleShortVersionString</key>
-            <string>1.0</string>
-            <key>CFBundleVersion</key>
-            <string>1</string>
-            <key>LSArchitecturePriority</key>
-            <array>
-                <string>arm64</string>
-            </array>
-            <key>LSMinimumSystemVersion</key>
-            <string>11.0</string>
-            <key>NSHighResolutionCapable</key>
-            <true/>
-            <key>NSPrincipalClass</key>
-            <string>NSApplication</string>
-        </dict>
-        </plist>
-        EOF
 
         # Verify executable
         echo "Executable details:"
