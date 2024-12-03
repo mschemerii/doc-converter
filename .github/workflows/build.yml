@@ -9,6 +9,7 @@ on:
 jobs:
   build-macos:
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: macos-13
@@ -21,10 +22,16 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
+    - name: Upgrade Git
+      run: |
+        brew update
+        brew upgrade git
+        git --version
+
     - uses: actions/checkout@v4
       with:
         fetch-depth: 1
-        submodules: recursive
+        submodules: false
 
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -174,20 +181,27 @@ jobs:
 
   build-windows:
     strategy:
+      fail-fast: false
       matrix:
-        os: [windows-latest]
-        python-version: ['3.12']
-        architecture: [x64]
+        include:
+          - os: windows-latest
+            python-version: '3.11'
+            architecture: x64
 
     runs-on: ${{ matrix.os }}
 
     steps:
+    - name: Upgrade Git
+      run: |
+        choco upgrade git
+        git --version
+
     - uses: actions/checkout@v4
       with:
         fetch-depth: 1
-        submodules: recursive
+        submodules: false
 
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
@@ -197,10 +211,11 @@ jobs:
     - name: Install system dependencies
       run: |
         python -m pip install --upgrade pip setuptools wheel
-        python -m pip install --upgrade \
-          pyinstaller \
-          python-docx \
-          tkinter
+        python -m pip install --upgrade `
+          pyinstaller `
+          python-docx `
+          tkinter `
+          pywin32
 
     - name: Install project dependencies
       run: |
@@ -262,6 +277,6 @@ jobs:
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
       with:
-        files: artifacts/*.app.zip artifacts/*.zip
+        files: artifacts/*.{app.zip,zip}
         tag_name: v1.0.${{ github.run_number }}
         generate_release_notes: true
