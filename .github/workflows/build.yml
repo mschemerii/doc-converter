@@ -72,27 +72,24 @@ jobs:
         # Generate private key and certificate
         openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
           -keyout build.key -out build.crt \
-          -subj "/CN=Developer ID Application"
+          -subj "/CN=Doc Converter"
 
         # Convert to p12 format
         openssl pkcs12 -export \
           -in build.crt \
           -inkey build.key \
           -out build.p12 \
-          -name "Developer ID Application" \
+          -name "Doc Converter" \
           -passout pass:github-actions
 
         # Import certificate to keychain
         security import build.p12 -k build.keychain -P github-actions \
           -T /usr/bin/codesign
 
-        # Allow codesign to access the certificate
+        # Allow codesign to access the keychain
         security set-key-partition-list -S apple-tool:,apple:,codesign: -s \
           -k github-actions build.keychain
 
-        # Find the certificate
-        CERT_NAME="Developer ID Application"
-        
         # Build the executable with x86_64 architecture
         arch -x86_64 python -m PyInstaller \
           --name "Doc-Converter" \
@@ -133,29 +130,18 @@ jobs:
         </plist>
         EOF
 
-        # Create entitlements file
-        cat > entitlements.plist << EOF
-        <?xml version="1.0" encoding="UTF-8"?>
-        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-        <plist version="1.0">
-        <dict>
-            <key>com.apple.security.cs.allow-jit</key>
-            <true/>
-            <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
-            <true/>
-            <key>com.apple.security.cs.disable-library-validation</key>
-            <true/>
-        </dict>
-        </plist>
-        EOF
-        
+        # List certificates to verify
+        security find-identity -v -p codesigning build.keychain
+
         # Sign the app bundle
         codesign --force --deep --options runtime \
-          --entitlements entitlements.plist \
-          --sign "$CERT_NAME" \
+          --sign "Doc Converter" \
           --keychain build.keychain \
           "Doc-Converter.app"
-        
+
+        # Verify signing
+        codesign -vv --deep --strict "Doc-Converter.app"
+
         # Create zip of the app bundle
         ditto -c -k --keepParent "Doc-Converter.app" "Doc-Converter-Intel.app.zip"
         
