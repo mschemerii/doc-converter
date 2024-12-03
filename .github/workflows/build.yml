@@ -80,11 +80,75 @@ jobs:
         mkdir -p artifacts/doc_converter-macos-intel
         cp -R "dist/Doc-Converter.app" "artifacts/doc_converter-macos-intel/Doc-Converter.app"
     
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
+    - name: Prepare macOS Intel Artifact for Upload
+      run: |
+        set -x  # Enable verbose debugging output
+        
+        # Define artifact directory
+        MACOS_INTEL_ARTIFACT_DIR="artifacts/doc_converter-macos-intel"
+        
+        # Verify artifact directory exists
+        if [ ! -d "$MACOS_INTEL_ARTIFACT_DIR" ]; then
+          echo "ERROR: Artifact directory $MACOS_INTEL_ARTIFACT_DIR does not exist"
+          echo "Contents of artifacts directory:"
+          ls -la artifacts/
+          exit 1
+        fi
+        
+        # Find the executable
+        EXECUTABLE=$(find "$MACOS_INTEL_ARTIFACT_DIR" -type f \( -name "Doc-Converter" -o -name "doc-converter" \) | head -n 1)
+        
+        if [ -z "$EXECUTABLE" ]; then
+          echo "ERROR: No executable found in $MACOS_INTEL_ARTIFACT_DIR"
+          echo "Attempting broader search:"
+          find . -type f \( -name "Doc-Converter" -o -name "doc-converter" \)
+          exit 1
+        fi
+        
+        echo "Found executable: $EXECUTABLE"
+        
+        # Create clean .app bundle structure
+        APP_NAME="Doc-Converter-Intel.app"
+        rm -rf "$APP_NAME"
+        mkdir -p "$APP_NAME/Contents/MacOS"
+        mkdir -p "$APP_NAME/Contents/Resources"
+        
+        # Copy executable and set permissions
+        cp "$EXECUTABLE" "$APP_NAME/Contents/MacOS/Doc-Converter"
+        chmod 755 "$APP_NAME/Contents/MacOS/Doc-Converter"
+        
+        # Create Info.plist
+        echo '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict><key>CFBundleExecutable</key><string>Doc-Converter</string><key>CFBundleIdentifier</key><string>com.docconverter.macos</string><key>CFBundleName</key><string>Doc-Converter</string><key>CFBundlePackageType</key><string>APPL</string><key>CFBundleShortVersionString</key><string>1.0</string><key>CFBundleVersion</key><string>1</string><key>LSMinimumSystemVersion</key><string>10.10</string><key>NSHighResolutionCapable</key><true/></dict></plist>' > "$APP_NAME/Contents/Info.plist"
+        
+        # Create PkgInfo
+        echo "APPL????" > "$APP_NAME/Contents/PkgInfo"
+        
+        # Set bundle permissions
+        find "$APP_NAME" -type d -exec chmod 755 {} \;
+        find "$APP_NAME" -type f -exec chmod 644 {} \;
+        chmod 755 "$APP_NAME/Contents/MacOS/Doc-Converter"
+        
+        # Create zip with preserving permissions
+        rm -f "$MACOS_INTEL_ARTIFACT_DIR/$APP_NAME.zip"
+        ditto -c -k --keepParent "$APP_NAME" "$MACOS_INTEL_ARTIFACT_DIR/$APP_NAME.zip"
+        
+        # Verify archive
+        echo "Archive contents:"
+        unzip -l "$MACOS_INTEL_ARTIFACT_DIR/$APP_NAME.zip"
+        
+        echo "Archive permissions:"
+        ls -la "$MACOS_INTEL_ARTIFACT_DIR/$APP_NAME.zip"
+    
+    - name: Upload macOS Intel Artifact
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
       with:
-        name: doc_converter-macos-intel
-        path: artifacts/doc_converter-macos-intel/Doc-Converter.app
+        upload_url: ${{ env.UPLOAD_URL }}
+        asset_path: artifacts/doc_converter-macos-intel/Doc-Converter-Intel.app.zip
+        asset_name: Doc-Converter-Intel-${{ steps.tag.outputs.tag_name }}.app.zip
+        asset_content_type: application/zip
   
   build-macos-silicon:
     runs-on: macos-latest
@@ -112,11 +176,75 @@ jobs:
         mkdir -p artifacts/doc_converter-macos-silicon
         cp -R "dist/Doc-Converter.app" "artifacts/doc_converter-macos-silicon/Doc-Converter.app"
     
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
+    - name: Prepare macOS Silicon Artifact for Upload
+      run: |
+        set -x  # Enable verbose debugging output
+        
+        # Define artifact directory
+        MACOS_SILICON_ARTIFACT_DIR="artifacts/doc_converter-macos-silicon"
+        
+        # Verify artifact directory exists
+        if [ ! -d "$MACOS_SILICON_ARTIFACT_DIR" ]; then
+          echo "ERROR: Artifact directory $MACOS_SILICON_ARTIFACT_DIR does not exist"
+          echo "Contents of artifacts directory:"
+          ls -la artifacts/
+          exit 1
+        fi
+        
+        # Find the executable
+        EXECUTABLE=$(find "$MACOS_SILICON_ARTIFACT_DIR" -type f \( -name "Doc-Converter" -o -name "doc-converter" \) | head -n 1)
+        
+        if [ -z "$EXECUTABLE" ]; then
+          echo "ERROR: No executable found in $MACOS_SILICON_ARTIFACT_DIR"
+          echo "Attempting broader search:"
+          find . -type f \( -name "Doc-Converter" -o -name "doc-converter" \)
+          exit 1
+        fi
+        
+        echo "Found executable: $EXECUTABLE"
+        
+        # Create clean .app bundle structure
+        APP_NAME="Doc-Converter-Silicon.app"
+        rm -rf "$APP_NAME"
+        mkdir -p "$APP_NAME/Contents/MacOS"
+        mkdir -p "$APP_NAME/Contents/Resources"
+        
+        # Copy executable and set permissions
+        cp "$EXECUTABLE" "$APP_NAME/Contents/MacOS/Doc-Converter"
+        chmod 755 "$APP_NAME/Contents/MacOS/Doc-Converter"
+        
+        # Create Info.plist
+        echo '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict><key>CFBundleExecutable</key><string>Doc-Converter</string><key>CFBundleIdentifier</key><string>com.docconverter.macos</string><key>CFBundleName</key><string>Doc-Converter</string><key>CFBundlePackageType</key><string>APPL</string><key>CFBundleShortVersionString</key><string>1.0</string><key>CFBundleVersion</key><string>1</string><key>LSMinimumSystemVersion</key><string>10.10</string><key>NSHighResolutionCapable</key><true/></dict></plist>' > "$APP_NAME/Contents/Info.plist"
+        
+        # Create PkgInfo
+        echo "APPL????" > "$APP_NAME/Contents/PkgInfo"
+        
+        # Set bundle permissions
+        find "$APP_NAME" -type d -exec chmod 755 {} \;
+        find "$APP_NAME" -type f -exec chmod 644 {} \;
+        chmod 755 "$APP_NAME/Contents/MacOS/Doc-Converter"
+        
+        # Create zip with preserving permissions
+        rm -f "$MACOS_SILICON_ARTIFACT_DIR/$APP_NAME.zip"
+        ditto -c -k --keepParent "$APP_NAME" "$MACOS_SILICON_ARTIFACT_DIR/$APP_NAME.zip"
+        
+        # Verify archive
+        echo "Archive contents:"
+        unzip -l "$MACOS_SILICON_ARTIFACT_DIR/$APP_NAME.zip"
+        
+        echo "Archive permissions:"
+        ls -la "$MACOS_SILICON_ARTIFACT_DIR/$APP_NAME.zip"
+    
+    - name: Upload macOS Silicon Artifact
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
       with:
-        name: doc_converter-macos-silicon
-        path: artifacts/doc_converter-macos-silicon/Doc-Converter.app
+        upload_url: ${{ env.UPLOAD_URL }}
+        asset_path: artifacts/doc_converter-macos-silicon/Doc-Converter-Silicon.app.zip
+        asset_name: Doc-Converter-Silicon-${{ steps.tag.outputs.tag_name }}.app.zip
+        asset_content_type: application/zip
   
   build-oracle-linux-8:
     runs-on: ubuntu-latest
@@ -371,86 +499,6 @@ jobs:
         asset_name: Doc-Converter-Windows-${{ steps.tag.outputs.tag_name }}.exe
         asset_content_type: application/octet-stream
 
-    - name: Prepare macOS Intel Artifact for Upload
-      run: |
-        set -x  # Enable verbose debugging output
-        
-        # Print environment and current state
-        echo "Current environment:"
-        env
-        
-        echo "Current working directory:"
-        pwd
-        
-        echo "Listing all directories:"
-        find . -type d
-        
-        # Define artifact directory
-        MACOS_INTEL_ARTIFACT_DIR="artifacts/doc_converter-macos-intel"
-        
-        # Verify artifact directory exists
-        if [ ! -d "$MACOS_INTEL_ARTIFACT_DIR" ]; then
-          echo "ERROR: Artifact directory $MACOS_INTEL_ARTIFACT_DIR does not exist"
-          echo "Contents of artifacts directory:"
-          ls -la artifacts/
-          exit 1
-        fi
-        
-        # Detailed directory listing
-        echo "Detailed contents of $MACOS_INTEL_ARTIFACT_DIR:"
-        ls -laR "$MACOS_INTEL_ARTIFACT_DIR"
-        
-        # Find all files in the artifact directory
-        echo "Finding all files in artifact directory:"
-        find "$MACOS_INTEL_ARTIFACT_DIR" -type f
-        
-        # Attempt to locate the executable
-        echo "Searching for executable:"
-        EXECUTABLE=$(find "$MACOS_INTEL_ARTIFACT_DIR" -type f \( -name "Doc-Converter" -o -name "doc-converter" \) | head -n 1)
-        
-        if [ -z "$EXECUTABLE" ]; then
-          echo "ERROR: No executable found in $MACOS_INTEL_ARTIFACT_DIR"
-          echo "Attempting broader search:"
-          find . -type f \( -name "Doc-Converter" -o -name "doc-converter" \)
-          exit 1
-        fi
-        
-        echo "Found executable: $EXECUTABLE"
-        
-        # Create .app bundle structure
-        mkdir -p "Doc-Converter-Intel.app/Contents/MacOS"
-        mkdir -p "Doc-Converter-Intel.app/Contents/Resources"
-        
-        # Copy executable
-        cp "$EXECUTABLE" "Doc-Converter-Intel.app/Contents/MacOS/Doc-Converter"
-        chmod +x "Doc-Converter-Intel.app/Contents/MacOS/Doc-Converter"
-        
-        # Attempt to find and copy Info.plist
-        PLIST=$(find "$MACOS_INTEL_ARTIFACT_DIR" -name "Info.plist" | head -n 1)
-        if [ -n "$PLIST" ]; then
-          echo "Found Info.plist: $PLIST"
-          cp "$PLIST" "Doc-Converter-Intel.app/Contents/Info.plist"
-        else
-          echo "WARNING: No Info.plist found. Creating a basic one."
-          echo '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict><key>CFBundleExecutable</key><string>Doc-Converter</string><key>CFBundleIdentifier</key><string>com.docconverter.macos</string><key>CFBundleName</key><string>Doc-Converter</string><key>CFBundleVersion</key><string>1.0</string><key>CFBundlePackageType</key><string>APPL</string></dict></plist>' > "Doc-Converter-Intel.app/Contents/Info.plist"
-        fi
-        
-        # Create zip of the .app bundle
-        echo "Creating zip archive..."
-        zip -r "artifacts/doc_converter-macos-intel/Doc-Converter-Intel.zip" "Doc-Converter-Intel.app"
-        
-        # Verify archive creation
-        echo "Compressed archive details:"
-        ls -la "artifacts/doc_converter-macos-intel/Doc-Converter-Intel.zip"
-        
-        # Show zip contents
-        echo "Zip contents:"
-        unzip -l "artifacts/doc_converter-macos-intel/Doc-Converter-Intel.zip"
-        
-        # Verify executable permissions
-        echo "Executable permissions:"
-        ls -l "Doc-Converter-Intel.app/Contents/MacOS/Doc-Converter"
-
     - name: Upload macOS Intel Artifact
       uses: actions/upload-release-asset@v1
       env:
@@ -458,89 +506,9 @@ jobs:
         UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
       with:
         upload_url: ${{ env.UPLOAD_URL }}
-        asset_path: artifacts/doc_converter-macos-intel/Doc-Converter-Intel.zip
+        asset_path: artifacts/doc_converter-macos-intel/Doc-Converter-Intel.app.zip
         asset_name: Doc-Converter-Intel-${{ steps.tag.outputs.tag_name }}.app.zip
         asset_content_type: application/zip
-
-    - name: Prepare macOS Silicon Artifact for Upload
-      run: |
-        set -x  # Enable verbose debugging output
-        
-        # Print environment and current state
-        echo "Current environment:"
-        env
-        
-        echo "Current working directory:"
-        pwd
-        
-        echo "Listing all directories:"
-        find . -type d
-        
-        # Define artifact directory
-        MACOS_SILICON_ARTIFACT_DIR="artifacts/doc_converter-macos-silicon"
-        
-        # Verify artifact directory exists
-        if [ ! -d "$MACOS_SILICON_ARTIFACT_DIR" ]; then
-          echo "ERROR: Artifact directory $MACOS_SILICON_ARTIFACT_DIR does not exist"
-          echo "Contents of artifacts directory:"
-          ls -la artifacts/
-          exit 1
-        fi
-        
-        # Detailed directory listing
-        echo "Detailed contents of $MACOS_SILICON_ARTIFACT_DIR:"
-        ls -laR "$MACOS_SILICON_ARTIFACT_DIR"
-        
-        # Find all files in the artifact directory
-        echo "Finding all files in artifact directory:"
-        find "$MACOS_SILICON_ARTIFACT_DIR" -type f
-        
-        # Attempt to locate the executable
-        echo "Searching for executable:"
-        EXECUTABLE=$(find "$MACOS_SILICON_ARTIFACT_DIR" -type f \( -name "Doc-Converter" -o -name "doc-converter" \) | head -n 1)
-        
-        if [ -z "$EXECUTABLE" ]; then
-          echo "ERROR: No executable found in $MACOS_SILICON_ARTIFACT_DIR"
-          echo "Attempting broader search:"
-          find . -type f \( -name "Doc-Converter" -o -name "doc-converter" \)
-          exit 1
-        fi
-        
-        echo "Found executable: $EXECUTABLE"
-        
-        # Create .app bundle structure
-        mkdir -p "Doc-Converter-Silicon.app/Contents/MacOS"
-        mkdir -p "Doc-Converter-Silicon.app/Contents/Resources"
-        
-        # Copy executable
-        cp "$EXECUTABLE" "Doc-Converter-Silicon.app/Contents/MacOS/Doc-Converter"
-        chmod +x "Doc-Converter-Silicon.app/Contents/MacOS/Doc-Converter"
-        
-        # Attempt to find and copy Info.plist
-        PLIST=$(find "$MACOS_SILICON_ARTIFACT_DIR" -name "Info.plist" | head -n 1)
-        if [ -n "$PLIST" ]; then
-          echo "Found Info.plist: $PLIST"
-          cp "$PLIST" "Doc-Converter-Silicon.app/Contents/Info.plist"
-        else
-          echo "WARNING: No Info.plist found. Creating a basic one."
-          echo '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict><key>CFBundleExecutable</key><string>Doc-Converter</string><key>CFBundleIdentifier</key><string>com.docconverter.macos</string><key>CFBundleName</key><string>Doc-Converter</string><key>CFBundleVersion</key><string>1.0</string><key>CFBundlePackageType</key><string>APPL</string></dict></plist>' > "Doc-Converter-Silicon.app/Contents/Info.plist"
-        fi
-        
-        # Create zip of the .app bundle
-        echo "Creating zip archive..."
-        zip -r "artifacts/doc_converter-macos-silicon/Doc-Converter-Silicon.zip" "Doc-Converter-Silicon.app"
-        
-        # Verify archive creation
-        echo "Compressed archive details:"
-        ls -la "artifacts/doc_converter-macos-silicon/Doc-Converter-Silicon.zip"
-        
-        # Show zip contents
-        echo "Zip contents:"
-        unzip -l "artifacts/doc_converter-macos-silicon/Doc-Converter-Silicon.zip"
-        
-        # Verify executable permissions
-        echo "Executable permissions:"
-        ls -l "Doc-Converter-Silicon.app/Contents/MacOS/Doc-Converter"
 
     - name: Upload macOS Silicon Artifact
       uses: actions/upload-release-asset@v1
@@ -549,7 +517,7 @@ jobs:
         UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
       with:
         upload_url: ${{ env.UPLOAD_URL }}
-        asset_path: artifacts/doc_converter-macos-silicon/Doc-Converter-Silicon.zip
+        asset_path: artifacts/doc_converter-macos-silicon/Doc-Converter-Silicon.app.zip
         asset_name: Doc-Converter-Silicon-${{ steps.tag.outputs.tag_name }}.app.zip
         asset_content_type: application/zip
 
