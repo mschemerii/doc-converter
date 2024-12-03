@@ -68,10 +68,8 @@ jobs:
           --name "Doc-Converter" \
           --windowed \
           --target-arch x86_64 \
+          --distpath "Doc-Converter.app/Contents/MacOS" \
           doc_converter_gui.py
-        
-        # Copy the built executable to the app bundle
-        cp -r dist/Doc-Converter/* "Doc-Converter.app/Contents/MacOS/"
         
         # Create Info.plist
         cat > "Doc-Converter.app/Contents/Info.plist" << EOF
@@ -104,16 +102,51 @@ jobs:
         </dict>
         </plist>
         EOF
+
+        # Create entitlements file
+        cat > entitlements.plist << EOF
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>com.apple.security.cs.allow-jit</key>
+            <true/>
+            <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+            <true/>
+            <key>com.apple.security.cs.disable-library-validation</key>
+            <true/>
+        </dict>
+        </plist>
+        EOF
+        
+        # Create temporary keychain
+        security create-keychain -p github-actions build.keychain
+        security default-keychain -s build.keychain
+        security unlock-keychain -p github-actions build.keychain
+        
+        # Create self-signed certificate
+        security create-certificate-authority \
+          --years 1 \
+          --subject "CN=Developer ID Application" \
+          --keychain build.keychain
+        
+        # Find the certificate
+        CERT_ID=$(security find-certificate -a build.keychain | grep "Developer ID Application" -A 1 | grep "SHA-1" | awk '{print $3}')
+        
+        # Sign the app bundle
+        codesign --force --deep --options runtime \
+          --entitlements entitlements.plist \
+          --sign "$CERT_ID" \
+          --timestamp \
+          "Doc-Converter.app"
         
         # Create zip of the app bundle
-        zip -r Doc-Converter-Intel.app.zip Doc-Converter.app
+        ditto -c -k --keepParent "Doc-Converter.app" "Doc-Converter-Intel.app.zip"
         
-        # Create artifacts directory
+        # Create artifacts directory and copy zip
         mkdir -p artifacts/doc_converter-macos-intel
-        
-        # Copy zip to artifacts
         cp Doc-Converter-Intel.app.zip artifacts/doc_converter-macos-intel/
-
+    
     - name: Upload macOS Intel Artifact
       uses: actions/upload-artifact@v4
       with:
