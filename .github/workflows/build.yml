@@ -15,12 +15,6 @@ jobs:
   build-macos-intel:
     runs-on: macos-13
     steps:
-    - name: Upgrade Git
-      run: |
-        brew update
-        brew upgrade git
-        git --version
-
     - uses: actions/checkout@v4
       with:
         fetch-depth: 1
@@ -30,46 +24,11 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: '3.10'
-        architecture: x64
-        cache: 'pip'
 
-    - name: Install system dependencies
+    - name: Install Dependencies
       run: |
-        # Upgrade pip and setuptools to latest versions
-        python3 -m pip install --upgrade pip setuptools wheel
-        
-        # Install build dependencies with specific versions
-        python3 -m pip install \
-          'pyinstaller==6.11.1' \
-          'pyobjc-framework-Cocoa==10.2' \
-          'python-docx==1.0.1' \
-          'lxml==4.9.3'
-
-    - name: Install Tkinter
-      run: |
-        # Install Tkinter for macOS
-        brew install python-tk@3.10
-        # Explicitly link Tkinter
-        ln -s /usr/local/opt/python@3.10/Frameworks/Python.framework/Versions/3.10/lib/python3.10/tkinter /Users/runner/hostedtoolcache/Python/3.10.15/x64/lib/python3.10/tkinter
-        python3 -m pip install tk
-
-    - name: Install project dependencies
-      run: |
-        # Use --no-deps to prevent potential conflicts
-        python3 -m pip install -r requirements.txt --no-deps
-        
-        # Verify installed packages
-        python3 -m pip list
-
-    - name: Prepare Build Environment
-      run: |
-        # Create build directories with architecture-specific names
-        BUILD_DIR="build/macos-intel-py3.10"
-        mkdir -p "$BUILD_DIR"
-        
-        # Set environment variables for consistent builds
-        echo "PYTHONPATH=$PYTHONPATH:$(pwd)" >> "$GITHUB_ENV"
-        echo "BUILD_DIR=$BUILD_DIR" >> "$GITHUB_ENV"
+        python -m pip install --upgrade pip
+        pip install pyinstaller python-docx lxml
 
     - name: Build macOS Intel Executable
       env:
@@ -85,6 +44,7 @@ jobs:
           --distpath "$BUILD_DIR" \
           --add-binary "/System/Library/Frameworks/Tk.framework/Tk:Tk" \
           --add-binary "/System/Library/Frameworks/Tcl.framework/Tcl:Tcl" \
+          --osx-bundle-identifier "com.mschemer.docconverter" \
           doc_converter_gui.py
 
     - name: Prepare macOS Intel Artifact
@@ -104,19 +64,32 @@ jobs:
           exit 1
         fi
         
+        # Create Info.plist with additional metadata
+        PLIST="Doc-Converter-Intel.app/Contents/Info.plist"
+        /usr/libexec/PlistBuddy -c "Add :CFBundleIdentifier string com.mschemer.docconverter" "$PLIST"
+        /usr/libexec/PlistBuddy -c "Add :CFBundleName string 'Doc Converter'" "$PLIST"
+        /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string 'Doc Converter'" "$PLIST"
+        /usr/libexec/PlistBuddy -c "Add :CFBundleVersion string 1.0.0" "$PLIST"
+        /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string 1.0.0" "$PLIST"
+        /usr/libexec/PlistBuddy -c "Add :NSHumanReadableCopyright string ' 2024 M. Schemer'" "$PLIST"
+        
         # Repair .app bundle permissions
         chmod -R 755 "Doc-Converter-Intel.app"
         
-        # Create ad-hoc code signing certificate
+        # Create ad-hoc signing certificate
         security create-keychain -p "" build.keychain
         security default-keychain -s build.keychain
         security unlock-keychain -p "" build.keychain
         
-        # Ad-hoc sign the application
-        codesign --force --deep --sign - "Doc-Converter-Intel.app"
+        # Ad-hoc sign the application with deep signing and entitlements
+        codesign --force --deep \
+          --sign - \
+          --options runtime \
+          --entitlements /dev/null \
+          "Doc-Converter-Intel.app"
         
         # Verify code signing
-        codesign --verify --verbose "Doc-Converter-Intel.app"
+        codesign --verify --verbose --strict "Doc-Converter-Intel.app"
         
         # Create a tar.gz of the entire .app bundle with full path preservation
         tar -czvf "../Doc-Converter-Intel.tar.gz" "Doc-Converter-Intel.app"
@@ -138,12 +111,6 @@ jobs:
   build-macos-silicon:
     runs-on: macos-14
     steps:
-    - name: Upgrade Git
-      run: |
-        brew update
-        brew upgrade git
-        git --version
-
     - uses: actions/checkout@v4
       with:
         fetch-depth: 1
@@ -153,47 +120,11 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: '3.10'
-        cache: 'pip'
 
-    - name: Install system dependencies
+    - name: Install Dependencies
       run: |
-        # Upgrade pip and setuptools to latest versions
-        python3 -m pip install --upgrade pip setuptools wheel
-        
-        # Install build dependencies with specific versions
-        arch -x86_64 python3 -m pip install \
-          'pyinstaller==6.11.1' \
-          'pyobjc-framework-Cocoa==10.2' \
-          'python-docx==1.0.1' \
-          'lxml==4.9.3'
-
-    - name: Install Tkinter
-      run: |
-        # Install Tkinter for macOS
-        brew install python-tk@3.10
-        # Create tkinter directory if it doesn't exist
-        mkdir -p /Users/runner/hostedtoolcache/Python/3.10.15/arm64/lib/python3.10/
-        # Explicitly link Tkinter
-        ln -s /opt/homebrew/Cellar/python-tk@3.10/3.10.15_1/libexec/tkinter /Users/runner/hostedtoolcache/Python/3.10.15/arm64/lib/python3.10/tkinter
-        python3 -m pip install tk
-
-    - name: Install project dependencies
-      run: |
-        # Use --no-deps to prevent potential conflicts
-        arch -x86_64 python3 -m pip install -r requirements.txt --no-deps
-        
-        # Verify installed packages
-        arch -x86_64 python3 -m pip list
-
-    - name: Prepare Build Environment
-      run: |
-        # Create build directories with architecture-specific names
-        BUILD_DIR="build/macos-silicon-py3.10"
-        mkdir -p "$BUILD_DIR"
-        
-        # Set environment variables for consistent builds
-        echo "PYTHONPATH=$PYTHONPATH:$(pwd)" >> "$GITHUB_ENV"
-        echo "BUILD_DIR=$BUILD_DIR" >> "$GITHUB_ENV"
+        python -m pip install --upgrade pip
+        pip install pyinstaller python-docx lxml
 
     - name: Build macOS Silicon Executable
       env:
@@ -209,6 +140,7 @@ jobs:
           --distpath "$BUILD_DIR" \
           --add-binary "/System/Library/Frameworks/Tk.framework/Tk:Tk" \
           --add-binary "/System/Library/Frameworks/Tcl.framework/Tcl:Tcl" \
+          --osx-bundle-identifier "com.mschemer.docconverter" \
           doc_converter_gui.py
 
     - name: Prepare macOS Silicon Artifact
@@ -228,19 +160,32 @@ jobs:
           exit 1
         fi
         
+        # Create Info.plist with additional metadata
+        PLIST="Doc-Converter-Silicon.app/Contents/Info.plist"
+        /usr/libexec/PlistBuddy -c "Add :CFBundleIdentifier string com.mschemer.docconverter" "$PLIST"
+        /usr/libexec/PlistBuddy -c "Add :CFBundleName string 'Doc Converter'" "$PLIST"
+        /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string 'Doc Converter'" "$PLIST"
+        /usr/libexec/PlistBuddy -c "Add :CFBundleVersion string 1.0.0" "$PLIST"
+        /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string 1.0.0" "$PLIST"
+        /usr/libexec/PlistBuddy -c "Add :NSHumanReadableCopyright string ' 2024 M. Schemer'" "$PLIST"
+        
         # Repair .app bundle permissions
         chmod -R 755 "Doc-Converter-Silicon.app"
         
-        # Create ad-hoc code signing certificate
+        # Create ad-hoc signing certificate
         security create-keychain -p "" build.keychain
         security default-keychain -s build.keychain
         security unlock-keychain -p "" build.keychain
         
-        # Ad-hoc sign the application
-        codesign --force --deep --sign - "Doc-Converter-Silicon.app"
+        # Ad-hoc sign the application with deep signing and entitlements
+        codesign --force --deep \
+          --sign - \
+          --options runtime \
+          --entitlements /dev/null \
+          "Doc-Converter-Silicon.app"
         
         # Verify code signing
-        codesign --verify --verbose "Doc-Converter-Silicon.app"
+        codesign --verify --verbose --strict "Doc-Converter-Silicon.app"
         
         # Create a tar.gz of the entire .app bundle with full path preservation
         tar -czvf "../Doc-Converter-Silicon.tar.gz" "Doc-Converter-Silicon.app"

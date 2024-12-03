@@ -16,5 +16,5 @@ pypandoc==1.11; platform_system == "Linux"  # Python interface for Pandoc
 
 # Build and packaging dependencies
 pyinstaller==6.11.1
-setuptools==69.2.0
+setuptools==70.0.0
 wheel==0.43.0
