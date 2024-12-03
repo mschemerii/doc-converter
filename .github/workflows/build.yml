@@ -21,6 +21,12 @@ jobs:
         fetch-depth: 1
         submodules: false
 
+    - name: Prepare entitlements file
+      run: |
+        # Copy entitlements file to a known location
+        cp macos_entitlements.xml /tmp/macos_entitlements.xml
+        cat /tmp/macos_entitlements.xml
+
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
@@ -84,7 +90,7 @@ jobs:
         chmod -R 755 "Doc-Converter-MacOS-Intel.app"
         
         # Simplify code signing process
-        codesign --force --deep --sign - --options runtime --entitlements /github/workspace/macos_entitlements.xml "Doc-Converter-MacOS-Intel.app"
+        codesign --force --deep --sign - --options runtime --entitlements /tmp/macos_entitlements.xml "Doc-Converter-MacOS-Intel.app"
         codesign --verify --verbose "Doc-Converter-MacOS-Intel.app"
         
         # Create a tar.gz of the entire .app bundle with full path preservation
@@ -112,6 +118,12 @@ jobs:
       with:
         fetch-depth: 1
         submodules: false
+
+    - name: Prepare entitlements file
+      run: |
+        # Copy entitlements file to a known location
+        cp macos_entitlements.xml /tmp/macos_entitlements.xml
+        cat /tmp/macos_entitlements.xml
 
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -176,7 +188,7 @@ jobs:
         chmod -R 755 "Doc-Converter-MacOS-Silicon.app"
         
         # Simplify code signing process
-        codesign --force --deep --sign - --options runtime --entitlements /github/workspace/macos_entitlements.xml "Doc-Converter-MacOS-Silicon.app"
+        codesign --force --deep --sign - --options runtime --entitlements /tmp/macos_entitlements.xml "Doc-Converter-MacOS-Silicon.app"
         codesign --verify --verbose "Doc-Converter-MacOS-Silicon.app"
         
         # Create a tar.gz of the entire .app bundle with full path preservation
