@@ -33,7 +33,7 @@ jobs:
         python3 -m pip install --upgrade pip setuptools wheel
         
         # Install build dependencies with specific versions
-        python3 -m pip install \
+        arch -x86_64 python3 -m pip install \
           'pyinstaller==6.11.1' \
           'pyobjc-framework-Cocoa==10.2' \
           'python-docx==1.0.1' \
@@ -42,16 +42,26 @@ jobs:
     - name: Install Tkinter
       run: |
         # Install Tkinter for macOS
-        brew install python-tk@3.10
-        python3.10 -m pip install tk
+        arch -x86_64 brew install python-tk@3.10
+        arch -x86_64 python3.10 -m pip install tk
 
     - name: Install project dependencies
       run: |
         # Use --no-deps to prevent potential conflicts
-        python3 -m pip install -r requirements.txt --no-deps
+        arch -x86_64 python3 -m pip install -r requirements.txt --no-deps
         
         # Verify installed packages
-        python3 -m pip list
+        arch -x86_64 python3 -m pip list
+
+    - name: Verify Architecture
+      run: |
+        # Explicitly check and print architecture
+        echo "Current Architecture:"
+        uname -m
+        echo "Python Architecture:"
+        python3 -c "import platform; print(platform.machine())"
+        echo "Pip Architecture:"
+        python3 -m pip config debug
 
     - name: Prepare Build Environment
       run: |
@@ -71,8 +81,8 @@ jobs:
         BUILD_DIR="build/macos-intel-py3.10"
         mkdir -p "$BUILD_DIR"
         
-        # Build command here
-        pyinstaller --clean --noconfirm --windowed \
+        # Build command here with arch specification
+        arch -x86_64 pyinstaller --clean --noconfirm --windowed \
           --name "Doc-Converter-Intel" \
           doc_converter_gui.py
         
@@ -113,7 +123,7 @@ jobs:
         python3 -m pip install --upgrade pip setuptools wheel
         
         # Install build dependencies with specific versions
-        python3 -m pip install \
+        arch -x86_64 python3 -m pip install \
           'pyinstaller==6.11.1' \
           'pyobjc-framework-Cocoa==10.2' \
           'python-docx==1.0.1' \
@@ -122,16 +132,26 @@ jobs:
     - name: Install Tkinter
       run: |
         # Install Tkinter for macOS
-        brew install python-tk@3.10
-        python3.10 -m pip install tk
+        arch -x86_64 brew install python-tk@3.10
+        arch -x86_64 python3.10 -m pip install tk
 
     - name: Install project dependencies
       run: |
         # Use --no-deps to prevent potential conflicts
-        python3 -m pip install -r requirements.txt --no-deps
+        arch -x86_64 python3 -m pip install -r requirements.txt --no-deps
         
         # Verify installed packages
-        python3 -m pip list
+        arch -x86_64 python3 -m pip list
+
+    - name: Verify Architecture
+      run: |
+        # Explicitly check and print architecture
+        echo "Current Architecture:"
+        uname -m
+        echo "Python Architecture:"
+        python3 -c "import platform; print(platform.machine())"
+        echo "Pip Architecture:"
+        python3 -m pip config debug
 
     - name: Prepare Build Environment
       run: |
@@ -201,6 +221,16 @@ jobs:
       run: |
         python -m pip install -r requirements.txt --no-deps
         python -m pip list
+
+    - name: Verify Architecture
+      run: |
+        # Explicitly check and print architecture
+        echo "Current Architecture:"
+        wmic os get osarchitecture
+        echo "Python Architecture:"
+        python -c "import platform; print(platform.machine())"
+        echo "Pip Architecture:"
+        python -m pip config debug
 
     - name: Prepare Build Environment
       run: |
