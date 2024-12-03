@@ -78,16 +78,12 @@ jobs:
         pyinstaller --clean --noconfirm --windowed \
           --name "Doc-Converter-Intel" \
           doc_converter_gui.py
-        
-        # Zip the application bundle
-        cd build/macos-intel-py3.10
-        zip -r Doc-Converter-Intel.app.zip Doc-Converter-Intel.app
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: doc-converter-macos-intel
-        path: build/macos-intel-py3.10/Doc-Converter-Intel.app.zip
+        path: build/macos-intel-py3.10/Doc-Converter-Intel.app
         retention-days: 7
 
   build-macos-silicon:
@@ -160,16 +156,12 @@ jobs:
         pyinstaller --clean --noconfirm --windowed \
           --name "Doc-Converter-Silicon" \
           doc_converter_gui.py
-        
-        # Zip the application bundle
-        cd build/macos-silicon-py3.10
-        zip -r Doc-Converter-Silicon.app.zip Doc-Converter-Silicon.app
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: doc-converter-macos-silicon
-        path: build/macos-silicon-py3.10/Doc-Converter-Silicon.app.zip
+        path: build/macos-silicon-py3.10/Doc-Converter-Silicon.app
         retention-days: 7
 
   build-windows:
@@ -216,16 +208,12 @@ jobs:
         pyinstaller --clean --noconfirm --windowed `
           --name "Doc-Converter-Windows-${{ matrix.architecture }}" `
           doc_converter_gui.py
-        
-        # Zip the executable
-        cd build\windows-${{ matrix.architecture }}
-        Compress-Archive -Path ".\Doc-Converter-Windows-${{ matrix.architecture }}.exe" -DestinationPath "Doc-Converter-Windows-${{ matrix.architecture }}.zip"
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: doc-converter-windows-${{ matrix.architecture }}
-        path: build\windows-${{ matrix.architecture }}\Doc-Converter-Windows-${{ matrix.architecture }}.zip
+        path: build\windows-${{ matrix.architecture }}\Doc-Converter-Windows-${{ matrix.architecture }}.exe
         retention-days: 7
 
   release:
