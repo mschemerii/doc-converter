@@ -200,14 +200,28 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Set up Python and build tools
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+
+    - name: Install system dependencies
       run: |
-        dnf install -y python3 python3-pip rpm-build
-        alternatives --set python3 /usr/bin/python3
-    
+        sudo dnf update -y
+        sudo dnf install -y python3 python3-pip rpm-build
+        
+        # Ensure Python 3.12 is the default
+        sudo alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1
+        sudo alternatives --set python3 /usr/bin/python3.12
+
+    - name: Verify Python installation
+      run: |
+        python3 --version
+        python3 -m pip --version
+
     - name: Install dependencies
       run: |
-        python3 -m pip install --upgrade pip
         python3 -m pip install -r requirements.txt
         python3 -m pip install pyinstaller
     
@@ -281,14 +295,28 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Set up Python and build tools
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+
+    - name: Install system dependencies
       run: |
-        dnf install -y python3 python3-pip rpm-build
-        alternatives --set python3 /usr/bin/python3
-    
+        sudo dnf update -y
+        sudo dnf install -y python3 python3-pip rpm-build
+        
+        # Ensure Python 3.12 is the default
+        sudo alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1
+        sudo alternatives --set python3 /usr/bin/python3.12
+
+    - name: Verify Python installation
+      run: |
+        python3 --version
+        python3 -m pip --version
+
     - name: Install dependencies
       run: |
-        python3 -m pip install --upgrade pip
         python3 -m pip install -r requirements.txt
         python3 -m pip install pyinstaller
     
@@ -360,17 +388,18 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Set up Python and build tools
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+
+    - name: Install system dependencies
       run: |
-        sudo add-apt-repository ppa:deadsnakes/ppa -y
         sudo apt-get update
-        sudo apt-get install -y python3.12 python3.12-dev python3.12-distutils python3.12-venv python3-pip ruby-dev build-essential
-        sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1
-        sudo update-alternatives --set python3 /usr/bin/python3.12
-        curl -sS https://bootstrap.pypa.io/get-pip.py | python3.12
-        python3.12 -m pip install --upgrade pip
+        sudo apt-get install -y ruby-dev build-essential
         sudo gem install fpm
-    
+
     - name: Install dependencies
       run: |
         python3 -m pip install -r requirements.txt
@@ -379,11 +408,6 @@ jobs:
     - name: Build Ubuntu DEB Package
       run: |
         mkdir -p artifacts/doc_converter-ubuntu-20-04
-        # Install FPM and other dependencies
-        sudo apt-get update
-        sudo apt-get install -y ruby-dev build-essential
-        sudo gem install fpm
-        
         # Install Python dependencies
         python3 -m pip install -r requirements.txt
         python3 -m pip install pyinstaller
@@ -416,17 +440,18 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Set up Python and build tools
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+
+    - name: Install system dependencies
       run: |
-        sudo add-apt-repository ppa:deadsnakes/ppa -y
         sudo apt-get update
-        sudo apt-get install -y python3.12 python3.12-dev python3.12-distutils python3.12-venv python3-pip ruby-dev build-essential
-        sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1
-        sudo update-alternatives --set python3 /usr/bin/python3.12
-        curl -sS https://bootstrap.pypa.io/get-pip.py | python3.12
-        python3.12 -m pip install --upgrade pip
+        sudo apt-get install -y ruby-dev build-essential
         sudo gem install fpm
-    
+
     - name: Install dependencies
       run: |
         python3 -m pip install -r requirements.txt
@@ -435,11 +460,6 @@ jobs:
     - name: Build Ubuntu DEB Package
       run: |
         mkdir -p artifacts/doc_converter-ubuntu-22-04
-        # Install FPM and other dependencies
-        sudo apt-get update
-        sudo apt-get install -y ruby-dev build-essential
-        sudo gem install fpm
-        
         # Install Python dependencies
         python3 -m pip install -r requirements.txt
         python3 -m pip install pyinstaller
@@ -472,17 +492,18 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Set up Python and build tools
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+
+    - name: Install system dependencies
       run: |
-        sudo add-apt-repository ppa:deadsnakes/ppa -y
         sudo apt-get update
-        sudo apt-get install -y python3.12 python3.12-dev python3.12-distutils python3.12-venv python3-pip ruby-dev build-essential
-        sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1
-        sudo update-alternatives --set python3 /usr/bin/python3.12
-        curl -sS https://bootstrap.pypa.io/get-pip.py | python3.12
-        python3.12 -m pip install --upgrade pip
+        sudo apt-get install -y ruby-dev build-essential
         sudo gem install fpm
-    
+
     - name: Install dependencies
       run: |
         python3 -m pip install -r requirements.txt
@@ -491,11 +512,6 @@ jobs:
     - name: Build Ubuntu DEB Package
       run: |
         mkdir -p artifacts/doc_converter-ubuntu-24-04
-        # Install FPM and other dependencies
-        sudo apt-get update
-        sudo apt-get install -y ruby-dev build-essential
-        sudo gem install fpm
-        
         # Install Python dependencies
         python3 -m pip install -r requirements.txt
         python3 -m pip install pyinstaller
