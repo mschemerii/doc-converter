@@ -75,7 +75,7 @@ jobs:
             <key>CFBundleIconFile</key>
             <string>AppIcon</string>
             <key>CFBundleIdentifier</key>
-            <string>com.docconverter.app</string>
+            <string>com.docconverter.app.intel</string>
             <key>CFBundleName</key>
             <string>Doc Converter</string>
             <key>CFBundlePackageType</key>
@@ -84,14 +84,23 @@ jobs:
             <string>1.0</string>
             <key>CFBundleVersion</key>
             <string>1</string>
+            <key>LSMinimumSystemVersion</key>
+            <string>10.15</string>
+            <key>NSHighResolutionCapable</key>
+            <true/>
             <key>NSPrincipalClass</key>
             <string>NSApplication</string>
         </dict>
         </plist>
         EOF
         
-        # Build executable
-        python3 -m PyInstaller --name "Doc-Converter" --onefile --windowed doc_converter_gui.py
+        # Build executable for x86_64 architecture
+        arch -x86_64 python3 -m PyInstaller \
+            --name "Doc-Converter" \
+            --onefile \
+            --windowed \
+            --target-architecture x86_64 \
+            doc_converter_gui.py
         
         # Move executable to app bundle
         cp dist/Doc-Converter "$APP_NAME/Contents/MacOS/"
@@ -143,7 +152,7 @@ jobs:
             <key>CFBundleIconFile</key>
             <string>AppIcon</string>
             <key>CFBundleIdentifier</key>
-            <string>com.docconverter.app</string>
+            <string>com.docconverter.app.silicon</string>
             <key>CFBundleName</key>
             <string>Doc Converter</string>
             <key>CFBundlePackageType</key>
@@ -152,14 +161,23 @@ jobs:
             <string>1.0</string>
             <key>CFBundleVersion</key>
             <string>1</string>
+            <key>LSMinimumSystemVersion</key>
+            <string>11.0</string>
+            <key>NSHighResolutionCapable</key>
+            <true/>
             <key>NSPrincipalClass</key>
             <string>NSApplication</string>
         </dict>
         </plist>
         EOF
         
-        # Build executable
-        arch -arm64 python3 -m PyInstaller --name "Doc-Converter" --onefile --windowed doc_converter_gui.py
+        # Build executable for arm64 architecture
+        arch -arm64 python3 -m PyInstaller \
+            --name "Doc-Converter" \
+            --onefile \
+            --windowed \
+            --target-architecture arm64 \
+            doc_converter_gui.py
         
         # Move executable to app bundle
         cp dist/Doc-Converter "$APP_NAME/Contents/MacOS/"
@@ -408,10 +426,58 @@ jobs:
         fi
         echo "tag_name=$TAG" >> $GITHUB_OUTPUT
     
-    - name: Download all artifacts
+    - name: Download Windows Artifact
       uses: actions/download-artifact@v4
       with:
-        path: artifacts
+        name: doc_converter-windows
+        path: artifacts/doc_converter-windows
+
+    - name: Download macOS Intel Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: doc_converter-macos-intel
+        path: artifacts/doc_converter-macos-intel
+
+    - name: Download macOS Silicon Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: doc_converter-macos-silicon
+        path: artifacts/doc_converter-macos-silicon
+
+    - name: Download Oracle Linux 8 Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: doc_converter-ol8
+        path: artifacts/doc_converter-ol8
+
+    - name: Download Oracle Linux 9 Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: doc_converter-ol9
+        path: artifacts/doc_converter-ol9
+
+    - name: Download Ubuntu 24.04 Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: doc_converter-ubuntu-24-04
+        path: artifacts/doc_converter-ubuntu-24-04
+
+    - name: Download Ubuntu 22.04 Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: doc_converter-ubuntu-22-04
+        path: artifacts/doc_converter-ubuntu-22-04
+
+    - name: Download Ubuntu 20.04 Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: doc_converter-ubuntu-20-04
+        path: artifacts/doc_converter-ubuntu-20-04
+
+    - name: List Downloaded Artifacts
+      run: |
+        echo "Listing downloaded artifacts:"
+        find artifacts -type f
 
   create-release:
     needs: 
