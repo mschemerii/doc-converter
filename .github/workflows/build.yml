@@ -200,16 +200,67 @@ jobs:
       - build-macos-silicon
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download Windows Artifact
+        uses: actions/download-artifact@v4
         with:
-          path: artifacts
-          merge-multiple: true
-      
+          name: doc_converter-windows
+          path: artifacts/doc_converter-windows
+
+      - name: Download macOS Intel Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: doc_converter-macos-intel
+          path: artifacts/doc_converter-macos-intel
+
+      - name: Download macOS Silicon Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: doc_converter-macos-silicon
+          path: artifacts/doc_converter-macos-silicon
+
+      - name: List artifacts
+        run: find artifacts -type f
+
       - name: Create Release
-        uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          files: |
-            artifacts/doc_converter-windows/Doc-Converter.exe
-            artifacts/doc_converter-macos-intel/Doc-Converter-Intel.app.zip
-            artifacts/doc_converter-macos-silicon/Doc-Converter-Silicon.app.zip
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Windows Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: artifacts/doc_converter-windows/Doc-Converter.exe
+          asset_name: Doc-Converter-Windows.exe
+          asset_content_type: application/octet-stream
+
+      - name: Upload macOS Intel Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: artifacts/doc_converter-macos-intel/Doc-Converter-Intel.app.zip
+          asset_name: Doc-Converter-macOS-Intel.app.zip
+          asset_content_type: application/zip
+
+      - name: Upload macOS Silicon Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: artifacts/doc_converter-macos-silicon/Doc-Converter-Silicon.app.zip
+          asset_name: Doc-Converter-macOS-Silicon.app.zip
+          asset_content_type: application/zip
