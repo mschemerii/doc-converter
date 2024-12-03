@@ -63,39 +63,6 @@ jobs:
         mkdir -p "Doc-Converter.app/Contents/MacOS"
         mkdir -p "Doc-Converter.app/Contents/Resources"
         
-        # Create temporary keychain
-        security create-keychain -p github-actions build.keychain
-        security list-keychains -d user -s build.keychain $(security list-keychains -d user | xargs)
-        security default-keychain -s build.keychain
-        security unlock-keychain -p github-actions build.keychain
-        security set-keychain-settings -t 3600 -u build.keychain
-
-        # Generate private key and certificate
-        openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-          -keyout build.key -out build.crt \
-          -subj "/CN=Doc Converter/O=Self-Signed/C=US"
-
-        # Convert to p12 format
-        openssl pkcs12 -export \
-          -in build.crt \
-          -inkey build.key \
-          -out build.p12 \
-          -name "Doc Converter" \
-          -passout pass:github-actions
-
-        # Import certificate to keychain
-        security import build.p12 -k build.keychain -P github-actions \
-          -T /usr/bin/codesign \
-          -A
-
-        # Update keychain settings
-        security set-key-partition-list -S apple-tool:,apple:,codesign: -s \
-          -k github-actions -D "Doc Converter" build.keychain
-
-        # List certificates to verify
-        echo "Available certificates for signing:"
-        security find-identity -v -p codesigning build.keychain
-
         # Build the executable with x86_64 architecture
         arch -x86_64 python -m PyInstaller \
           --name "Doc-Converter" \
@@ -103,7 +70,7 @@ jobs:
           --target-arch x86_64 \
           --distpath "Doc-Converter.app/Contents/MacOS" \
           doc_converter_gui.py
-        
+
         # Create Info.plist
         cat > "Doc-Converter.app/Contents/Info.plist" << EOF
         <?xml version="1.0" encoding="UTF-8"?>
@@ -136,12 +103,8 @@ jobs:
         </plist>
         EOF
 
-        # Sign the app bundle
-        codesign --force --deep --options runtime \
-          --sign "Doc Converter" \
-          --keychain build.keychain \
-          --verbose \
-          "Doc-Converter.app"
+        # Sign with ad-hoc signature
+        codesign --force --deep --sign - "Doc-Converter.app"
 
         # Verify signing
         codesign -vv --deep --strict "Doc-Converter.app"
