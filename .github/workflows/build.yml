@@ -64,15 +64,29 @@ jobs:
           exit 1
         fi
         
-        # Create Info.plist with additional metadata
+        # Create Info.plist if it doesn't exist
         PLIST="Doc-Converter-Intel.app/Contents/Info.plist"
+        if [ ! -f "$PLIST" ]; then
+          echo "Creating new Info.plist"
+          /usr/libexec/PlistBuddy -c "Add :CFBundlePackageType string APPL" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleExecutable string Doc-Converter-Intel" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleName string 'Doc Converter'" "$PLIST"
+        fi
         
-        # Use Set commands instead of Add to modify existing entries
+        # Set or add Info.plist entries
+        /usr/libexec/PlistBuddy -c "Add :CFBundleIdentifier string com.mschemer.docconverter" "$PLIST" || \
         /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier com.mschemer.docconverter" "$PLIST"
-        /usr/libexec/PlistBuddy -c "Set :CFBundleName 'Doc Converter'" "$PLIST"
+        
+        /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string 'Doc Converter'" "$PLIST" || \
         /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName 'Doc Converter'" "$PLIST"
+        
+        /usr/libexec/PlistBuddy -c "Add :CFBundleVersion string 1.0.0" "$PLIST" || \
         /usr/libexec/PlistBuddy -c "Set :CFBundleVersion 1.0.0" "$PLIST"
+        
+        /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string 1.0.0" "$PLIST" || \
         /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.0.0" "$PLIST"
+        
+        /usr/libexec/PlistBuddy -c "Add :NSHumanReadableCopyright string ' 2024 M. Schemer'" "$PLIST" || \
         /usr/libexec/PlistBuddy -c "Set :NSHumanReadableCopyright ' 2024 M. Schemer'" "$PLIST"
         
         # Repair .app bundle permissions
@@ -162,15 +176,29 @@ jobs:
           exit 1
         fi
         
-        # Create Info.plist with additional metadata
+        # Create Info.plist if it doesn't exist
         PLIST="Doc-Converter-Silicon.app/Contents/Info.plist"
+        if [ ! -f "$PLIST" ]; then
+          echo "Creating new Info.plist"
+          /usr/libexec/PlistBuddy -c "Add :CFBundlePackageType string APPL" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleExecutable string Doc-Converter-Silicon" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleName string 'Doc Converter'" "$PLIST"
+        fi
         
-        # Use Set commands instead of Add to modify existing entries
+        # Set or add Info.plist entries
+        /usr/libexec/PlistBuddy -c "Add :CFBundleIdentifier string com.mschemer.docconverter" "$PLIST" || \
         /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier com.mschemer.docconverter" "$PLIST"
-        /usr/libexec/PlistBuddy -c "Set :CFBundleName 'Doc Converter'" "$PLIST"
+        
+        /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string 'Doc Converter'" "$PLIST" || \
         /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName 'Doc Converter'" "$PLIST"
+        
+        /usr/libexec/PlistBuddy -c "Add :CFBundleVersion string 1.0.0" "$PLIST" || \
         /usr/libexec/PlistBuddy -c "Set :CFBundleVersion 1.0.0" "$PLIST"
+        
+        /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string 1.0.0" "$PLIST" || \
         /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.0.0" "$PLIST"
+        
+        /usr/libexec/PlistBuddy -c "Add :NSHumanReadableCopyright string ' 2024 M. Schemer'" "$PLIST" || \
         /usr/libexec/PlistBuddy -c "Set :NSHumanReadableCopyright ' 2024 M. Schemer'" "$PLIST"
         
         # Repair .app bundle permissions
