@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    tags:
+      - 'v*'
 
 permissions:
   contents: write
@@ -11,6 +13,32 @@ permissions:
   actions: write
 
 jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      tag_name: ${{ steps.get_tag.outputs.tag_name }}
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Get tag
+      id: get_tag
+      run: |
+        # Get the latest tag or use a default
+        TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.1.0")
+        echo "tag_name=$TAG" >> $GITHUB_OUTPUT
+    
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.get_tag.outputs.tag_name }}
+        release_name: Release ${{ steps.get_tag.outputs.tag_name }}
+        draft: false
+        prerelease: false
+
   build-windows:
     runs-on: windows-latest
     steps:
@@ -55,6 +83,7 @@ jobs:
         path: artifacts/doc_converter-windows/Doc-Converter.exe
 
   build-macos-intel:
+    needs: create-release
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v4
@@ -68,24 +97,6 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install pyinstaller
-    
-    - name: Get tag
-      id: tag
-      run: |
-        # Get the latest tag or use a default
-        TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.1.0")
-        echo "tag_name=$TAG" >> $GITHUB_OUTPUT
-    
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ steps.tag.outputs.tag_name }}
-        release_name: Release ${{ steps.tag.outputs.tag_name }}
-        draft: false
-        prerelease: false
     
     - name: Build macOS Intel
       run: |
@@ -161,14 +172,14 @@ jobs:
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
       with:
-        upload_url: ${{ env.UPLOAD_URL }}
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
         asset_path: artifacts/doc_converter-macos-intel/Doc-Converter-Intel.app.zip
-        asset_name: Doc-Converter-Intel-${{ steps.tag.outputs.tag_name }}.app.zip
+        asset_name: Doc-Converter-Intel-${{ needs.create-release.outputs.tag_name }}.app.zip
         asset_content_type: application/zip
-  
+
   build-macos-silicon:
+    needs: create-release
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v4
@@ -182,24 +193,6 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install pyinstaller
-    
-    - name: Get tag
-      id: tag
-      run: |
-        # Get the latest tag or use a default
-        TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.1.0")
-        echo "tag_name=$TAG" >> $GITHUB_OUTPUT
-    
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ steps.tag.outputs.tag_name }}
-        release_name: Release ${{ steps.tag.outputs.tag_name }}
-        draft: false
-        prerelease: false
     
     - name: Build macOS Silicon
       run: |
@@ -275,13 +268,12 @@ jobs:
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
       with:
-        upload_url: ${{ env.UPLOAD_URL }}
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
         asset_path: artifacts/doc_converter-macos-silicon/Doc-Converter-Silicon.app.zip
-        asset_name: Doc-Converter-Silicon-${{ steps.tag.outputs.tag_name }}.app.zip
+        asset_name: Doc-Converter-Silicon-${{ needs.create-release.outputs.tag_name }}.app.zip
         asset_content_type: application/zip
-  
+
   build-oracle-linux-8:
     runs-on: ubuntu-latest
     container: 
@@ -501,24 +493,6 @@ jobs:
     permissions:
       contents: write
     steps:
-    - name: Generate release tag
-      id: tag
-      shell: bash
-      run: |
-        TAG_NAME="v$(date +'%Y.%m.%d-%H%M')"
-        echo "::set-output name=tag_name::${TAG_NAME}"
-
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ steps.tag.outputs.tag_name }}
-        release_name: Release ${{ steps.tag.outputs.tag_name }}
-        draft: false
-        prerelease: false
-
     - name: Download all artifacts
       uses: actions/download-artifact@v4
       with:
@@ -528,86 +502,86 @@ jobs:
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
+        UPLOAD_URL: ${{ needs.create-release.outputs.upload_url }}
       with:
         upload_url: ${{ env.UPLOAD_URL }}
         asset_path: artifacts/doc_converter-windows/Doc-Converter.exe
-        asset_name: Doc-Converter-Windows-${{ steps.tag.outputs.tag_name }}.exe
+        asset_name: Doc-Converter-Windows-${{ needs.create-release.outputs.tag_name }}.exe
         asset_content_type: application/octet-stream
 
     - name: Upload macOS Intel Artifact
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
+        UPLOAD_URL: ${{ needs.create-release.outputs.upload_url }}
       with:
         upload_url: ${{ env.UPLOAD_URL }}
         asset_path: artifacts/doc_converter-macos-intel/Doc-Converter-Intel.app.zip
-        asset_name: Doc-Converter-Intel-${{ steps.tag.outputs.tag_name }}.app.zip
+        asset_name: Doc-Converter-Intel-${{ needs.create-release.outputs.tag_name }}.app.zip
         asset_content_type: application/zip
 
     - name: Upload macOS Silicon Artifact
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
+        UPLOAD_URL: ${{ needs.create-release.outputs.upload_url }}
       with:
         upload_url: ${{ env.UPLOAD_URL }}
         asset_path: artifacts/doc_converter-macos-silicon/Doc-Converter-Silicon.app.zip
-        asset_name: Doc-Converter-Silicon-${{ steps.tag.outputs.tag_name }}.app.zip
+        asset_name: Doc-Converter-Silicon-${{ needs.create-release.outputs.tag_name }}.app.zip
         asset_content_type: application/zip
 
     - name: Upload Oracle Linux 8 Artifact
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
+        UPLOAD_URL: ${{ needs.create-release.outputs.upload_url }}
       with:
         upload_url: ${{ env.UPLOAD_URL }}
         asset_path: artifacts/doc_converter-ol8/Doc-Converter
-        asset_name: Doc-Converter-OL8-${{ steps.tag.outputs.tag_name }}.rpm
+        asset_name: Doc-Converter-OL8-${{ needs.create-release.outputs.tag_name }}.rpm
         asset_content_type: application/octet-stream
 
     - name: Upload Oracle Linux 9 Artifact
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
+        UPLOAD_URL: ${{ needs.create-release.outputs.upload_url }}
       with:
         upload_url: ${{ env.UPLOAD_URL }}
         asset_path: artifacts/doc_converter-ol9/Doc-Converter
-        asset_name: Doc-Converter-OL9-${{ steps.tag.outputs.tag_name }}.rpm
+        asset_name: Doc-Converter-OL9-${{ needs.create-release.outputs.tag_name }}.rpm
         asset_content_type: application/octet-stream
 
     - name: Upload Ubuntu 24.04 Artifact
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
+        UPLOAD_URL: ${{ needs.create-release.outputs.upload_url }}
       with:
         upload_url: ${{ env.UPLOAD_URL }}
         asset_path: artifacts/doc_converter-ubuntu-24-04/Doc-Converter
-        asset_name: Doc-Converter-Ubuntu-24-04-${{ steps.tag.outputs.tag_name }}.deb
+        asset_name: Doc-Converter-Ubuntu-24-04-${{ needs.create-release.outputs.tag_name }}.deb
         asset_content_type: application/octet-stream
 
     - name: Upload Ubuntu 22.04 Artifact
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
+        UPLOAD_URL: ${{ needs.create-release.outputs.upload_url }}
       with:
         upload_url: ${{ env.UPLOAD_URL }}
         asset_path: artifacts/doc_converter-ubuntu-22-04/Doc-Converter
-        asset_name: Doc-Converter-Ubuntu-22-04-${{ steps.tag.outputs.tag_name }}.deb
+        asset_name: Doc-Converter-Ubuntu-22-04-${{ needs.create-release.outputs.tag_name }}.deb
         asset_content_type: application/octet-stream
 
     - name: Upload Ubuntu 20.04 Artifact
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
+        UPLOAD_URL: ${{ needs.create-release.outputs.upload_url }}
       with:
         upload_url: ${{ env.UPLOAD_URL }}
         asset_path: artifacts/doc_converter-ubuntu-20-04/Doc-Converter
-        asset_name: Doc-Converter-Ubuntu-20-04-${{ steps.tag.outputs.tag_name }}.deb
+        asset_name: Doc-Converter-Ubuntu-20-04-${{ needs.create-release.outputs.tag_name }}.deb
         asset_content_type: application/octet-stream
