@@ -63,11 +63,15 @@ jobs:
         mkdir -p "Doc-Converter.app/Contents/MacOS"
         mkdir -p "Doc-Converter.app/Contents/Resources"
         
-        # Build the executable
-        pyinstaller --name "Doc-Converter" --windowed doc_converter_gui.py
+        # Build the executable with x86_64 architecture
+        arch -x86_64 python -m PyInstaller \
+          --name "Doc-Converter" \
+          --windowed \
+          --target-arch x86_64 \
+          doc_converter_gui.py
         
         # Copy the built executable to the app bundle
-        cp dist/Doc-Converter "Doc-Converter.app/Contents/MacOS/Doc-Converter"
+        cp -r dist/Doc-Converter/* "Doc-Converter.app/Contents/MacOS/"
         
         # Create Info.plist
         cat > "Doc-Converter.app/Contents/Info.plist" << EOF
@@ -89,6 +93,12 @@ jobs:
             <string>1.0</string>
             <key>CFBundleVersion</key>
             <string>1</string>
+            <key>LSArchitecturePriority</key>
+            <array>
+                <string>x86_64</string>
+            </array>
+            <key>LSMinimumSystemVersion</key>
+            <string>10.15</string>
             <key>NSHighResolutionCapable</key>
             <true/>
         </dict>
@@ -102,8 +112,8 @@ jobs:
         mkdir -p artifacts/doc_converter-macos-intel
         
         # Copy zip to artifacts
-        cp Doc-Converter-Intel.app.zip artifacts/doc_converter-macos-intel/Doc-Converter-Intel.app.zip
-    
+        cp Doc-Converter-Intel.app.zip artifacts/doc_converter-macos-intel/
+
     - name: Upload macOS Intel Artifact
       uses: actions/upload-artifact@v4
       with:
