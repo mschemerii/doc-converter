@@ -432,24 +432,7 @@ jobs:
           cp "$PLIST" "Doc-Converter-Intel.app/Contents/Info.plist"
         else
           echo "WARNING: No Info.plist found. Creating a basic one."
-          cat > "Doc-Converter-Intel.app/Contents/Info.plist" << EOL
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>CFBundleExecutable</key>
-    <string>Doc-Converter</string>
-    <key>CFBundleIdentifier</key>
-    <string>com.docconverter.macos</string>
-    <key>CFBundleName</key>
-    <string>Doc-Converter</string>
-    <key>CFBundleVersion</key>
-    <string>1.0</string>
-    <key>CFBundlePackageType</key>
-    <string>APPL</string>
-</dict>
-</plist>
-EOL
+          echo '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict><key>CFBundleExecutable</key><string>Doc-Converter</string><key>CFBundleIdentifier</key><string>com.docconverter.macos</string><key>CFBundleName</key><string>Doc-Converter</string><key>CFBundleVersion</key><string>1.0</string><key>CFBundlePackageType</key><string>APPL</string></dict></plist>' > "Doc-Converter-Intel.app/Contents/Info.plist"
         fi
         
         # Create zip of the .app bundle
@@ -540,24 +523,7 @@ EOL
           cp "$PLIST" "Doc-Converter-Silicon.app/Contents/Info.plist"
         else
           echo "WARNING: No Info.plist found. Creating a basic one."
-          cat > "Doc-Converter-Silicon.app/Contents/Info.plist" << EOL
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>CFBundleExecutable</key>
-    <string>Doc-Converter</string>
-    <key>CFBundleIdentifier</key>
-    <string>com.docconverter.macos</string>
-    <key>CFBundleName</key>
-    <string>Doc-Converter</string>
-    <key>CFBundleVersion</key>
-    <string>1.0</string>
-    <key>CFBundlePackageType</key>
-    <string>APPL</string>
-</dict>
-</plist>
-EOL
+          echo '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict><key>CFBundleExecutable</key><string>Doc-Converter</string><key>CFBundleIdentifier</key><string>com.docconverter.macos</string><key>CFBundleName</key><string>Doc-Converter</string><key>CFBundleVersion</key><string>1.0</string><key>CFBundlePackageType</key><string>APPL</string></dict></plist>' > "Doc-Converter-Silicon.app/Contents/Info.plist"
         fi
         
         # Create zip of the .app bundle
