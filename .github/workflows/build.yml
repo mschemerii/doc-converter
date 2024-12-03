@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-macos-intel:
-    runs-on: macos-14
+    runs-on: macos-13
     steps:
     - name: Upgrade Git
       run: |
@@ -25,6 +25,7 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: '3.10'
+        architecture: x64
         cache: 'pip'
 
     - name: Install system dependencies
@@ -33,7 +34,7 @@ jobs:
         python3 -m pip install --upgrade pip setuptools wheel
         
         # Install build dependencies with specific versions
-        arch -x86_64 python3 -m pip install \
+        python3 -m pip install \
           'pyinstaller==6.11.1' \
           'pyobjc-framework-Cocoa==10.2' \
           'python-docx==1.0.1' \
@@ -42,26 +43,16 @@ jobs:
     - name: Install Tkinter
       run: |
         # Install Tkinter for macOS
-        arch -x86_64 brew install python-tk@3.10
-        arch -x86_64 python3.10 -m pip install tk
+        brew install python-tk@3.10
+        python3 -m pip install tk
 
     - name: Install project dependencies
       run: |
         # Use --no-deps to prevent potential conflicts
-        arch -x86_64 python3 -m pip install -r requirements.txt --no-deps
+        python3 -m pip install -r requirements.txt --no-deps
         
         # Verify installed packages
-        arch -x86_64 python3 -m pip list
-
-    - name: Verify Architecture
-      run: |
-        # Explicitly check and print architecture
-        echo "Current Architecture:"
-        uname -m
-        echo "Python Architecture:"
-        python3 -c "import platform; print(platform.machine())"
-        echo "Pip Architecture:"
-        python3 -m pip config debug
+        python3 -m pip list
 
     - name: Prepare Build Environment
       run: |
@@ -82,7 +73,7 @@ jobs:
         mkdir -p "$BUILD_DIR"
         
         # Build command here with arch specification
-        arch -x86_64 pyinstaller --clean --noconfirm --windowed \
+        pyinstaller --clean --noconfirm --windowed \
           --name "Doc-Converter-Intel" \
           doc_converter_gui.py
         
@@ -142,16 +133,6 @@ jobs:
         
         # Verify installed packages
         arch -x86_64 python3 -m pip list
-
-    - name: Verify Architecture
-      run: |
-        # Explicitly check and print architecture
-        echo "Current Architecture:"
-        uname -m
-        echo "Python Architecture:"
-        python3 -c "import platform; print(platform.machine())"
-        echo "Pip Architecture:"
-        python3 -m pip config debug
 
     - name: Prepare Build Environment
       run: |
@@ -221,16 +202,6 @@ jobs:
       run: |
         python -m pip install -r requirements.txt --no-deps
         python -m pip list
-
-    - name: Verify Architecture
-      run: |
-        # Explicitly check and print architecture
-        echo "Current Architecture:"
-        wmic os get osarchitecture
-        echo "Python Architecture:"
-        python -c "import platform; print(platform.machine())"
-        echo "Pip Architecture:"
-        python -m pip config debug
 
     - name: Prepare Build Environment
       run: |
