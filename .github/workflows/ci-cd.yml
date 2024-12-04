@@ -83,7 +83,6 @@ jobs:
 
   build-macos-silicon:
     runs-on: macos-latest-silicon
-    needs: build-macos-intel
     steps:
     - uses: actions/checkout@v4
     
@@ -114,7 +113,7 @@ jobs:
           Output/*.exe
 
   release:
-    needs: [build-windows, build-macos-intel]
+    needs: [build-windows, build-macos-intel, build-macos-silicon]
     runs-on: ubuntu-latest
     steps:
     - name: Create Release
@@ -125,6 +124,7 @@ jobs:
         files: |
           doc-converter-windows/*.exe
           doc-converter-macos-intel/*.exe
+          doc-converter-macos-silicon/*.exe
         body: |
           Release of doc-converter executables
       env:
