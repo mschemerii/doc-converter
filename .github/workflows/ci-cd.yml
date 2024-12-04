@@ -28,78 +28,7 @@ permissions:
   contents: write  # Explicitly grant write permissions to the GitHub token
 
 jobs:
-  file-tag-generator:
-    if: github.event_name == 'push'
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-    
-    - name: Generate tags for all files
-      run: |
-        # Function to create a safe tag name
-        create_safe_tag() {
-          local file="$1"
-          # Remove ./ prefix if present
-          file=${file#./}
-          # Replace non-alphanumeric characters with hyphens, convert to lowercase
-          local safe_filename=$(echo "$file" | sed 's/[^a-zA-Z0-9]/-/g' | tr '[:upper:]' '[:lower:]')
-          # Truncate filename if too long (leaving room for prefix and hash)
-          safe_filename=${safe_filename:0:40}
-          
-          # Get current commit SHA
-          local COMMIT_SHA="${{ github.sha }}"
-          
-          # Create a tag with filename and commit SHA
-          echo "file-${safe_filename}-${COMMIT_SHA:0:7}"
-        }
-        
-        # Configure git
-        git config user.name github-actions
-        git config user.email github-actions@github.com
-        
-        # Get list of all files in the repository, excluding .git directory
-        echo "Finding all files..."
-        ALL_FILES=$(find . -type f \
-          ! -path "./.git/*" \
-          ! -path "*/\.*" \
-          ! -name "*.pyc" \
-          ! -name "__pycache__" \
-          ! -name "*.log" \
-          -print)
-        
-        # Process each file
-        for file in $ALL_FILES; do
-          # Skip if file is a directory or binary file
-          if [[ -d "$file" ]] || [[ -x "$file" ]]; then
-            echo "Skipping: $file (directory or binary)"
-            continue
-          fi
-          
-          # Create tag for the file
-          TAG=$(create_safe_tag "$file")
-          echo "Processing: $file -> $TAG"
-          
-          # Delete existing tag if it exists (both locally and remotely)
-          git tag -d "$TAG" 2>/dev/null || true
-          git push --delete origin "$TAG" 2>/dev/null || true
-          
-          # Create new tag
-          if git tag "$TAG"; then
-            echo "Created tag: $TAG"
-            if git push origin "$TAG"; then
-              echo "Pushed tag: $TAG"
-            else
-              echo "Failed to push tag: $TAG"
-            fi
-          else
-            echo "Failed to create tag: $TAG"
-          fi
-        done
-
   lint-and-test:
-    needs: file-tag-generator
     if: always()
     runs-on: ubuntu-latest
     outputs:
@@ -137,138 +66,11 @@ jobs:
         # Always create a release on push
         echo "should_release=true" >> $GITHUB_OUTPUT
 
-  version-bump:
-    if: github.event_name == 'push' || 
-        (github.event_name == 'workflow_dispatch' && 
-         (github.event.inputs.version_bump == 'patch' || 
-          github.event.inputs.version_bump == 'minor' || 
-          github.event.inputs.version_bump == 'major'))
-    needs: lint-and-test
-    runs-on: ubuntu-latest
-    outputs:
-      new_version: ${{ steps.bump_version.outputs.new_version }}
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        token: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Bump version
-      id: bump_version
-      env:
-        EVENT_NAME: ${{ github.event_name }}
-        VERSION_BUMP: ${{ github.event.inputs.version_bump }}
-      run: |
-        # Function to validate version format
-        is_valid_version() {
-          local version=$1
-          if [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            return 0
-          else
-            echo "Invalid version format: $version"
-            return 1
-          fi
-        }
-        
-        # Get all version tags and sort them
-        echo "Fetching all tags..."
-        git fetch --tags
-        
-        # Get the latest semantic version tag
-        LATEST_TAG=$(git tag -l "v[0-9]*.[0-9]*.[0-9]*" | sort -V | tail -n 1)
-        
-        # If no valid tag exists, start from 0.1.0
-        if [ -z "$LATEST_TAG" ]; then
-          CURRENT_VERSION="0.1.0"
-        else
-          CURRENT_VERSION=${LATEST_TAG#v}
-          # Validate version format
-          if ! is_valid_version "$CURRENT_VERSION"; then
-            echo "Invalid version format found: $CURRENT_VERSION. Resetting to 0.1.0"
-            CURRENT_VERSION="0.1.0"
-          fi
-        fi
-        
-        echo "Current version: $CURRENT_VERSION"
-        
-        # Split version into major, minor, patch
-        IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
-        
-        # Determine bump type based on changed files or manual input
-        if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
-          case "$VERSION_BUMP" in
-            major)
-              MAJOR=$((MAJOR + 1))
-              MINOR=0
-              PATCH=0
-              ;;
-            minor)
-              MINOR=$((MINOR + 1))
-              PATCH=0
-              ;;
-            patch)
-              PATCH=$((PATCH + 1))
-              ;;
-            *)
-              PATCH=$((PATCH + 1))
-              ;;
-          esac
-        else
-          # Automatic bump for push events
-          PATCH=$((PATCH + 1))
-        fi
-        
-        NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
-        echo "New version: $NEW_VERSION"
-        
-        # Validate new version format
-        if ! is_valid_version "$NEW_VERSION"; then
-          echo "Error: Generated invalid version format: $NEW_VERSION"
-          exit 1
-        fi
-        
-        CURRENT_DATE=$(date +"%Y-%m-%d")
-        
-        # Escape NEW_VERSION for sed to handle dots
-        ESCAPED_VERSION=$(printf '%s\n' "$NEW_VERSION" | sed -e 's/[\/&]/\\&/g')
-        
-        # Update Inno Setup script
-        sed -i "s/AppVersion=[0-9.]*/AppVersion=$ESCAPED_VERSION/" installer.iss
-        sed -i "s/OutputBaseFilename=DocConverterInstaller_v[0-9.]*/OutputBaseFilename=DocConverterInstaller_v$ESCAPED_VERSION/" installer.iss
-        
-        # Configure git
-        git config user.name github-actions
-        git config user.email github-actions@github.com
-        
-        # Stage changes
-        git add installer.iss
-        
-        # Commit changes
-        git commit -m "Bump version to v$NEW_VERSION"
-        
-        # Try to delete the tag both locally and remotely (ignore errors)
-        echo "Cleaning up any existing tags..."
-        git tag -d "v$NEW_VERSION" 2>/dev/null || true
-        git push --delete origin "v$NEW_VERSION" 2>/dev/null || true
-        
-        # Force push changes to main
-        echo "Pushing changes to main..."
-        git push -f origin HEAD:main
-        
-        # Create and push new tag
-        echo "Creating new version tag..."
-        git tag "v$NEW_VERSION"
-        git push -f origin "v$NEW_VERSION"
-        
-        # Output the new version for subsequent jobs
-        echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
-
   build:
-    needs: version-bump
+    needs: lint-and-test
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ['3.12']
+        os: [windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
@@ -276,7 +78,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: '3.12'
         cache: 'pip'
     
     - name: Install dependencies
@@ -286,31 +88,23 @@ jobs:
         pip install pyinstaller --no-cache-dir
       shell: bash
     
-    - name: Build with PyInstaller
+    - name: Build Windows Executable
+      if: matrix.os == 'windows-latest'
       run: |
         python -m PyInstaller --onefile --windowed --name doc-converter doc_converter_gui.py
       shell: bash
     
-    - name: List contents of dist directory
+    - name: Build macOS Executable
+      if: matrix.os == 'macos-latest'
       run: |
-        echo "Contents of dist directory:"
-        ls -la dist
+        python -m PyInstaller --onefile --windowed --name doc-converter doc_converter_gui.py
       shell: bash
     
-    - name: Create Windows Installer
-      if: matrix.os == 'windows-latest'
+    - name: Sign macOS Executable
+      if: matrix.os == 'macos-latest'
       run: |
-        if [ -f dist/doc_converter_gui.exe ]; then
-          # Download and install Inno Setup
-          curl -L -o is.exe https://files.jrsoftware.org/is/6/innosetup-6.2.2.exe
-          ./is.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-
-          
-          # Run Inno Setup Compiler
-          & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' installer.iss
-        else
-          echo "Executable not found, skipping Inno Setup.";
-        fi
-      shell: pwsh
+        codesign --deep --force --verify --verbose --sign "Developer ID Application: Your Name (Team ID)" dist/doc-converter
+      shell: bash
     
     - name: Upload artifacts
       uses: actions/upload-artifact@v3
