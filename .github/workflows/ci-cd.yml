@@ -184,8 +184,8 @@ jobs:
         CURRENT_DATE=$(date +"%Y-%m-%d")
         
         # Update Inno Setup script
-        sed -i "s/AppVersion=.*/AppVersion=${NEW_VERSION}/" installer.iss
-        sed -i "s/OutputBaseFilename=.*/OutputBaseFilename=DocConverterInstaller_v${NEW_VERSION}/" installer.iss
+        sed -i "s/AppVersion=[0-9.]*/AppVersion=${NEW_VERSION}/" installer.iss
+        sed -i "s/OutputBaseFilename=DocConverterInstaller_v[0-9.]*/OutputBaseFilename=DocConverterInstaller_v${NEW_VERSION}/" installer.iss
         
         # Update CHANGELOG.md
         sed -i "0,/\[Unreleased\]/s/\[Unreleased\]/[Unreleased]\n\n## [${NEW_VERSION}] - ${CURRENT_DATE}\n${CHANGELOG_SECTION}\n- TODO: Add specific changes" CHANGELOG.md
