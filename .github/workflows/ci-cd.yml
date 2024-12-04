@@ -44,11 +44,11 @@ jobs:
           # Replace non-alphanumeric characters, convert to lowercase
           local safe_filename=$(echo "$file" | sed 's/[^a-zA-Z0-9]/-/g' | tr '[:upper:]' '[:lower:]')
           
-          # Generate a unique identifier (using current timestamp)
-          local TIMESTAMP=$(date +"%Y%m%d%H%M%S")
+          # Get current commit SHA
+          local COMMIT_SHA="${{ github.sha }}"
           
-          # Create a tag with filename and timestamp
-          local TAG="file-${safe_filename}-${TIMESTAMP}"
+          # Create a tag with filename and commit SHA
+          local TAG="file-${safe_filename}-${COMMIT_SHA:0:7}"
           
           echo "$TAG"
         }
@@ -133,6 +133,8 @@ jobs:
     
     - name: Check if version bump is needed
       id: check_version_bump
+      env:
+        EVENT_NAME: ${{ github.event_name }}
       run: |
         # Get list of changed files
         CHANGED_FILES=$(git diff-tree --no-commit-id --name-only -r ${{ github.sha }})
