@@ -41,38 +41,41 @@ jobs:
         # Function to create a safe tag name
         create_safe_tag() {
           local file="$1"
-          # Replace non-alphanumeric characters, convert to lowercase
+          # Replace non-alphanumeric characters with hyphens, convert to lowercase
           local safe_filename=$(echo "$file" | sed 's/[^a-zA-Z0-9]/-/g' | tr '[:upper:]' '[:lower:]')
+          # Truncate filename if too long
+          safe_filename=${safe_filename:0:50}
           
           # Get current commit SHA
           local COMMIT_SHA="${{ github.sha }}"
           
           # Create a tag with filename and commit SHA
-          local TAG="file-${safe_filename}-${COMMIT_SHA:0:7}"
-          
-          echo "$TAG"
+          echo "file-tag-${safe_filename}-${COMMIT_SHA:0:7}"
         }
         
         # Get list of all files in the repository
-        ALL_FILES=$(find . -type f | sed 's|^\./||' | grep -v '^\.')
+        echo "Finding all files..."
+        ALL_FILES=$(find . -type f | sed 's|^\./||' | grep -v '^\.git/')
+        
+        # Configure git
+        git config user.name github-actions
+        git config user.email github-actions@github.com
         
         # Generate a tag for each file
         for file in $ALL_FILES; do
-          # Skip git directories and large binary files
-          if [[ "$file" =~ ^\.git/ ]] || [[ -d "$file" ]]; then
+          # Skip git directories, binary files, and directories
+          if [[ "$file" =~ ^\.git/ ]] || [[ -d "$file" ]] || [[ -x "$file" ]]; then
+            echo "Skipping: $file"
             continue
           fi
           
           # Create tag for the file
           TAG=$(create_safe_tag "$file")
+          echo "Creating tag: $TAG for file: $file"
           
-          # Create and push the tag
-          git config user.name github-actions
-          git config user.email github-actions@github.com
-          git tag "$TAG"
-          git push origin "$TAG"
-          
-          echo "Created tag: $TAG for file: $file"
+          # Create the tag
+          git tag -f "$TAG" || echo "Failed to create tag: $TAG"
+          git push -f origin "$TAG" || echo "Failed to push tag: $TAG"
         done
 
   lint-and-test:
@@ -124,49 +127,24 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       new_version: ${{ steps.bump_version.outputs.new_version }}
-      should_bump: ${{ steps.check_version_bump.outputs.should_bump }}
     steps:
     - uses: actions/checkout@v4
       with:
         fetch-depth: 0
         token: ${{ secrets.GITHUB_TOKEN }}
-    
-    - name: Check if version bump is needed
-      id: check_version_bump
-      env:
-        EVENT_NAME: ${{ github.event_name }}
-      run: |
-        # Get list of changed files
-        CHANGED_FILES=$(git diff-tree --no-commit-id --name-only -r ${{ github.sha }})
-        
-        # Check if any significant files have changed
-        SIGNIFICANT_FILES=$(echo "$CHANGED_FILES" | grep -E '(\.py|\.yml|\.yaml|\.toml|requirements\.txt|setup\.py)' || true)
-        
-        # Get latest tag
-        LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-        
-        if [ -n "$SIGNIFICANT_FILES" ] || [ -z "$LATEST_TAG" ]; then
-          echo "should_bump=true" >> $GITHUB_OUTPUT
-          echo "Significant files changed or no existing tag found"
-        else
-          echo "should_bump=false" >> $GITHUB_OUTPUT
-          echo "No significant changes detected"
-        fi
-        
-        # List changed files for debugging
-        echo "Changed files:"
-        echo "$CHANGED_FILES"
 
     - name: Bump version
-      if: steps.check_version_bump.outputs.should_bump == 'true'
       id: bump_version
       env:
         EVENT_NAME: ${{ github.event_name }}
         VERSION_BUMP: ${{ github.event.inputs.version_bump }}
       run: |
-        # Get the latest tag or start from 0.1.0
-        LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.1.0")
+        # Get the latest semantic version tag (starts with v)
+        LATEST_TAG=$(git tag -l "v[0-9]*.[0-9]*.[0-9]*" | sort -V | tail -n 1 || echo "v0.1.0")
+        echo "Latest semantic version tag: $LATEST_TAG"
+        
         CURRENT_VERSION=${LATEST_TAG#v}
+        echo "Current version: $CURRENT_VERSION"
         
         # Split version into major, minor, patch
         IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
@@ -201,6 +179,7 @@ jobs:
         fi
         
         NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+        echo "New version: $NEW_VERSION"
         CURRENT_DATE=$(date +"%Y-%m-%d")
         
         # Escape NEW_VERSION for sed to handle dots
@@ -213,11 +192,11 @@ jobs:
         # Update CHANGELOG.md
         sed -i "0,/\[Unreleased\]/s/\[Unreleased\]/[Unreleased]\n\n## [$ESCAPED_VERSION] - $CURRENT_DATE\n$CHANGELOG_SECTION\n- TODO: Add specific changes/" CHANGELOG.md
         
-        # Create and push new tag
+        # Create and push new version tag
         git config user.name github-actions
         git config user.email github-actions@github.com
         git add installer.iss CHANGELOG.md
-        git commit -m "Bump version to $NEW_VERSION"
+        git commit -m "Bump version to v$NEW_VERSION"
         git tag "v$NEW_VERSION"
         git push origin "v$NEW_VERSION"
         
