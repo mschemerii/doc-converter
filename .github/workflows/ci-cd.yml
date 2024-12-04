@@ -200,26 +200,21 @@ jobs:
               MAJOR=$((MAJOR + 1))
               MINOR=0
               PATCH=0
-              CHANGELOG_SECTION="### Added"
               ;;
             minor)
               MINOR=$((MINOR + 1))
               PATCH=0
-              CHANGELOG_SECTION="### Added"
               ;;
             patch)
               PATCH=$((PATCH + 1))
-              CHANGELOG_SECTION="### Fixed"
               ;;
             *)
               PATCH=$((PATCH + 1))
-              CHANGELOG_SECTION="### Changed"
               ;;
           esac
         else
           # Automatic bump for push events
           PATCH=$((PATCH + 1))
-          CHANGELOG_SECTION="### Changed"
         fi
         
         NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
@@ -240,15 +235,12 @@ jobs:
         sed -i "s/AppVersion=[0-9.]*/AppVersion=$ESCAPED_VERSION/" installer.iss
         sed -i "s/OutputBaseFilename=DocConverterInstaller_v[0-9.]*/OutputBaseFilename=DocConverterInstaller_v$ESCAPED_VERSION/" installer.iss
         
-        # Update CHANGELOG.md
-        sed -i "0,/\[Unreleased\]/s/\[Unreleased\]/[Unreleased]\n\n## [$ESCAPED_VERSION] - $CURRENT_DATE\n$CHANGELOG_SECTION\n- TODO: Add specific changes/" CHANGELOG.md
-        
         # Configure git
         git config user.name github-actions
         git config user.email github-actions@github.com
         
         # Stage changes
-        git add installer.iss CHANGELOG.md
+        git add installer.iss
         
         # Commit changes
         git commit -m "Bump version to v$NEW_VERSION"
@@ -305,14 +297,18 @@ jobs:
       shell: bash
     
     - name: Create Windows Installer
-      if: matrix.os == 'windows-latest'
+      if: matrix.os == 'windows-latest' && fileExists('dist/doc_converter_gui.exe')
       run: |
-        # Download and install Inno Setup
-        curl -L -o is.exe https://files.jrsoftware.org/is/6/innosetup-6.2.2.exe
-        ./is.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-
-        
-        # Run Inno Setup Compiler
-        & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' installer.iss
+        if [ -f dist/doc_converter_gui.exe ]; then
+          # Download and install Inno Setup
+          curl -L -o is.exe https://files.jrsoftware.org/is/6/innosetup-6.2.2.exe
+          ./is.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-
+          
+          # Run Inno Setup Compiler
+          & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' installer.iss
+        else
+          echo "Executable not found, skipping Inno Setup.";
+        fi
       shell: pwsh
     
     - name: Upload artifacts
