@@ -52,7 +52,6 @@ jobs:
 
   build-macos-intel:
     runs-on: macos-latest
-    needs: build-windows
     steps:
     - uses: actions/checkout@v4
     
@@ -115,14 +114,14 @@ jobs:
 #          Output/*.exe
 
   release:
-    needs: build-macos-intel
+    needs: [build-windows, build-macos-intel]
     runs-on: ubuntu-latest
     steps:
     - name: Create Release
       if: github.event_name == 'push'
       uses: softprops/action-gh-release@v2
       with:
-        tag_name: v0.1.0
+        tag_name: v1.0.0
         files: |
           dist/doc-converter.exe
           dist/doc-converter.app
