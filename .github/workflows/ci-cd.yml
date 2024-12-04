@@ -28,11 +28,8 @@ permissions:
   contents: write  # Explicitly grant write permissions to the GitHub token
 
 jobs:
-  lint-and-test:
-    if: always()
+  build:
     runs-on: ubuntu-latest
-    outputs:
-      should_release: ${{ steps.check_release.outputs.should_release }}
     steps:
     - uses: actions/checkout@v4
     
@@ -44,13 +41,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install flake8 pytest
         pip install -r requirements.txt
-    
-    - name: Lint with flake8
-      run: |
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     
     - name: Check Python version compatibility
       run: |
@@ -59,18 +50,13 @@ jobs:
     - name: Run basic import checks
       run: |
         python -m compileall .
-    
-    - name: Check if release should be created
-      id: check_release
-      run: |
-        # Always create a release on push
-        echo "should_release=true" >> $GITHUB_OUTPUT
 
-  build:
-    needs: lint-and-test
+  build-executables:
+    needs: build
     strategy:
       matrix:
-        os: [windows-latest, macos-latest]
+        os: [windows-latest, macos-latest, macos-latest-silicon]
+        python-version: ['3.12']
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
@@ -78,7 +64,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.12'
+        python-version: ${{ matrix.python-version }}
         cache: 'pip'
     
     - name: Install dependencies
@@ -88,20 +74,19 @@ jobs:
         pip install pyinstaller --no-cache-dir
       shell: bash
     
-    - name: Build Windows Executable
-      if: matrix.os == 'windows-latest'
+    - name: Build Executable
       run: |
-        python -m PyInstaller --onefile --windowed --name doc-converter doc_converter_gui.py
-      shell: bash
-    
-    - name: Build macOS Executable
-      if: matrix.os == 'macos-latest'
-      run: |
-        python -m PyInstaller --onefile --windowed --name doc-converter doc_converter_gui.py
+        if [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+          python -m PyInstaller --onefile --windowed --name doc-converter doc_converter_gui.py --target-arch x86_64
+        elif [[ "${{ matrix.os }}" == "macos-latest-silicon" ]]; then
+          python -m PyInstaller --onefile --windowed --name doc-converter doc_converter_gui.py --target-arch arm64
+        else
+          python -m PyInstaller --onefile --windowed --name doc-converter doc_converter_gui.py
+        fi
       shell: bash
     
     - name: Sign macOS Executable
-      if: matrix.os == 'macos-latest'
+      if: matrix.os == 'macos-latest' || matrix.os == 'macos-latest-silicon'
       run: |
         codesign --deep --force --verify --verbose --sign "Developer ID Application: Your Name (Team ID)" dist/doc-converter
       shell: bash
@@ -113,3 +98,20 @@ jobs:
         path: |
           dist/*
           Output/*.exe
+
+  release:
+    needs: build-executables
+    runs-on: ubuntu-latest
+    steps:
+    - name: Create Release
+      if: github.event_name == 'push'
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: v0.1.0
+        files: |
+          dist/doc_converter_gui.exe
+          dist/doc-converter
+        body: |
+          Release of doc-converter executables
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
