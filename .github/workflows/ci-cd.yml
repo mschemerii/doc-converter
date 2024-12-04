@@ -104,12 +104,22 @@ jobs:
         echo "should_release=true" >> $GITHUB_OUTPUT
 
   version-bump:
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.version_bump != 'none'
+    if: |
+      github.event_name == 'workflow_dispatch' && 
+      (github.event.inputs.version_bump == 'patch' || 
+       github.event.inputs.version_bump == 'minor' || 
+       github.event.inputs.version_bump == 'major')
     needs: lint-and-test
     runs-on: ubuntu-latest
     outputs:
       new_version: ${{ steps.bump_version.outputs.new_version }}
     steps:
+    - name: Debug Event Information
+      run: |
+        echo "Event Name: ${{ github.event_name }}"
+        echo "Version Bump Input: ${{ github.event.inputs.version_bump }}"
+        echo "Workflow Dispatch: ${{ github.event_name == 'workflow_dispatch' }}"
+    
     - uses: actions/checkout@v4
       with:
         fetch-depth: 0
@@ -141,6 +151,10 @@ jobs:
           patch)
             PATCH=$((PATCH + 1))
             CHANGELOG_SECTION="### Fixed"
+            ;;
+          *)
+            echo "No valid version bump type selected"
+            exit 1
             ;;
         esac
         
@@ -219,10 +233,31 @@ jobs:
           dist/*${{ matrix.ext }}
           Output/*.exe
     
+    - name: Create Unique Tag for Release
+      id: create_tag
+      run: |
+        # Generate a timestamp-based tag if no version bump occurred
+        TIMESTAMP=$(date +"%Y%m%d%H%M%S")
+        TAG="release-${TIMESTAMP}"
+        
+        # If version bump job ran, use its version
+        if [ -n "${{ needs.version-bump.outputs.new_version }}" ]; then
+          TAG="v${{ needs.version-bump.outputs.new_version }}"
+        fi
+        
+        # Create and push the tag
+        git config user.name github-actions
+        git config user.email github-actions@github.com
+        git tag "$TAG"
+        git push origin "$TAG"
+        
+        echo "tag=${TAG}" >> $GITHUB_OUTPUT
+    
     - name: Create Release
       if: needs.lint-and-test.outputs.should_release == 'true'
       uses: softprops/action-gh-release@v2
       with:
+        tag_name: ${{ steps.create_tag.outputs.tag }}
         files: |
           dist/*${{ matrix.ext }}
           Output/*.exe
