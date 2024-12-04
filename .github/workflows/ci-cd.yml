@@ -295,7 +295,7 @@ jobs:
     
     - name: Build with PyInstaller
       run: |
-        python -m PyInstaller --onefile --name doc-converter src/main.py
+        python -m PyInstaller --onefile --windowed --name doc-converter doc_converter_gui.py
       shell: bash
     
     - name: Create Windows Installer
