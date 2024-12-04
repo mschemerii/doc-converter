@@ -1,22 +1,18 @@
 [Setup]
 AppName=Doc Converter
-AppVersion=1.0
+AppVersion=1.0.0
 DefaultDirName={pf}\DocConverter
 DefaultGroupName=Doc Converter
-OutputBaseFilename=DocConverterInstaller
+OutputBaseFilename=DocConverterInstaller_v1.0.0
 Compression=lzma
 SolidCompression=yes
 ArchitecturesInstallIn64BitMode=x64
 AlwaysRestart=no
 AllowNoIcons=yes
-AlwaysShowDirPage=yes
-DisableDirPage=no
 DisableProgramGroupPage=no
 UninstallDisplayIcon={app}\doc_converter_gui.exe
 Uninstallable=yes
 CreateUninstallRegKey=yes
-UsePreviousAppDir=yes
-UsePreviousGroup=yes
 
 [Files]
 Source: "dist\doc_converter_gui.exe"; DestDir: "{app}"; Flags: ignoreversion replacesameversion

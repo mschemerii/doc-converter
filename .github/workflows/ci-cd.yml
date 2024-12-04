@@ -1,8 +1,16 @@
-name: Multi-Platform Build and Test
+name: CI/CD Pipeline
 
 on:
   workflow_dispatch:
     inputs:
+      version_bump:
+        description: 'Version Bump Type'
+        required: false
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
       release:
         description: 'Create a new release'
         required: false
@@ -16,7 +24,63 @@ on:
     branches: [ main, master ]
 
 jobs:
+  version-bump:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Bump version
+      run: |
+        # Get the latest tag or start from 1.0.0
+        LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v1.0.0")
+        CURRENT_VERSION=${LATEST_TAG#v}
+        
+        # Split version into major, minor, patch
+        IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+        
+        # Bump version based on input
+        case "${{ github.event.inputs.version_bump }}" in
+          major)
+            MAJOR=$((MAJOR + 1))
+            MINOR=0
+            PATCH=0
+            CHANGELOG_SECTION="### Added"
+            ;;
+          minor)
+            MINOR=$((MINOR + 1))
+            PATCH=0
+            CHANGELOG_SECTION="### Added"
+            ;;
+          patch)
+            PATCH=$((PATCH + 1))
+            CHANGELOG_SECTION="### Fixed"
+            ;;
+        esac
+        
+        NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+        CURRENT_DATE=$(date +"%Y-%m-%d")
+        
+        # Update Inno Setup script
+        sed -i "s/AppVersion=.*/AppVersion=${NEW_VERSION}/" installer.iss
+        sed -i "s/OutputBaseFilename=.*/OutputBaseFilename=DocConverterInstaller_v${NEW_VERSION}/" installer.iss
+        
+        # Update CHANGELOG.md
+        sed -i "0,/\[Unreleased\]/s/\[Unreleased\]/[Unreleased]\n\n## [${NEW_VERSION}] - ${CURRENT_DATE}\n${CHANGELOG_SECTION}\n- TODO: Add specific changes" CHANGELOG.md
+        
+        # Create and push new tag
+        git config user.name github-actions
+        git config user.email github-actions@github.com
+        git add installer.iss CHANGELOG.md
+        git commit -m "Bump version to ${NEW_VERSION}"
+        git tag "v${NEW_VERSION}"
+        git push origin "v${NEW_VERSION}"
+
   lint-and-test:
+    needs: version-bump
+    if: always()
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -49,17 +113,16 @@ jobs:
     needs: lint-and-test
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
         include:
           - os: windows-latest
             platform: windows
             ext: .exe
             installer: true
-          - os: ubuntu-latest
+          - os: ubuntu-22.04  # Latest LTS version
             platform: linux
             ext: ''
             installer: false
-          - os: macos-latest
+          - os: macos-13  # Ventura (macOS 13)
             platform: macos
             ext: ''
             installer: false
@@ -106,4 +169,5 @@ jobs:
         files: |
           dist/*${{ matrix.ext }}
           Output/*.exe
+        body_path: CHANGELOG.md
         generate_release_notes: true
