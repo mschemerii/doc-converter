@@ -104,59 +104,81 @@ jobs:
         echo "should_release=true" >> $GITHUB_OUTPUT
 
   version-bump:
-    if: |
-      github.event_name == 'workflow_dispatch' && 
-      (github.event.inputs.version_bump == 'patch' || 
-       github.event.inputs.version_bump == 'minor' || 
-       github.event.inputs.version_bump == 'major')
+    if: github.event_name == 'push' || 
+        (github.event_name == 'workflow_dispatch' && 
+         (github.event.inputs.version_bump == 'patch' || 
+          github.event.inputs.version_bump == 'minor' || 
+          github.event.inputs.version_bump == 'major'))
     needs: lint-and-test
     runs-on: ubuntu-latest
     outputs:
       new_version: ${{ steps.bump_version.outputs.new_version }}
+      should_bump: ${{ steps.check_version_bump.outputs.should_bump }}
     steps:
-    - name: Debug Event Information
-      run: |
-        echo "Event Name: ${{ github.event_name }}"
-        echo "Version Bump Input: ${{ github.event.inputs.version_bump }}"
-        echo "Workflow Dispatch: ${{ github.event_name == 'workflow_dispatch' }}"
-    
     - uses: actions/checkout@v4
       with:
         fetch-depth: 0
         token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Check if version bump is needed
+      id: check_version_bump
+      run: |
+        # Get list of changed files
+        CHANGED_FILES=$(git diff-tree --no-commit-id --name-only -r ${{ github.sha }})
+        
+        # Check if any significant files have changed
+        SIGNIFICANT_FILES=$(echo "$CHANGED_FILES" | grep -E '(\.py|\.yml|\.yaml|\.toml|requirements\.txt|setup\.py)' || true)
+        
+        # Get latest tag
+        LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+        
+        if [ -n "$SIGNIFICANT_FILES" ] || [ -z "$LATEST_TAG" ]; then
+          echo "should_bump=true" >> $GITHUB_OUTPUT
+          echo "Significant files changed or no existing tag found"
+        else
+          echo "should_bump=false" >> $GITHUB_OUTPUT
+          echo "No significant changes detected"
+        fi
+        
+        # List changed files for debugging
+        echo "Changed files:"
+        echo "$CHANGED_FILES"
 
     - name: Bump version
+      if: steps.check_version_bump.outputs.should_bump == 'true'
       id: bump_version
       run: |
         # Get the latest tag or start from 1.0.0
-        LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v1.0.0")
+        LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.1.0")
         CURRENT_VERSION=${LATEST_TAG#v}
         
         # Split version into major, minor, patch
         IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
         
-        # Bump version based on input
-        case "${{ github.event.inputs.version_bump }}" in
-          major)
-            MAJOR=$((MAJOR + 1))
-            MINOR=0
-            PATCH=0
-            CHANGELOG_SECTION="### Added"
-            ;;
-          minor)
-            MINOR=$((MINOR + 1))
-            PATCH=0
-            CHANGELOG_SECTION="### Added"
-            ;;
-          patch)
-            PATCH=$((PATCH + 1))
-            CHANGELOG_SECTION="### Fixed"
-            ;;
-          *)
-            echo "No valid version bump type selected"
-            exit 1
-            ;;
-        esac
+        # Determine bump type based on changed files or manual input
+        if [ "${{ github.event_name }}" == 'workflow_dispatch' ]; then
+          case "${{ github.event.inputs.version_bump }}" in
+            major)
+              MAJOR=$((MAJOR + 1))
+              MINOR=0
+              PATCH=0
+              CHANGELOG_SECTION="### Added"
+              ;;
+            minor)
+              MINOR=$((MINOR + 1))
+              PATCH=0
+              CHANGELOG_SECTION="### Added"
+              ;;
+            patch)
+              PATCH=$((PATCH + 1))
+              CHANGELOG_SECTION="### Fixed"
+              ;;
+          esac
+        else
+          # Automatic bump for push events
+          PATCH=$((PATCH + 1))
+          CHANGELOG_SECTION="### Changed"
+        fi
         
         NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
         CURRENT_DATE=$(date +"%Y-%m-%d")
@@ -236,13 +258,22 @@ jobs:
     - name: Create Unique Tag for Release
       id: create_tag
       run: |
+        # Get the latest tag or set to empty
+        LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+        
         # Generate a timestamp-based tag if no version bump occurred
         TIMESTAMP=$(date +"%Y%m%d%H%M%S")
-        TAG="release-${TIMESTAMP}"
         
-        # If version bump job ran, use its version
+        # Determine the tag to use
         if [ -n "${{ needs.version-bump.outputs.new_version }}" ]; then
+          # Use version bump tag if available
           TAG="v${{ needs.version-bump.outputs.new_version }}"
+        elif [ -n "$LATEST_TAG" ]; then
+          # Use existing latest tag
+          TAG="$LATEST_TAG-${TIMESTAMP}"
+        else
+          # Create a new initial tag
+          TAG="v0.1.0-${TIMESTAMP}"
         fi
         
         # Create and push the tag
@@ -252,6 +283,7 @@ jobs:
         git push origin "$TAG"
         
         echo "tag=${TAG}" >> $GITHUB_OUTPUT
+        echo "Created tag: ${TAG}"
     
     - name: Create Release
       if: needs.lint-and-test.outputs.should_release == 'true'
