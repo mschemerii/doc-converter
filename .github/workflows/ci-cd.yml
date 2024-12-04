@@ -298,6 +298,12 @@ jobs:
         python -m PyInstaller --onefile --windowed --name doc-converter doc_converter_gui.py
       shell: bash
     
+    - name: List contents of dist directory
+      run: |
+        echo "Contents of dist directory:"
+        ls -la dist
+      shell: bash
+    
     - name: Create Windows Installer
       if: matrix.os == 'windows-latest'
       run: |
