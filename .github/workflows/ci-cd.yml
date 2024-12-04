@@ -297,7 +297,7 @@ jobs:
       shell: bash
     
     - name: Create Windows Installer
-      if: matrix.os == 'windows-latest' && fileExists('dist/doc_converter_gui.exe')
+      if: matrix.os == 'windows-latest'
       run: |
         if [ -f dist/doc_converter_gui.exe ]; then
           # Download and install Inno Setup
