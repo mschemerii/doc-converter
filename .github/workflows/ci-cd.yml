@@ -39,7 +39,7 @@ jobs:
     
     - name: Build Windows Executable
       run: |
-        python -m PyInstaller --onefile --windowed --name doc-converter doc_converter_gui.py --add-binary "C:\Windows\System32\api-ms-win-core-path-l1-1-0.dll;." --collect-all tkinter
+        python -m PyInstaller --onefile --windowed --name doc-converter doc_converter_gui.py --collect-all tkinter
       shell: bash
     
     - name: Upload artifacts
@@ -129,6 +129,6 @@ jobs:
         tag_name: v1.0.0
         files: |
           windows-build/doc-converter.exe
-          macos-build/doc-converter.app/**/*
+          macos-build/dist/doc-converter.app/**/*
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
