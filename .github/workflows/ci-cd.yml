@@ -78,8 +78,7 @@ jobs:
       with:
         name: doc-converter-macos-intel
         path: |
-          dist/*
-          Output/*.exe
+          dist/doc-converter.app/**/*
 
 #  build-macos-silicon:
 #    runs-on: macos-latest-silicon
@@ -109,8 +108,7 @@ jobs:
 #      with:
 #        name: doc-converter-macos-silicon
 #        path: |
-#          dist/*
-#          Output/*.exe
+#          dist/doc-converter.app/**/*
 
   release:
     needs: [build-windows, build-macos-intel]
@@ -123,6 +121,6 @@ jobs:
         tag_name: v1.0.0
         files: |
           doc-converter-windows/dist/doc-converter.exe
-          doc-converter-macos-intel/dist/doc-converter.app
+          doc-converter-macos-intel/dist/doc-converter.app/**/*
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
