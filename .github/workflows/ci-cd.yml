@@ -41,41 +41,61 @@ jobs:
         # Function to create a safe tag name
         create_safe_tag() {
           local file="$1"
+          # Remove ./ prefix if present
+          file=${file#./}
           # Replace non-alphanumeric characters with hyphens, convert to lowercase
           local safe_filename=$(echo "$file" | sed 's/[^a-zA-Z0-9]/-/g' | tr '[:upper:]' '[:lower:]')
-          # Truncate filename if too long
-          safe_filename=${safe_filename:0:50}
+          # Truncate filename if too long (leaving room for prefix and hash)
+          safe_filename=${safe_filename:0:40}
           
           # Get current commit SHA
           local COMMIT_SHA="${{ github.sha }}"
           
           # Create a tag with filename and commit SHA
-          echo "file-tag-${safe_filename}-${COMMIT_SHA:0:7}"
+          echo "file-${safe_filename}-${COMMIT_SHA:0:7}"
         }
-        
-        # Get list of all files in the repository
-        echo "Finding all files..."
-        ALL_FILES=$(find . -type f | sed 's|^\./||' | grep -v '^\.git/')
         
         # Configure git
         git config user.name github-actions
         git config user.email github-actions@github.com
         
-        # Generate a tag for each file
+        # Get list of all files in the repository, excluding .git directory
+        echo "Finding all files..."
+        ALL_FILES=$(find . -type f \
+          ! -path "./.git/*" \
+          ! -path "*/\.*" \
+          ! -name "*.pyc" \
+          ! -name "__pycache__" \
+          ! -name "*.log" \
+          -print)
+        
+        # Process each file
         for file in $ALL_FILES; do
-          # Skip git directories, binary files, and directories
-          if [[ "$file" =~ ^\.git/ ]] || [[ -d "$file" ]] || [[ -x "$file" ]]; then
-            echo "Skipping: $file"
+          # Skip if file is a directory or binary file
+          if [[ -d "$file" ]] || [[ -x "$file" ]]; then
+            echo "Skipping: $file (directory or binary)"
             continue
           fi
           
           # Create tag for the file
           TAG=$(create_safe_tag "$file")
-          echo "Creating tag: $TAG for file: $file"
+          echo "Processing: $file -> $TAG"
           
-          # Create the tag
-          git tag -f "$TAG" || echo "Failed to create tag: $TAG"
-          git push -f origin "$TAG" || echo "Failed to push tag: $TAG"
+          # Delete existing tag if it exists (both locally and remotely)
+          git tag -d "$TAG" 2>/dev/null || true
+          git push --delete origin "$TAG" 2>/dev/null || true
+          
+          # Create new tag
+          if git tag "$TAG"; then
+            echo "Created tag: $TAG"
+            if git push origin "$TAG"; then
+              echo "Pushed tag: $TAG"
+            else
+              echo "Failed to push tag: $TAG"
+            fi
+          else
+            echo "Failed to create tag: $TAG"
+          fi
         done
 
   lint-and-test:
