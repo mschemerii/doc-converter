@@ -74,22 +74,25 @@ jobs:
         pip install pyinstaller --no-cache-dir
       shell: bash
     
-    - name: Build Executable
+    - name: Build Windows Executable
+      if: matrix.os == 'windows-latest'
       run: |
-        if [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-          python -m PyInstaller --onefile --windowed --name doc-converter doc_converter_gui.py --target-arch x86_64
-        elif [[ "${{ matrix.os }}" == "macos-latest-silicon" ]]; then
-          python -m PyInstaller --onefile --windowed --name doc-converter doc_converter_gui.py --target-arch arm64
-        else
-          python -m PyInstaller --onefile --windowed --name doc-converter doc_converter_gui.py
-        fi
+        python -m PyInstaller --onefile --windowed --name doc-converter doc_converter_gui.py
       shell: bash
     
-    - name: Sign macOS Executable
-      if: matrix.os == 'macos-latest' || matrix.os == 'macos-latest-silicon'
+    - name: Build macOS Executable (Intel)
+      if: matrix.os == 'macos-latest'
       run: |
-        codesign --deep --force --verify --verbose --sign "Developer ID Application: Your Name (Team ID)" dist/doc-converter
+        python -m PyInstaller --onefile --windowed --name doc-converter doc_converter_gui.py
       shell: bash
+    
+    - name: Build macOS Executable (Silicon)
+      if: matrix.os == 'macos-latest-silicon'
+      run: |
+        python -m PyInstaller --onefile --windowed --name doc-converter doc_converter_gui.py
+      shell: bash
+    
+    # Removed signing step for now
     
     - name: Upload artifacts
       uses: actions/upload-artifact@v3
