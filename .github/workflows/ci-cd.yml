@@ -39,7 +39,7 @@ jobs:
     
     - name: Build Windows Executable
       run: |
-        python -m PyInstaller --onefile --windowed --name doc-converter doc_converter_gui.py --collect-all tkinter --hidden-import win32api
+        python -m PyInstaller --onefile --windowed --name doc-converter doc_converter_gui.py --collect-all tkinter
       shell: bash
     
     - name: Upload artifacts
@@ -122,6 +122,14 @@ jobs:
         name: doc-converter-macos-intel
         path: macos-build
 
+    - name: List Downloads
+      run: |
+        echo "Windows build contents:"
+        ls -R windows-build/
+        echo "macOS build contents:"
+        ls -R macos-build/
+      shell: bash
+
     - name: Create Release
       if: github.event_name == 'push'
       uses: softprops/action-gh-release@v2
@@ -129,6 +137,6 @@ jobs:
         tag_name: v1.0.0
         files: |
           windows-build/doc-converter.exe
-          macos-build/dist/doc-converter.app/**/*
+          macos-build/doc-converter.app
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
