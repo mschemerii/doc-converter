@@ -123,8 +123,8 @@ jobs:
       with:
         tag_name: v1.0.0
         files: |
-          doc-converter-windows/*.exe
-          doc-converter-macos-intel/*.exe
+          dist/doc-converter.exe
+          dist/doc-converter.app/Contents/MacOS/doc-converter
         body: |
           Release of doc-converter executables
       env:
