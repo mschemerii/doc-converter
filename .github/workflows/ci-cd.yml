@@ -169,6 +169,10 @@ jobs:
           fi
         }
         
+        # Get all version tags and sort them
+        echo "Fetching all tags..."
+        git fetch --tags
+        
         # Get the latest semantic version tag
         LATEST_TAG=$(git tag -l "v[0-9]*.[0-9]*.[0-9]*" | sort -V | tail -n 1)
         
@@ -239,115 +243,76 @@ jobs:
         # Update CHANGELOG.md
         sed -i "0,/\[Unreleased\]/s/\[Unreleased\]/[Unreleased]\n\n## [$ESCAPED_VERSION] - $CURRENT_DATE\n$CHANGELOG_SECTION\n- TODO: Add specific changes/" CHANGELOG.md
         
-        # Create and push new version tag
+        # Configure git
         git config user.name github-actions
         git config user.email github-actions@github.com
+        
+        # Stage changes
         git add installer.iss CHANGELOG.md
+        
+        # Commit changes
         git commit -m "Bump version to v$NEW_VERSION"
         
-        # Delete existing tag if it exists (both locally and remotely)
+        # Try to delete the tag both locally and remotely (ignore errors)
+        echo "Cleaning up any existing tags..."
         git tag -d "v$NEW_VERSION" 2>/dev/null || true
         git push --delete origin "v$NEW_VERSION" 2>/dev/null || true
         
+        # Force push changes to main
+        echo "Pushing changes to main..."
+        git push -f origin HEAD:main
+        
         # Create and push new tag
+        echo "Creating new version tag..."
         git tag "v$NEW_VERSION"
-        git push origin "v$NEW_VERSION"
-        git push origin HEAD:main
+        git push -f origin "v$NEW_VERSION"
         
         # Output the new version for subsequent jobs
         echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
   build:
-    needs: [lint-and-test, version-bump]
-    if: always() && (needs.version-bump.result == 'success' || needs.version-bump.result == 'skipped')
+    needs: version-bump
     strategy:
       matrix:
-        include:
-          - os: windows-latest
-            platform: windows
-            ext: .exe
-            installer: true
-          - os: ubuntu-22.04  # Latest LTS version
-            platform: linux
-            ext: ''
-            installer: false
-          - os: macos-13  # Ventura (macOS 13)
-            platform: macos
-            ext: ''
-            installer: false
-
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.12']
     runs-on: ${{ matrix.os }}
-    
     steps:
     - uses: actions/checkout@v4
     
-    - name: Set up Python 3.12
-      uses: actions/setup-python@v5
+    - name: Set up Python
+      uses: actions/setup-python@v4
       with:
-        python-version: '3.12'
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
     
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pyinstaller
         pip install -r requirements.txt
+        pip install pyinstaller --no-cache-dir
+      shell: bash
     
-    - name: Build Executable
+    - name: Build with PyInstaller
       run: |
-        pyinstaller --onefile --windowed doc_converter_gui.py
+        python -m PyInstaller --onefile --name doc-converter src/main.py
+      shell: bash
     
     - name: Create Windows Installer
-      if: matrix.installer
-      uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
-      with:
-        path: installer.iss
-        options: /O+
-    
-    - name: Upload Artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: doc-converter-${{ matrix.platform }}
-        path: |
-          dist/*${{ matrix.ext }}
-          Output/*.exe
-    
-    - name: Create Unique Tag for Release
-      id: create_tag
+      if: matrix.os == 'windows-latest'
       run: |
-        # Get the latest tag or set to empty
-        LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+        # Download and install Inno Setup
+        curl -L -o is.exe https://files.jrsoftware.org/is/6/innosetup-6.2.2.exe
+        ./is.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-
         
-        # Generate a timestamp-based tag if no version bump occurred
-        TIMESTAMP=$(date +"%Y%m%d%H%M%S")
-        
-        # Determine the tag to use
-        if [ -n "${{ needs.version-bump.outputs.new_version }}" ]; then
-          # Use version bump tag if available
-          TAG="v${{ needs.version-bump.outputs.new_version }}"
-        elif [ -n "$LATEST_TAG" ]; then
-          # Use existing latest tag
-          TAG="$LATEST_TAG-${TIMESTAMP}"
-        else
-          # Create a new initial tag
-          TAG="v0.1.0-${TIMESTAMP}"
-        fi
-        
-        # Create and push the tag
-        git config user.name github-actions
-        git config user.email github-actions@github.com
-        git tag "$TAG"
-        git push origin "$TAG"
-        
-        echo "tag=${TAG}" >> $GITHUB_OUTPUT
-        echo "Created tag: ${TAG}"
+        # Run Inno Setup Compiler
+        & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' installer.iss
+      shell: pwsh
     
-    - name: Create Release
-      if: needs.lint-and-test.outputs.should_release == 'true'
-      uses: softprops/action-gh-release@v2
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
       with:
-        tag_name: ${{ steps.create_tag.outputs.tag }}
-        files: |
-          dist/*${{ matrix.ext }}
+        name: doc-converter-${{ matrix.os }}
+        path: |
+          dist/*
           Output/*.exe
-        body_path: CHANGELOG.md
-        generate_release_notes: true
