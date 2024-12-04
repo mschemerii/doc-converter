@@ -124,8 +124,8 @@ jobs:
       with:
         tag_name: v0.1.0
         files: |
-          dist/doc_converter_gui.exe
-          dist/doc-converter
+          dist/doc-converter.exe
+          dist/doc-converter.app
         body: |
           Release of doc-converter executables
       env:
