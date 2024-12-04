@@ -110,13 +110,25 @@ jobs:
     needs: [build-windows, build-macos-intel]
     runs-on: ubuntu-latest
     steps:
+    - name: Download Windows Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: doc-converter-windows
+        path: windows-build
+
+    - name: Download macOS Intel Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: doc-converter-macos-intel
+        path: macos-build
+
     - name: Create Release
       if: github.event_name == 'push'
       uses: softprops/action-gh-release@v2
       with:
         tag_name: v1.0.0
         files: |
-          doc-converter-windows/doc-converter.exe
-          doc-converter-macos-intel/doc-converter.app
+          windows-build/doc-converter.exe
+          macos-build/doc-converter.app
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
