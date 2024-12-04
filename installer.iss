@@ -1,9 +1,9 @@
 [Setup]
 AppName=Doc Converter
-AppVersion=1.0.0
+AppVersion=0.1.1
 DefaultDirName={pf}\DocConverter
 DefaultGroupName=Doc Converter
-OutputBaseFilename=DocConverterInstaller_v1.0.0
+OutputBaseFilename=DocConverterInstaller_v0.1.1
 Compression=lzma
 SolidCompression=yes
 ArchitecturesInstallIn64BitMode=x64
