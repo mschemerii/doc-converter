@@ -122,7 +122,7 @@ jobs:
       with:
         tag_name: v1.0.0
         files: |
-          doc-converter-windows/*.exe
-          doc-converter-macos-intel/*.exe
+          doc-converter-windows/dist/doc-converter.exe
+          doc-converter-macos-intel/dist/doc-converter.app
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
