@@ -43,12 +43,10 @@ jobs:
       shell: bash
     
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: doc-converter-windows
-        path: |
-          dist/*
-          Output/*.exe
+        path: dist/doc-converter.exe
 
   build-macos-intel:
     runs-on: macos-latest
@@ -74,11 +72,10 @@ jobs:
       shell: bash
     
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: doc-converter-macos-intel
-        path: |
-          dist/doc-converter.app/**/*
+        path: dist/doc-converter.app
 
 #  build-macos-silicon:
 #    runs-on: macos-latest-silicon
@@ -104,11 +101,10 @@ jobs:
 #      shell: bash
 #    
 #    - name: Upload artifacts
-#      uses: actions/upload-artifact@v3
+#      uses: actions/upload-artifact@v4
 #      with:
 #        name: doc-converter-macos-silicon
-#        path: |
-#          dist/doc-converter.app/**/*
+#        path: dist/doc-converter.app
 
   release:
     needs: [build-windows, build-macos-intel]
@@ -120,7 +116,7 @@ jobs:
       with:
         tag_name: v1.0.0
         files: |
-          doc-converter-windows/dist/doc-converter.exe
-          doc-converter-macos-intel/dist/doc-converter.app/**/*
+          doc-converter-windows/doc-converter.exe
+          doc-converter-macos-intel/doc-converter.app
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
