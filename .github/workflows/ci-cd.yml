@@ -19,19 +19,15 @@ permissions:
   contents: write  # Explicitly grant write permissions to the GitHub token
 
 jobs:
-  build-executables:
-    strategy:
-      matrix:
-        os: [windows-latest, macos-latest, macos-latest-silicon]
-        python-version: ['3.12']
-    runs-on: ${{ matrix.os }}
+  build-windows:
+    runs-on: windows-latest
     steps:
     - uses: actions/checkout@v4
     
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: '3.12'
         cache: 'pip'
     
     - name: Install dependencies
@@ -42,19 +38,6 @@ jobs:
       shell: bash
     
     - name: Build Windows Executable
-      if: matrix.os == 'windows-latest'
-      run: |
-        python -m PyInstaller --onefile --windowed --name doc-converter doc_converter_gui.py
-      shell: bash
-    
-    - name: Build macOS Executable (Intel)
-      if: matrix.os == 'macos-latest'
-      run: |
-        python -m PyInstaller --onefile --windowed --name doc-converter doc_converter_gui.py
-      shell: bash
-    
-    - name: Build macOS Executable (Silicon)
-      if: matrix.os == 'macos-latest-silicon'
       run: |
         python -m PyInstaller --onefile --windowed --name doc-converter doc_converter_gui.py
       shell: bash
@@ -62,13 +45,77 @@ jobs:
     - name: Upload artifacts
       uses: actions/upload-artifact@v3
       with:
-        name: doc-converter-${{ matrix.os }}
+        name: doc-converter-windows
+        path: |
+          dist/*
+          Output/*.exe
+
+  build-macos-intel:
+    runs-on: macos-latest
+    needs: build-windows
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pyinstaller --no-cache-dir
+      shell: bash
+    
+    - name: Build macOS Executable (Intel)
+      run: |
+        python -m PyInstaller --onefile --windowed --name doc-converter doc_converter_gui.py
+      shell: bash
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: doc-converter-macos-intel
+        path: |
+          dist/*
+          Output/*.exe
+
+  build-macos-silicon:
+    runs-on: macos-latest-silicon
+    needs: build-macos-intel
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pyinstaller --no-cache-dir
+      shell: bash
+    
+    - name: Build macOS Executable (Silicon)
+      run: |
+        python -m PyInstaller --onefile --windowed --name doc-converter doc_converter_gui.py
+      shell: bash
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: doc-converter-macos-silicon
         path: |
           dist/*
           Output/*.exe
 
   release:
-    needs: build-executables
+    needs: build-macos-silicon
     runs-on: ubuntu-latest
     steps:
     - name: Create Release
