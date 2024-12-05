@@ -103,6 +103,13 @@ jobs:
         security default-keychain -s doc-converter-keychain
         security unlock-keychain -p "temp_password" doc-converter-keychain
       shell: bash
+      
+    - name: Create Keychain
+      run: |
+        security create-keychain -p "temp_password" doc-converter-keychain
+        security default-keychain -s doc-converter-keychain
+        security unlock-keychain -p "temp_password" doc-converter-keychain
+      shell: bash
 
     - name: Store Notary Credentials
       env:
