@@ -73,22 +73,36 @@ jobs:
     
     - name: Build macOS Executable (Intel)
       run: |
-        # Create spec file
+        # Create basic spec file
         pyi-makespec --windowed --name doc-converter doc_converter_gui.py
         
-        # Modify spec file to include proper Info.plist settings
-        echo '# -*- mode: python ; coding: utf-8 -*-\nblock_cipher = None\na = Analysis(['"'"'doc_converter_gui.py'"'"'], pathex=[], binaries=[], datas=[], hiddenimports=[], hookspath=[], hooksconfig={}, runtime_hooks=[], excludes=[], win_no_prefer_redirects=False, win_private_assemblies=False, cipher=block_cipher, noarchive=False)\npyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)\nexe = EXE(pyz, a.scripts, [], exclude_binaries=True, name='"'"'doc-converter'"'"', debug=False, bootloader_ignore_signals=False, strip=False, upx=True, console=False, disable_windowed_traceback=False, argv_emulation=True, target_arch='"'"'x86_64'"'"', codesign_identity=None, entitlements_file=None)\ncoll = COLLECT(exe, a.binaries, a.zipfiles, a.datas, strip=False, upx=True, upx_exclude=[], name='"'"'doc-converter'"'"')\napp = BUNDLE(coll, name='"'"'doc-converter.app'"'"', icon=None, bundle_identifier='"'"'com.docconverter.app'"'"', info_plist={'"'"'LSMinimumSystemVersion'"'"': '"'"'10.13.0'"'"', '"'"'NSHighResolutionCapable'"'"': True, '"'"'CFBundleShortVersionString'"'"': '"'"'1.0.0'"'"', '"'"'CFBundleVersion'"'"': '"'"'1.0.0'"'"', '"'"'NSRequiresAquaSystemAppearance'"'"': False})' > doc-converter.spec
+        # Add necessary imports to spec file
+        echo "import sys" > doc-converter.spec.new
+        echo "from PyInstaller.utils.hooks import collect_all" >> doc-converter.spec.new
+        cat doc-converter.spec >> doc-converter.spec.new
+        mv doc-converter.spec.new doc-converter.spec
+        
+        # Replace the Analysis block to include all necessary dependencies
+        sed -i '' 's/a = Analysis.*/a = Analysis(["doc_converter_gui.py"], binaries=[], datas=[], hiddenimports=[], hookspath=[], hooksconfig={}, runtime_hooks=[], excludes=[], noarchive=False)/' doc-converter.spec
+        
+        # Replace the BUNDLE section to include proper Info.plist
+        sed -i '' 's/app = BUNDLE.*/app = BUNDLE(coll, name="doc-converter.app", bundle_identifier="com.docconverter.app", info_plist={"LSMinimumSystemVersion": "10.13.0", "NSHighResolutionCapable": True, "CFBundleShortVersionString": "1.0.0", "CFBundleVersion": "1.0.0"})/' doc-converter.spec
+        
+        # Display the final spec file
+        echo "Final spec file contents:"
+        cat doc-converter.spec
         
         # Build using the spec file
-        python -m PyInstaller doc-converter.spec
+        ARCHFLAGS="-arch x86_64" python -m PyInstaller --target-arch x86_64 doc-converter.spec
         
         # Verify app bundle structure
         echo "App bundle structure:"
-        find dist/doc-converter.app -type f
+        find dist/doc-converter.app -type f || true
         
         # Check binary dependencies
         echo "Binary dependencies:"
-        otool -L dist/doc-converter.app/Contents/MacOS/doc-converter
+        file dist/doc-converter.app/Contents/MacOS/doc-converter || true
+        otool -L dist/doc-converter.app/Contents/MacOS/doc-converter || true
       shell: bash
     
     - name: Install Apple Certificate
