@@ -196,6 +196,7 @@ jobs:
         codesign -d --entitlements :- dist/doc-converter.app;
         
         # Submit for notarization
+        echo "Submitting for notarization...";
         xcrun notarytool submit dist/doc-converter-macos.zip \
           --apple-id "$APPLE_ID" \
           --password "$APP_SPECIFIC_PASSWORD" \
