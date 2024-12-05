@@ -72,9 +72,14 @@ jobs:
       shell: bash
     
     - name: Build macOS Executable (Intel)
+      env:
+        ARCHFLAGS: "-arch x86_64"
       run: |
-        # Create spec file with proper architecture
-        pyi-makespec --windowed --name doc-converter --target-arch x86_64 doc_converter_gui.py
+        # Force x86_64 architecture for PyInstaller
+        python -c "import platform; print(f'Python architecture: {platform.machine()}')"
+        SYSTEM_ARCH=$(arch)
+        echo "System architecture: $SYSTEM_ARCH"
+        arch -x86_64 python -m PyInstaller --clean --noconfirm --windowed --icon=assets/icon.icns --name doc-converter doc_converter_gui.py
         
         # Create a new spec file with our modifications
         cat > doc-converter.spec << 'END_OF_SPEC'
@@ -168,7 +173,7 @@ jobs:
         ls -la
         
         # Create zip archive
-        zip -r doc-converter-macos.zip doc-converter.app
+        ditto -c -k --keepParent doc-converter.app doc-converter-macos.zip
         
         # Verify zip contents
         echo "Zip file contents:"
@@ -197,33 +202,42 @@ jobs:
         
         # Submit for notarization
         echo "Submitting for notarization...";
-        submission_id=$(xcrun notarytool submit dist/doc-converter-macos.zip \
+        submission_output=$(xcrun notarytool submit dist/doc-converter-macos.zip \
           --apple-id "$APPLE_ID" \
           --password "$APP_SPECIFIC_PASSWORD" \
           --team-id "$TEAM_ID" \
-          --wait | grep 'id:' | awk '{print $2}')
+          --wait)
+        echo "Submission output: $submission_output"
+        
+        submission_id=$(echo "$submission_output" | grep 'id:' | awk '{print $2}')
         echo "Submission ID: $submission_id";
         
-        # Log notarization status
-        xcrun notarytool log "$submission_id" logs.txt --keychain-profile "AC_PASSWORD" || echo "Failed to fetch logs, check submission ID.";
+        # Wait for notarization to complete and check status
+        echo "Waiting for notarization to complete..."
+        status_output=$(xcrun notarytool wait "$submission_id" \
+          --apple-id "$APPLE_ID" \
+          --password "$APP_SPECIFIC_PASSWORD" \
+          --team-id "$TEAM_ID")
+        echo "Status output: $status_output"
         
-        # Check for errors in the logs
-        if [ -f logs.txt ]; then
-          cat logs.txt
-          if grep -q 'Invalid\|error' logs.txt; then
-            echo "Notarization failed, check logs for details.";
-            exit 1;
-          fi
+        # Check if notarization was successful
+        if echo "$status_output" | grep -q "status: Accepted"; then
+          echo "Notarization successful, proceeding to staple..."
+          
+          # Staple the ticket
+          xcrun stapler staple "dist/doc-converter.app"
+          
+          # Verify stapling
+          echo "Verifying stapling..."
+          xcrun stapler validate "dist/doc-converter.app"
         else
-          echo "No errors found, proceeding to staple...";
+          echo "Notarization failed. Fetching detailed logs..."
+          xcrun notarytool log "$submission_id" \
+            --apple-id "$APPLE_ID" \
+            --password "$APP_SPECIFIC_PASSWORD" \
+            --team-id "$TEAM_ID"
+          exit 1
         fi
-        
-        # Staple the ticket
-        xcrun stapler staple "dist/doc-converter.app"
-        
-        # Verify stapling
-        echo "Verifying stapling..."
-        xcrun stapler validate "dist/doc-converter.app"
       shell: bash
     
     - name: Upload artifacts
