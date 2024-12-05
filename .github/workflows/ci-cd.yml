@@ -73,15 +73,22 @@ jobs:
     
     - name: Build macOS Executable (Intel)
       run: |
-        # Verify system architecture
-        echo "System architecture:"
-        uname -m
+        # Create spec file
+        pyi-makespec --windowed --name doc-converter doc_converter_gui.py
         
-        python -m PyInstaller --onefile --windowed --name doc-converter doc_converter_gui.py --target-arch x86_64
+        # Modify spec file to include proper Info.plist settings
+        echo '# -*- mode: python ; coding: utf-8 -*-\nblock_cipher = None\na = Analysis(['"'"'doc_converter_gui.py'"'"'], pathex=[], binaries=[], datas=[], hiddenimports=[], hookspath=[], hooksconfig={}, runtime_hooks=[], excludes=[], win_no_prefer_redirects=False, win_private_assemblies=False, cipher=block_cipher, noarchive=False)\npyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)\nexe = EXE(pyz, a.scripts, [], exclude_binaries=True, name='"'"'doc-converter'"'"', debug=False, bootloader_ignore_signals=False, strip=False, upx=True, console=False, disable_windowed_traceback=False, argv_emulation=True, target_arch='"'"'x86_64'"'"', codesign_identity=None, entitlements_file=None)\ncoll = COLLECT(exe, a.binaries, a.zipfiles, a.datas, strip=False, upx=True, upx_exclude=[], name='"'"'doc-converter'"'"')\napp = BUNDLE(coll, name='"'"'doc-converter.app'"'"', icon=None, bundle_identifier='"'"'com.docconverter.app'"'"', info_plist={'"'"'LSMinimumSystemVersion'"'"': '"'"'10.13.0'"'"', '"'"'NSHighResolutionCapable'"'"': True, '"'"'CFBundleShortVersionString'"'"': '"'"'1.0.0'"'"', '"'"'CFBundleVersion'"'"': '"'"'1.0.0'"'"', '"'"'NSRequiresAquaSystemAppearance'"'"': False})' > doc-converter.spec
         
-        # Verify binary architecture
-        echo "Binary architecture:"
-        file dist/doc-converter.app/Contents/MacOS/doc-converter
+        # Build using the spec file
+        python -m PyInstaller doc-converter.spec
+        
+        # Verify app bundle structure
+        echo "App bundle structure:"
+        find dist/doc-converter.app -type f
+        
+        # Check binary dependencies
+        echo "Binary dependencies:"
+        otool -L dist/doc-converter.app/Contents/MacOS/doc-converter
       shell: bash
     
     - name: Install Apple Certificate
@@ -112,12 +119,24 @@ jobs:
         echo "Contents of dist directory:"
         ls -la dist/
         
-        # Sign the app bundle
+        # Sign all binaries in the app bundle
+        find "dist/doc-converter.app/Contents/MacOS" -type f -exec codesign --force --options runtime --sign "Developer ID Application" {} \;
+        
+        # Sign the frameworks if they exist
+        if [ -d "dist/doc-converter.app/Contents/Frameworks" ]; then
+          find "dist/doc-converter.app/Contents/Frameworks" -type f -exec codesign --force --options runtime --sign "Developer ID Application" {} \;
+        fi
+        
+        # Finally sign the app bundle
         codesign --force --options runtime --sign "Developer ID Application" dist/doc-converter.app
         
         # Verify signing
         echo "Verifying code signature..."
         codesign -vvv --deep --strict dist/doc-converter.app
+        
+        # Check entitlements
+        echo "Checking entitlements..."
+        codesign -d --entitlements :- dist/doc-converter.app
       shell: bash
     
     - name: Package macOS App
