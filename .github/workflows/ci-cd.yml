@@ -103,6 +103,18 @@ jobs:
         zip -r doc-converter-macos.zip doc-converter.app
       shell: bash
     
+    - name: Notarize App
+      env:
+        APPLE_ID: ${{ secrets.APPLE_ID }}
+        APP_SPECIFIC_PASSWORD: ${{ secrets.APP_SPECIFIC_PASSWORD }}
+      run: |
+        xcrun altool --notarize-app -f dist/doc-converter-macos.zip --primary-bundle-id "com.mschemer.doc-converter" -u "$APPLE_ID" -p "$APP_SPECIFIC_PASSWORD" --output-format xml
+        # Wait for notarization to complete
+        sleep 300
+        # Staple notarization
+        xcrun stapler staple dist/doc-converter.app
+      shell: bash
+    
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
