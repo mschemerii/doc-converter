@@ -205,8 +205,8 @@ jobs:
         echo "Submission ID: $submission_id";
         
         # Log notarization status
-        echo "Waiting for notarization to complete...";
-        xcrun notarytool log --id $submission_id;
+        echo "Fetching notarization logs...";
+        xcrun notarytool log $submission_id;
         
         echo "Notarization completed. Stapling ticket..."
         
