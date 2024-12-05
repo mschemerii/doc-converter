@@ -71,27 +71,12 @@ jobs:
         python -m PyInstaller --onefile --windowed --name doc-converter doc_converter_gui.py --target-arch x86_64
       shell: bash
     
-    - name: Create Keychain for Notarization
-      run: |
-        security create-keychain -p "temp_password" doc-converter-keychain
-        security default-keychain -s doc-converter-keychain
-        security unlock-keychain -p "temp_password" doc-converter-keychain
-      shell: bash
-
-    - name: Store Notary Credentials
-      env:
-        APPLE_ID: ${{ secrets.APPLE_ID }}
-        APP_SPECIFIC_PASSWORD: ${{ secrets.APP_SPECIFIC_PASSWORD }}
-      run: |
-        xcrun notarytool store-credentials "doc-converter-keychain" --apple-id "$APPLE_ID" --password "$APP_SPECIFIC_PASSWORD"
-      shell: bash
-    
     - name: Install Apple Certificate
       env:
         MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
         MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
       run: |
-        # Create keychain
+        # Create signing keychain
         security create-keychain -p "temp_password" build.keychain
         security default-keychain -s build.keychain
         security unlock-keychain -p "temp_password" build.keychain
@@ -103,27 +88,63 @@ jobs:
         
         # Clean up
         rm certificate.p12
+        
+        # List certificates to verify import
+        security find-identity -v
       shell: bash
 
     - name: Sign App Bundle
       run: |
+        # List the contents of dist directory
+        echo "Contents of dist directory:"
+        ls -la dist/
+        
+        # Sign the app bundle
         codesign --force --options runtime --sign "Developer ID Application" dist/doc-converter.app
+        
         # Verify signing
+        echo "Verifying code signature..."
         codesign -vvv --deep --strict dist/doc-converter.app
       shell: bash
     
     - name: Package macOS App
       run: |
         cd dist
+        # List contents before zipping
+        echo "Contents before zipping:"
+        ls -la
+        
+        # Create zip archive
         zip -r doc-converter-macos.zip doc-converter.app
+        
+        # Verify zip contents
+        echo "Zip file contents:"
+        unzip -l doc-converter-macos.zip
       shell: bash
     
     - name: Notarize App
       env:
         APPLE_ID: ${{ secrets.APPLE_ID }}
         APP_SPECIFIC_PASSWORD: ${{ secrets.APP_SPECIFIC_PASSWORD }}
+        TEAM_ID: ${{ secrets.TEAM_ID }}
       run: |
-        xcrun notarytool submit dist/doc-converter-macos.zip --keychain-profile "doc-converter-keychain" --wait
+        echo "Starting notarization process..."
+        
+        # Submit for notarization
+        xcrun notarytool submit dist/doc-converter-macos.zip \
+          --apple-id "$APPLE_ID" \
+          --password "$APP_SPECIFIC_PASSWORD" \
+          --team-id "$TEAM_ID" \
+          --wait
+        
+        echo "Notarization completed. Stapling ticket..."
+        
+        # Staple the ticket
+        xcrun stapler staple "dist/doc-converter.app"
+        
+        # Verify stapling
+        echo "Verifying stapling..."
+        xcrun stapler validate "dist/doc-converter.app"
       shell: bash
     
     - name: Upload artifacts
@@ -131,90 +152,6 @@ jobs:
       with:
         name: doc-converter-macos-intel
         path: dist/doc-converter-macos.zip
-
-#  build-macos-silicon:
-#    runs-on: macos-latest-silicon
-#    steps:
-#    - uses: actions/checkout@v4
-#    
-#    - name: Set up Python
-#      uses: actions/setup-python@v4
-#      with:
-#        python-version: '3.12'
-#        cache: 'pip'
-#    
-#    - name: Install dependencies
-#      run: |
-#        python -m pip install --upgrade pip
-#        pip install -r requirements.txt
-#        pip install pyinstaller --no-cache-dir
-#      shell: bash
-#    
-#    - name: Build macOS Executable (Silicon)
-#      run: |
-#        python -m PyInstaller --onefile --windowed --name doc-converter doc_converter_gui.py --target-arch arm64
-#      shell: bash
-#    
-#    - name: Create Keychain
-#      run: |
-#        security create-keychain -p "temp_password" doc-converter-keychain
-#        security default-keychain -s doc-converter-keychain
-#        security unlock-keychain -p "temp_password" doc-converter-keychain
-#      shell: bash
-#    
-#    - name: Store Notary Credentials
-#      env:
-#        APPLE_ID: ${{ secrets.APPLE_ID }}
-#        APP_SPECIFIC_PASSWORD: ${{ secrets.APP_SPECIFIC_PASSWORD }}
-#      run: |
-#        xcrun notarytool store-credentials "doc-converter-keychain" --apple-id "$APPLE_ID" --password "$APP_SPECIFIC_PASSWORD"
-#      shell: bash
-#    
-#    - name: Install Apple Certificate
-#      env:
-#        MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
-#        MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
-#      run: |
-#        # Create keychain
-#        security create-keychain -p "temp_password" build.keychain
-#        security default-keychain -s build.keychain
-#        security unlock-keychain -p "temp_password" build.keychain
-#        
-#        # Import certificate
-#        echo $MACOS_CERTIFICATE | base64 --decode > certificate.p12
-#        security import certificate.p12 -k build.keychain -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
-#        security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "temp_password" build.keychain
-#        
-#        # Clean up
-#        rm certificate.p12
-#      shell: bash
-#    
-#    - name: Sign App Bundle
-#      run: |
-#        codesign --force --options runtime --sign "Developer ID Application" dist/doc-converter.app
-#        # Verify signing
-#        codesign -vvv --deep --strict dist/doc-converter.app
-#      shell: bash
-#    
-#    - name: Notarize App
-#      env:
-#        APPLE_ID: ${{ secrets.APPLE_ID }}
-#        APP_SPECIFIC_PASSWORD: ${{ secrets.APP_SPECIFIC_PASSWORD }}
-#      run: |
-#        xcrun notarytool submit dist/doc-converter-macos.zip --keychain-profile "doc-converter-keychain" --wait
-#      shell: bash
-#    
-#    - name: Package macOS App
-#      run: |
-#        cd dist
-#        zip -r doc-converter-macos.zip doc-converter.app
-#      shell: bash
-#    
-#    - name: Upload artifacts
-#      uses: actions/upload-artifact@v4
-#      with:
-#        name: doc-converter-macos-silicon
-#        path: dist/doc-converter-macos.zip
 
   release:
     needs: [build-windows, build-macos-intel]
