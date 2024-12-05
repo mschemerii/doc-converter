@@ -108,11 +108,7 @@ jobs:
         APPLE_ID: ${{ secrets.APPLE_ID }}
         APP_SPECIFIC_PASSWORD: ${{ secrets.APP_SPECIFIC_PASSWORD }}
       run: |
-        xcrun altool --notarize-app -f dist/doc-converter-macos.zip --primary-bundle-id "com.mschemer.doc-converter" -u "$APPLE_ID" -p "$APP_SPECIFIC_PASSWORD" --output-format xml
-        # Wait for notarization to complete
-        sleep 300
-        # Staple notarization
-        xcrun stapler staple dist/doc-converter.app
+        xcrun notarytool submit dist/doc-converter-macos.zip --keychain-profile "your-keychain-profile" --wait
       shell: bash
     
     - name: Upload artifacts
@@ -144,11 +140,51 @@ jobs:
 #        python -m PyInstaller --onefile --windowed --name doc-converter doc_converter_gui.py --target-arch arm64
 #      shell: bash
 #    
+#    - name: Install Apple Certificate
+#      env:
+#        MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+#        MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+#      run: |
+#        # Create keychain
+#        security create-keychain -p "temp_password" build.keychain
+#        security default-keychain -s build.keychain
+#        security unlock-keychain -p "temp_password" build.keychain
+#        
+#        # Import certificate
+#        echo $MACOS_CERTIFICATE | base64 --decode > certificate.p12
+#        security import certificate.p12 -k build.keychain -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+#        security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "temp_password" build.keychain
+#        
+#        # Clean up
+#        rm certificate.p12
+#      shell: bash
+#    
+#    - name: Sign App Bundle
+#      run: |
+#        codesign --force --options runtime --sign "Developer ID Application" dist/doc-converter.app
+#        # Verify signing
+#        codesign -vvv --deep --strict dist/doc-converter.app
+#      shell: bash
+#    
+#    - name: Notarize App
+#      env:
+#        APPLE_ID: ${{ secrets.APPLE_ID }}
+#        APP_SPECIFIC_PASSWORD: ${{ secrets.APP_SPECIFIC_PASSWORD }}
+#      run: |
+#        xcrun notarytool submit dist/doc-converter-macos.zip --keychain-profile "your-keychain-profile" --wait
+#      shell: bash
+#    
+#    - name: Package macOS App
+#      run: |
+#        cd dist
+#        zip -r doc-converter-macos.zip doc-converter.app
+#      shell: bash
+#    
 #    - name: Upload artifacts
 #      uses: actions/upload-artifact@v4
 #      with:
 #        name: doc-converter-macos-silicon
-#        path: dist/doc-converter.app
+#        path: dist/doc-converter-macos.zip
 
   release:
     needs: [build-windows, build-macos-intel]
