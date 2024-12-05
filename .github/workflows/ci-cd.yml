@@ -205,10 +205,10 @@ jobs:
         echo "Submission ID: $submission_id";
         
         # Log notarization status
-        xcrun notarytool log $submission_id logs.txt || echo "Failed to fetch logs, check submission ID.";
+        xcrun notarytool --apple-id "$APPLE_ID" --password "$APP_SPECIFIC_PASSWORD" --team-id "$TEAM_ID" log "$submission_id" logs.txt || echo "Failed to fetch logs, check submission ID.";
         
         # Check for errors in the logs
-        if grep -q 'Invalid' logs.txt; then
+        if [ -f logs.txt ] && grep -q 'Invalid' logs.txt; then
           echo "Notarization failed, check logs for details.";
         else
           echo "No errors found, proceeding to staple...";
