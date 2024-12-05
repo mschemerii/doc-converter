@@ -130,6 +130,12 @@ jobs:
         ls -R macos-build/
       shell: bash
 
+    - name: Package macOS App
+      run: |
+        cd macos-build
+        zip -r doc-converter-macos.zip doc-converter.app
+      shell: bash
+
     - name: Create Release
       if: github.event_name == 'push'
       uses: softprops/action-gh-release@v2
@@ -137,6 +143,6 @@ jobs:
         tag_name: v1.0.0
         files: |
           windows-build/doc-converter.exe
-          macos-build/doc-converter.app
+          macos-build/doc-converter-macos.zip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
