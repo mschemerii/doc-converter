@@ -73,34 +73,44 @@ jobs:
         arch -x86_64 /usr/local/bin/python3 -c "import platform; print(f'Python architecture: {platform.machine()}')"
       shell: bash
     
-    - name: Build macOS Executable (Intel)
+    - name: Build macOS Application
       env:
         ARCHFLAGS: "-arch x86_64"
       run: |
-        # Clean up previous builds
-        rm -rf build/ dist/
+        # Clean previous builds
+        rm -rf build dist
         
-        # Create empty icon if it doesn't exist
-        mkdir -p assets
-        touch assets/icon.icns
+        # Debug: Print Python and PyInstaller versions
+        echo "Python version:"
+        python3 --version
+        echo "PyInstaller version:"
+        python3 -m PyInstaller --version
         
-        # Build with x86_64 Python
-        arch -x86_64 /usr/local/bin/python3 -m PyInstaller \
+        # Build the application
+        arch -x86_64 python3 -m PyInstaller \
           --clean \
-          --noconfirm \
           --windowed \
           --name doc-converter \
+          --icon assets/icon.icns \
           --target-arch x86_64 \
-          --distpath dist \
-          --workpath build \
-          --specpath . \
+          --osx-bundle-identifier "com.docconverter.app" \
           doc_converter_gui.py
         
-        # Print directory contents for debugging
-        echo "Contents of dist directory:"
-        ls -la dist/
-        echo "Contents of build directory:"
-        ls -la build/
+        # Debug: Verify build artifacts
+        echo "Checking build artifacts..."
+        ls -la dist/doc-converter.app/Contents/MacOS/
+        otool -L dist/doc-converter.app/Contents/MacOS/doc-converter
+        
+        # Debug: Check app bundle structure
+        echo "App bundle structure:"
+        find dist/doc-converter.app -type f
+        
+        # Debug: Check Info.plist
+        echo "Info.plist contents:"
+        cat dist/doc-converter.app/Contents/Info.plist
+        
+        # Create zip for notarization
+        cd dist && zip -r doc-converter-macos.zip doc-converter.app
       shell: bash
     
     - name: Install Apple Certificate
@@ -149,21 +159,6 @@ jobs:
         # Check entitlements
         echo "Checking entitlements..."
         codesign -d --entitlements :- dist/doc-converter.app
-      shell: bash
-    
-    - name: Package macOS App
-      run: |
-        cd dist
-        # List contents before zipping
-        echo "Contents before zipping:"
-        ls -la
-        
-        # Create zip archive
-        ditto -c -k --keepParent doc-converter.app doc-converter-macos.zip
-        
-        # Verify zip contents
-        echo "Zip file contents:"
-        unzip -l doc-converter-macos.zip
       shell: bash
     
     - name: Notarize App
