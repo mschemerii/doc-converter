@@ -183,6 +183,18 @@ jobs:
       run: |
         echo "Starting notarization process..."
         
+        # Verify app bundle structure
+        echo "App bundle structure:";
+        find dist/doc-converter.app -type f;
+        
+        # Verify code signing
+        echo "Verifying code signing...";
+        codesign -vvv --deep --strict dist/doc-converter.app;
+        
+        # Check entitlements
+        echo "Checking entitlements...";
+        codesign -d --entitlements :- dist/doc-converter.app;
+        
         # Submit for notarization
         xcrun notarytool submit dist/doc-converter-macos.zip \
           --apple-id "$APPLE_ID" \
