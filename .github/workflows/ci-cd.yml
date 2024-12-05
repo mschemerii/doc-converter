@@ -206,9 +206,15 @@ jobs:
         
         # Log notarization status
         echo "Fetching notarization logs...";
-        xcrun notarytool log $submission_id logs.txt;
+        xcrun notarytool log $submission_id logs.txt || echo "Failed to fetch logs, check submission ID.";
         
-        echo "Notarization completed. Stapling ticket..."
+        # Check for errors in the logs
+        echo "Notarization completed. Checking for errors in logs..."
+        if grep -q 'Invalid' logs.txt; then
+          echo "Notarization failed, check logs for details.";
+        else
+          echo "No errors found, proceeding to staple...";
+        fi;
         
         # Staple the ticket
         xcrun stapler staple "dist/doc-converter.app"
