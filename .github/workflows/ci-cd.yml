@@ -205,10 +205,10 @@ jobs:
         echo "Submission ID: $submission_id";
         
         # Log notarization status
-        xcrun notarytool log $submission_id > logs.txt || echo "Failed to fetch logs, check submission ID.";
+        xcrun notarytool log $submission_id logs.txt || echo "Failed to fetch logs, check submission ID.";
         
         # Check for errors in the logs
-        if grep -q 'Invalid' logs.txt 2>/dev/null; then
+        if grep -q 'Invalid' logs.txt; then
           echo "Notarization failed, check logs for details.";
         else
           echo "No errors found, proceeding to staple...";
