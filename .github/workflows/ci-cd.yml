@@ -77,47 +77,30 @@ jobs:
       env:
         ARCHFLAGS: "-arch x86_64"
       run: |
+        # Clean up previous builds
+        rm -rf build/ dist/
+        
         # Create empty icon if it doesn't exist
         mkdir -p assets
         touch assets/icon.icns
         
         # Build with x86_64 Python
-        arch -x86_64 /usr/local/bin/python3 -m PyInstaller --clean --noconfirm --windowed --name doc-converter --target-arch x86_64 doc_converter_gui.py
+        arch -x86_64 /usr/local/bin/python3 -m PyInstaller \
+          --clean \
+          --noconfirm \
+          --windowed \
+          --name doc-converter \
+          --target-arch x86_64 \
+          --distpath dist \
+          --workpath build \
+          --specpath . \
+          doc_converter_gui.py
         
-        # Create a new spec file with our modifications
-        cat > doc-converter.spec << 'END_OF_SPEC'
-        # -*- mode: python ; coding: utf-8 -*-
-        import sys
-        from PyInstaller.utils.hooks import collect_all
-
-        block_cipher = None
-
-        a = Analysis(['doc_converter_gui.py'], pathex=[], binaries=[], datas=[], hiddenimports=[], hookspath=[], hooksconfig={}, runtime_hooks=[], excludes=[], win_no_prefer_redirects=False, win_private_assemblies=False, cipher=block_cipher, noarchive=False)
-
-        pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
-
-        exe = EXE(pyz, a.scripts, [], exclude_binaries=True, name='doc-converter', debug=False, bootloader_ignore_signals=False, strip=False, upx=True, console=False, disable_windowed_traceback=False, argv_emulation=True, target_arch='x86_64', codesign_identity=None, entitlements_file=None)
-
-        coll = COLLECT(exe, a.binaries, a.zipfiles, a.datas, strip=False, upx=True, upx_exclude=[], name='doc-converter')
-
-        app = BUNDLE(coll, name='doc-converter.app', icon=None, bundle_identifier='com.docconverter.app', info_plist={'LSMinimumSystemVersion': '10.13.0', 'NSHighResolutionCapable': True, 'CFBundleShortVersionString': '1.0.0', 'CFBundleVersion': '1.0.0'})
-        END_OF_SPEC
-        
-        # Display the spec file
-        echo "Final spec file contents:"
-        cat doc-converter.spec
-        
-        # Build using the spec file
-        ARCHFLAGS="-arch x86_64" python -m PyInstaller doc-converter.spec
-        
-        # Verify app bundle structure
-        echo "App bundle structure:"
-        find dist/doc-converter.app -type f || true
-        
-        # Check binary dependencies
-        echo "Binary dependencies:"
-        file dist/doc-converter.app/Contents/MacOS/doc-converter || true
-        otool -L dist/doc-converter.app/Contents/MacOS/doc-converter || true
+        # Print directory contents for debugging
+        echo "Contents of dist directory:"
+        ls -la dist/
+        echo "Contents of build directory:"
+        ls -la build/
       shell: bash
     
     - name: Install Apple Certificate
