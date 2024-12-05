@@ -71,6 +71,21 @@ jobs:
         python -m PyInstaller --onefile --windowed --name doc-converter doc_converter_gui.py --target-arch x86_64
       shell: bash
     
+    - name: Create Keychain for Notarization
+      run: |
+        security create-keychain -p "temp_password" doc-converter-keychain
+        security default-keychain -s doc-converter-keychain
+        security unlock-keychain -p "temp_password" doc-converter-keychain
+      shell: bash
+
+    - name: Store Notary Credentials
+      env:
+        APPLE_ID: ${{ secrets.APPLE_ID }}
+        APP_SPECIFIC_PASSWORD: ${{ secrets.APP_SPECIFIC_PASSWORD }}
+      run: |
+        xcrun notarytool store-credentials "doc-converter-keychain" --apple-id "$APPLE_ID" --password "$APP_SPECIFIC_PASSWORD"
+      shell: bash
+    
     - name: Install Apple Certificate
       env:
         MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
@@ -95,28 +110,6 @@ jobs:
         codesign --force --options runtime --sign "Developer ID Application" dist/doc-converter.app
         # Verify signing
         codesign -vvv --deep --strict dist/doc-converter.app
-      shell: bash
-    
-    - name: Create Keychain
-      run: |
-        security create-keychain -p "temp_password" doc-converter-keychain
-        security default-keychain -s doc-converter-keychain
-        security unlock-keychain -p "temp_password" doc-converter-keychain
-      shell: bash
-      
-    - name: Create Keychain
-      run: |
-        security create-keychain -p "temp_password" doc-converter-keychain
-        security default-keychain -s doc-converter-keychain
-        security unlock-keychain -p "temp_password" doc-converter-keychain
-      shell: bash
-
-    - name: Store Notary Credentials
-      env:
-        APPLE_ID: ${{ secrets.APPLE_ID }}
-        APP_SPECIFIC_PASSWORD: ${{ secrets.APP_SPECIFIC_PASSWORD }}
-      run: |
-        xcrun notarytool store-credentials "doc-converter-keychain" --apple-id "$APPLE_ID" --password "$APP_SPECIFIC_PASSWORD"
       shell: bash
     
     - name: Package macOS App
