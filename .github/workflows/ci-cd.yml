@@ -188,26 +188,25 @@ jobs:
         
         # Submit for notarization
         echo "Submitting for notarization...";
-        submission_output=$(xcrun notarytool submit dist/doc-converter-macos.zip \
+        submission_id=$(xcrun notarytool submit dist/doc-converter-macos.zip \
           --apple-id "$APPLE_ID" \
           --password "$APP_SPECIFIC_PASSWORD" \
           --team-id "$TEAM_ID" \
-          --wait)
-        echo "Submission output: $submission_output"
-        
-        submission_id=$(echo "$submission_output" | grep 'id:' | awk '{print $2}')
+          --wait | grep 'id:' | head -n1 | awk '{print $2}')
         echo "Submission ID: $submission_id";
         
         # Wait for notarization to complete and check status
         echo "Waiting for notarization to complete..."
-        status_output=$(xcrun notarytool wait "$submission_id" \
+        xcrun notarytool wait "$submission_id" \
           --apple-id "$APPLE_ID" \
           --password "$APP_SPECIFIC_PASSWORD" \
-          --team-id "$TEAM_ID")
-        echo "Status output: $status_output"
+          --team-id "$TEAM_ID"
         
         # Check if notarization was successful
-        if echo "$status_output" | grep -q "status: Accepted"; then
+        if xcrun notarytool info "$submission_id" \
+          --apple-id "$APPLE_ID" \
+          --password "$APP_SPECIFIC_PASSWORD" \
+          --team-id "$TEAM_ID" | grep -q "status: Accepted"; then
           echo "Notarization successful, proceeding to staple..."
           
           # Staple the ticket
