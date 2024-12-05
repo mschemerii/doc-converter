@@ -197,11 +197,16 @@ jobs:
         
         # Submit for notarization
         echo "Submitting for notarization...";
-        xcrun notarytool submit dist/doc-converter-macos.zip \
+        submission_id=$(xcrun notarytool submit dist/doc-converter-macos.zip \
           --apple-id "$APPLE_ID" \
           --password "$APP_SPECIFIC_PASSWORD" \
           --team-id "$TEAM_ID" \
-          --wait
+          --wait | grep 'id:' | awk '{print $2}')
+        echo "Submission ID: $submission_id";
+        
+        # Log notarization status
+        echo "Waiting for notarization to complete...";
+        xcrun notarytool log --id $submission_id;
         
         echo "Notarization completed. Stapling ticket..."
         
