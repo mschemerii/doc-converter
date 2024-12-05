@@ -56,15 +56,21 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.12'
+        python-version: '3.12.8'
         architecture: 'x64'
         cache: 'pip'
     
     - name: Install dependencies
+      env:
+        ARCHFLAGS: "-arch x86_64"
       run: |
+        # Verify Python architecture
+        python -c "import platform; print(f'Python architecture: {platform.machine()}')"
+        
+        # Install dependencies with x86_64 architecture
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pyinstaller --no-cache-dir
+        pip install --only-binary :all: -r requirements.txt
+        pip install --only-binary :all: pyinstaller
         
         # Verify Python architecture
         echo "Python architecture:"
@@ -79,7 +85,7 @@ jobs:
         python -c "import platform; print(f'Python architecture: {platform.machine()}')"
         SYSTEM_ARCH=$(arch)
         echo "System architecture: $SYSTEM_ARCH"
-        arch -x86_64 python -m PyInstaller --clean --noconfirm --windowed --icon=assets/icon.icns --name doc-converter doc_converter_gui.py
+        python -m PyInstaller --clean --noconfirm --windowed --icon=assets/icon.icns --name doc-converter --target-arch x86_64 doc_converter_gui.py
         
         # Create a new spec file with our modifications
         cat > doc-converter.spec << 'END_OF_SPEC'
