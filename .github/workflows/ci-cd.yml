@@ -64,28 +64,25 @@ jobs:
       env:
         ARCHFLAGS: "-arch x86_64"
       run: |
-        # Verify Python architecture
-        python -c "import platform; print(f'Python architecture: {platform.machine()}')"
+        # Force x86_64 Python
+        arch -x86_64 /usr/local/bin/python3 -m pip install --upgrade pip
+        arch -x86_64 /usr/local/bin/python3 -m pip install --only-binary :all: -r requirements.txt
+        arch -x86_64 /usr/local/bin/python3 -m pip install --only-binary :all: pyinstaller
         
-        # Install dependencies with x86_64 architecture
-        python -m pip install --upgrade pip
-        pip install --only-binary :all: -r requirements.txt
-        pip install --only-binary :all: pyinstaller
-        
-        # Verify Python architecture
-        echo "Python architecture:"
-        python -c "import platform; print(platform.machine())"
+        # Verify architecture
+        arch -x86_64 /usr/local/bin/python3 -c "import platform; print(f'Python architecture: {platform.machine()}')"
       shell: bash
     
     - name: Build macOS Executable (Intel)
       env:
         ARCHFLAGS: "-arch x86_64"
       run: |
-        # Force x86_64 architecture for PyInstaller
-        python -c "import platform; print(f'Python architecture: {platform.machine()}')"
-        SYSTEM_ARCH=$(arch)
-        echo "System architecture: $SYSTEM_ARCH"
-        python -m PyInstaller --clean --noconfirm --windowed --icon=assets/icon.icns --name doc-converter --target-arch x86_64 doc_converter_gui.py
+        # Create empty icon if it doesn't exist
+        mkdir -p assets
+        touch assets/icon.icns
+        
+        # Build with x86_64 Python
+        arch -x86_64 /usr/local/bin/python3 -m PyInstaller --clean --noconfirm --windowed --name doc-converter --target-arch x86_64 doc_converter_gui.py
         
         # Create a new spec file with our modifications
         cat > doc-converter.spec << 'END_OF_SPEC'
