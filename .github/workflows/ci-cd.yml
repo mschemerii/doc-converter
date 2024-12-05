@@ -57,6 +57,7 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: '3.12'
+        architecture: 'x64'
         cache: 'pip'
     
     - name: Install dependencies
@@ -64,11 +65,23 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install pyinstaller --no-cache-dir
+        
+        # Verify Python architecture
+        echo "Python architecture:"
+        python -c "import platform; print(platform.machine())"
       shell: bash
     
     - name: Build macOS Executable (Intel)
       run: |
+        # Verify system architecture
+        echo "System architecture:"
+        uname -m
+        
         python -m PyInstaller --onefile --windowed --name doc-converter doc_converter_gui.py --target-arch x86_64
+        
+        # Verify binary architecture
+        echo "Binary architecture:"
+        file dist/doc-converter.app/Contents/MacOS/doc-converter
       shell: bash
     
     - name: Install Apple Certificate
