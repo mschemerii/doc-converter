@@ -206,7 +206,7 @@ jobs:
         
         # Log notarization status
         echo "Fetching notarization logs...";
-        xcrun notarytool log $submission_id;
+        xcrun notarytool log $submission_id logs.txt;
         
         echo "Notarization completed. Stapling ticket..."
         
