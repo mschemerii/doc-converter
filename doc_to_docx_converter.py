@@ -19,7 +19,7 @@ logging.basicConfig(
     ]
 )
 
-def convert_using_windows_com(doc_path, output_path):
+def convert_using_windows_com(doc_path: str, output_path: str) -> None:
     """Convert a .doc file to .docx using Microsoft Word COM interface on Windows"""
     try:
         import win32com.client
@@ -61,7 +61,7 @@ def convert_using_windows_com(doc_path, output_path):
         # Clean up COM
         pythoncom.CoUninitialize()
 
-def convert_using_pandoc(doc_path, output_path):
+def convert_using_pandoc(doc_path: str, output_path: str) -> None:
     """Convert a .doc file to .docx using Pandoc on Linux"""
     try:
         import pypandoc
@@ -87,10 +87,51 @@ def convert_using_pandoc(doc_path, output_path):
         logging.error(traceback.format_exc())
         raise
 
-def convert_doc_to_docx(doc_path):
+def convert_using_macos_script(doc_path: str, output_path: str) -> None:
+    """Convert a .doc file to .docx using macOS Automation"""
+    try:
+        # AppleScript to convert using Pages
+        script = f'''
+        tell application "Pages"
+            set inputFile to POSIX file "{doc_path}" as alias
+            open inputFile
+            delay 1
+            set outputFile to "{output_path}"
+            export front document to file (outputFile as POSIX file) as Word
+            delay 1
+            close front document saving no
+            quit
+        end tell
+        '''
+        
+        # Execute AppleScript
+        subprocess.run(['osascript', '-e', script], check=True, capture_output=True, text=True)
+        logging.info(f"Successfully converted {doc_path} to {output_path} using Pages")
+        
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Error converting document using Pages: {e.stderr}")
+        logging.error(traceback.format_exc())
+        raise
+    except Exception as e:
+        logging.error(f"Unexpected error during macOS conversion: {e}")
+        logging.error(traceback.format_exc())
+        raise
+
+def convert_doc_to_docx(doc_path: str) -> str:
     """
     Convert a .doc file to .docx using available methods
     Supports Windows, macOS, and Linux
+    
+    Args:
+        doc_path (str): Path to the input .doc file
+        
+    Returns:
+        str: Path to the output .docx file
+        
+    Raises:
+        FileNotFoundError: If input file doesn't exist
+        OSError: If conversion is not supported on current OS
+        Exception: For other conversion errors
     """
     # Validate input file
     if not os.path.exists(doc_path):
@@ -107,9 +148,7 @@ def convert_doc_to_docx(doc_path):
         if os_name == 'windows':
             convert_using_windows_com(doc_path, output_path)
         elif os_name == 'darwin':  # macOS
-            # Implement macOS-specific conversion (e.g., AppleScript)
-            logging.warning("macOS conversion not fully implemented")
-            raise NotImplementedError("macOS conversion not yet supported")
+            convert_using_macos_script(doc_path, output_path)
         elif os_name == 'linux':
             convert_using_pandoc(doc_path, output_path)
         else:
@@ -123,7 +162,7 @@ def convert_doc_to_docx(doc_path):
         logging.critical(traceback.format_exc())
         raise
 
-def main():
+def main() -> None:
     """Command-line interface for document conversion"""
     if len(sys.argv) < 2:
         logging.error("Usage: python doc_to_docx_converter.py <input_file.doc>")

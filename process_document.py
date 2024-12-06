@@ -21,11 +21,34 @@ logging.basicConfig(
     ]
 )
 
-def activate_venv():
-    """Activate the virtual environment and return the activated environment path"""
-    try:
-        venv_path = Path('.venv')
+def is_venv_activated() -> bool:
+    """Check if a virtual environment is already activated"""
+    return (hasattr(sys, 'real_prefix') or 
+            (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix))
+
+def activate_venv() -> tuple[dict, Path, Path]:
+    """
+    Activate the virtual environment and return the activated environment path
+    
+    Returns:
+        tuple: (environment variables dict, python path, pip path)
         
+    Raises:
+        FileNotFoundError: If virtual environment not found
+    """
+    try:
+        # Check if already activated
+        if is_venv_activated():
+            logging.info("Virtual environment is already activated")
+            venv_path = Path(sys.prefix)
+        else:
+            venv_path = Path('.venv')
+            
+            if not venv_path.exists():
+                logging.error(f"Virtual environment not found at {venv_path}")
+                raise FileNotFoundError(f"Virtual environment not found at {venv_path}")
+        
+        # Set up paths based on platform
         if sys.platform == 'win32':
             python_path = venv_path / 'Scripts' / 'python'
             pip_path = venv_path / 'Scripts' / 'pip'
@@ -35,29 +58,22 @@ def activate_venv():
             pip_path = venv_path / 'bin' / 'pip'
             site_packages = venv_path / 'lib' / f'python{sys.version_info.major}.{sys.version_info.minor}' / 'site-packages'
         
-        # Validate virtual environment exists
-        if not venv_path.exists():
-            logging.error(f"Virtual environment not found at {venv_path}")
-            raise FileNotFoundError(f"Virtual environment not found at {venv_path}")
-        
-        # Add virtual environment to Python path
+        # Add to Python path if not already there
         if str(site_packages) not in sys.path:
             sys.path.insert(0, str(site_packages))
         
-        # Create new environment with venv path
+        # Set up environment
         env = os.environ.copy()
         env['VIRTUAL_ENV'] = str(venv_path)
         env['PATH'] = str(venv_path / ('Scripts' if sys.platform == 'win32' else 'bin')) + os.pathsep + env['PATH']
-        
-        # Unset PYTHONHOME if set
         env.pop('PYTHONHOME', None)
         
-        # Reload site module to recognize the new environment
+        # Reload site module
         importlib.reload(site)
         
         logging.info(f"Virtual environment activated at {venv_path}")
-        return env, str(python_path), str(pip_path)
-    
+        return env, python_path, pip_path
+        
     except Exception as e:
         logging.error(f"Error activating virtual environment: {e}")
         logging.error(traceback.format_exc())
