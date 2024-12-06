@@ -1,0 +1,209 @@
+name: Build macOS Apple Silicon
+
+on:
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: "3.12.0"
+
+jobs:
+  build-macos-silicon:
+    runs-on: macos-14
+    
+    env:
+      APPLE_ID: ${{ secrets.APPLE_ID }}
+      APP_SPECIFIC_PASSWORD: ${{ secrets.APP_SPECIFIC_PASSWORD }}
+      MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+      MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+      TEAM_ID: ${{ secrets.TEAM_ID }}
+      CERTIFICATE_PATH: ${{ runner.temp }}/build_certificate.p12
+      KEYCHAIN_PATH: ${{ runner.temp }}/app-signing.keychain-db
+      
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        architecture: arm64
+    
+    - name: Install Dependencies
+      run: |
+        python3 -m pip install --upgrade pip
+        python3 -m pip install -r requirements.txt
+        python3 -m pip install pyinstaller
+      shell: bash
+        
+    - name: Verify Python Architecture
+      run: |
+        echo "Python path: $(which python3)"
+        python3 -c "import platform; print(f'Python architecture: {platform.machine()}')"
+      shell: bash
+    
+    - name: Build macOS Application
+      run: |
+        # Clean previous builds
+        rm -rf build dist
+        
+        # Debug: Print Python and PyInstaller versions
+        echo "Python version:"
+        python3 --version
+        echo "PyInstaller version:"
+        python3 -m PyInstaller --version
+        
+        # Create a default icon if it doesn't exist
+        mkdir -p assets
+        if [ ! -f assets/icon.icns ]; then
+          echo "Creating default icon..."
+          # Convert the default macOS app icon to icns
+          cp /System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/GenericApplicationIcon.icns assets/icon.icns
+        fi
+        
+        # Build the application
+        python3 -m PyInstaller \
+          --clean \
+          --windowed \
+          --name doc-converter \
+          --icon assets/icon.icns \
+          --target-arch arm64 \
+          --osx-bundle-identifier "com.docconverter.app" \
+          doc_converter_gui.py
+        
+        # Debug: Verify build artifacts
+        echo "Checking build artifacts..."
+        ls -la dist/doc-converter.app/Contents/MacOS/
+        otool -L dist/doc-converter.app/Contents/MacOS/doc-converter
+        
+        # Debug: Check app bundle structure
+        echo "App bundle structure:"
+        find dist/doc-converter.app -type f
+        
+        # Debug: Check Info.plist
+        echo "Info.plist contents:"
+        cat dist/doc-converter.app/Contents/Info.plist
+        
+        # Create zip for notarization
+        cd dist && zip -r doc-converter-macos.zip doc-converter.app
+      shell: bash
+    
+    - name: Create Entitlements File
+      run: |
+        cat > entitlements.plist << EOF
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>com.apple.security.cs.allow-jit</key>
+            <true/>
+            <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+            <true/>
+            <key>com.apple.security.cs.disable-library-validation</key>
+            <true/>
+            <key>com.apple.security.cs.allow-dyld-environment-variables</key>
+            <true/>
+            <key>com.apple.security.automation.apple-events</key>
+            <true/>
+            <key>com.apple.security.get-task-allow</key>
+            <true/>
+        </dict>
+        </plist>
+        EOF
+
+    - name: Install Apple Certificate
+      run: |
+        # import certificate from secrets
+        echo -n "$MACOS_CERTIFICATE" | base64 --decode > $CERTIFICATE_PATH
+        
+        # create temporary keychain
+        security create-keychain -p "$MACOS_CERTIFICATE_PASSWORD" $KEYCHAIN_PATH
+        security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+        security unlock-keychain -p "$MACOS_CERTIFICATE_PASSWORD" $KEYCHAIN_PATH
+        
+        # import certificate to keychain
+        security import $CERTIFICATE_PATH -P "$MACOS_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+        security list-keychain -d user -s $KEYCHAIN_PATH
+        
+        # verify certificate import
+        security find-identity -v
+        
+        # Allow codesign to access the certificate
+        security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$MACOS_CERTIFICATE_PASSWORD" $KEYCHAIN_PATH
+      shell: bash
+
+    - name: Sign Application Bundle
+      run: |
+        # First, sign all dynamic libraries and extensions
+        echo "Signing all binaries in app bundle..."
+        find "dist/doc-converter.app/Contents/MacOS" "dist/doc-converter.app/Contents/Resources" -type f \( -name "*.so" -o -name "*.dylib" \) -exec codesign \
+          --force \
+          --sign "$(/usr/bin/security find-identity -v -p codesigning $KEYCHAIN_PATH | grep "Developer ID Application" | head -1 | awk '{print $2}')" \
+          --options runtime \
+          --timestamp \
+          --entitlements entitlements.plist \
+          --keychain $KEYCHAIN_PATH \
+          {} \;
+
+        # Then sign the main executable
+        echo "Signing main executable..."
+        codesign \
+          --force \
+          --sign "$(/usr/bin/security find-identity -v -p codesigning $KEYCHAIN_PATH | grep "Developer ID Application" | head -1 | awk '{print $2}')" \
+          --options runtime \
+          --timestamp \
+          --entitlements entitlements.plist \
+          --keychain $KEYCHAIN_PATH \
+          "dist/doc-converter.app"
+
+        # Verify signature
+        echo "Verifying signature..."
+        codesign --verify --deep --strict --verbose=2 "dist/doc-converter.app"
+    
+    - name: Notarize App
+      run: |
+        cd dist
+        
+        # Submit for notarization
+        echo "Submitting for notarization..."
+        submission_id=$(xcrun notarytool submit doc-converter-macos.zip \
+          --apple-id "$APPLE_ID" \
+          --password "$APP_SPECIFIC_PASSWORD" \
+          --team-id "$TEAM_ID" \
+          --wait | grep 'id:' | head -n1 | awk '{print $2}')
+        echo "Submission ID: $submission_id"
+        
+        # Wait for notarization to complete
+        echo "Waiting for notarization to complete..."
+        xcrun notarytool wait "$submission_id" \
+          --apple-id "$APPLE_ID" \
+          --password "$APP_SPECIFIC_PASSWORD" \
+          --team-id "$TEAM_ID"
+        
+        # Check if notarization was successful
+        if xcrun notarytool info "$submission_id" \
+          --apple-id "$APPLE_ID" \
+          --password "$APP_SPECIFIC_PASSWORD" \
+          --team-id "$TEAM_ID" | grep -q "status: Accepted"; then
+          echo "Notarization successful, proceeding to staple..."
+          
+          # Staple the ticket
+          xcrun stapler staple "doc-converter.app"
+          
+          # Verify stapling
+          echo "Verifying stapling..."
+          xcrun stapler validate "doc-converter.app"
+        else
+          echo "Notarization failed. Fetching detailed logs..."
+          xcrun notarytool log "$submission_id" \
+            --apple-id "$APPLE_ID" \
+            --password "$APP_SPECIFIC_PASSWORD" \
+            --team-id "$TEAM_ID"
+          exit 1
+        fi
+      shell: bash
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: doc-converter-silicon
+        path: dist/doc-converter.app
