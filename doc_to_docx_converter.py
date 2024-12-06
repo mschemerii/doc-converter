@@ -59,7 +59,6 @@ def convert_using_windows_com(doc_path: str, output_path: str) -> None:
         # Clean up COM
         pythoncom.CoUninitialize()
 
-    logging.info(f"Successfully converted {doc_path} to {output_path}")
 
 def convert_using_pandoc(doc_path: str, output_path: str) -> None:
     """Convert a .doc file to .docx using Pandoc on Linux"""
@@ -77,6 +76,9 @@ def convert_using_pandoc(doc_path: str, output_path: str) -> None:
             outputfile=output_path
         )
         
+        logging.info(f"Successfully converted {doc_path} to {output_path} using Pandoc")
+        logging.info(f"Final output path: {output_path}")
+        
     except ImportError:
         logging.error("Pandoc or pypandoc not installed. Cannot convert using Pandoc.")
         raise
@@ -84,8 +86,6 @@ def convert_using_pandoc(doc_path: str, output_path: str) -> None:
         logging.error(f"Error converting document using Pandoc: {e}")
         logging.error(traceback.format_exc())
         raise
-
-    logging.info(f"Successfully converted {doc_path} to {output_path} using Pandoc")
 
 def convert_using_macos_script(doc_path: str, output_path: str) -> None:
     """Convert a .doc file to .docx using macOS Automation"""
@@ -96,17 +96,23 @@ def convert_using_macos_script(doc_path: str, output_path: str) -> None:
         output_filename = f"{os.path.splitext(filename)[0]}.docx"
         output_path = os.path.join(os.path.dirname(doc_path), output_filename)
         
+        logging.info(f"Input file: {doc_path}")
+        logging.info(f"Generated filename: {filename}")
+        logging.info(f"Output path before conversion: {output_path}")
+        
         script = f'''
         tell application "Microsoft Word"
-            set inputFile to POSIX file "{doc_path}" as alias
+            set inputFile to POSIX file "{doc_path}"
             open inputFile
             delay 1
-            set outputFile to "{output_path}"
+            set outputFile to POSIX file "{output_path}"
             save as active document file name outputFile file format format document
             close active document saving no
             -- Do not quit the application
         end tell
         '''
+        
+        logging.info(f"Executing AppleScript with output path: {output_path}")
         
         # Execute AppleScript
         subprocess.run(['osascript', '-e', script], check=True, capture_output=True, text=True)
@@ -119,8 +125,6 @@ def convert_using_macos_script(doc_path: str, output_path: str) -> None:
         logging.error(f"Unexpected error during macOS conversion: {e}")
         logging.error(traceback.format_exc())
         raise
-
- #   logging.info(f"Successfully converted {doc_path} to {output_path}")
 
 def convert_doc_to_docx(doc_path: str) -> str:
     """
@@ -152,14 +156,16 @@ def convert_doc_to_docx(doc_path: str) -> str:
     try:
         if os_name == 'windows':
             convert_using_windows_com(doc_path, output_path)
+            logging.info(f"Successfully converted {doc_path} to {output_path} using Windows COM")
         elif os_name == 'darwin':  # macOS
             convert_using_macos_script(doc_path, output_path)
+            logging.info(f"Successfully converted {doc_path} to {output_path} using macOS Automation and Microsoft Word")
+            logging.info(f"Final output path: {output_path}")
         elif os_name == 'linux':
             convert_using_pandoc(doc_path, output_path)
         else:
             logging.error(f"Unsupported operating system: {os_name}")
             raise OSError(f"Conversion not supported on {os_name}")
-        
         return output_path
     
     except Exception as e:
@@ -177,7 +183,6 @@ def main() -> None:
     
     try:
         output_file = convert_doc_to_docx(input_file)
-        print(f"Successfully converted {input_file} to {output_file}")
     except Exception as e:
         print(f"Conversion failed: {e}")
         sys.exit(1)
