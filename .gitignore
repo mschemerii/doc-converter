@@ -32,3 +32,4 @@ Thumbs.db
 
 # special scripts
 setup_python_env.sh
+setup_env.sh
