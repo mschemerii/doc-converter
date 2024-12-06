@@ -29,3 +29,6 @@ Thumbs.db
 
 # workspace files
 *.code-workspace
+
+# special scripts
+setup_python_env.sh
