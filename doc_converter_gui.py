@@ -6,31 +6,6 @@ import subprocess
 import sys
 import os
 
-def check_requirements(requirements_file='requirements.txt'):
-    with open(requirements_file) as f:
-        required_packages = f.read().splitlines()
-
-    missing_packages = []
-    for package in required_packages:
-        if not package or package.startswith('#'):
-            continue
-        package_name = package.split('==')[0]  # Get the package name without version
-        try:
-            __import__(package_name)  # Import the package
-        except ImportError:
-            missing_packages.append(package)
-
-    if missing_packages:
-        print("The following required packages are missing:")
-        for pkg in missing_packages:
-            print(f"- {pkg}")
-        print("\nPlease install the missing packages using:")
-        print(f"pip install -r {requirements_file}")
-        sys.exit(1)
-
-# Call the check_requirements function at the start of your script
-check_requirements()
-
 import os
 import sys
 import tkinter as tk
@@ -49,31 +24,32 @@ logging.basicConfig(
     ]
 )
 
-# Import Python version check
-from python_version_check import check_python_version
-
-# Run version check immediately
-if not check_python_version():
-    logging.error("Python version check failed. Exiting.")
-    sys.exit(1)
-
-# Import the existing conversion script
-from doc_to_docx_converter import convert_doc_to_docx
-
 class RedirectText:
     """Redirect print statements to a tkinter Text widget"""
     def __init__(self, text_widget):
-        self.output = text_widget
+        self.text_widget = text_widget
     
     def write(self, string):
         try:
-            self.output.insert(tk.END, string)
-            self.output.see(tk.END)
+            self.text_widget.insert(tk.END, string)
+            self.text_widget.see(tk.END)
+            self.text_widget.update()
         except Exception as e:
             logging.error(f"Error writing to text widget: {e}")
     
     def flush(self):
         pass
+
+class GUILogHandler(logging.Handler):
+    def __init__(self, text_widget):
+        super().__init__()
+        self.text_widget = text_widget
+
+    def emit(self, record):
+        msg = self.format(record)
+        self.text_widget.insert(tk.END, msg + '\n')
+        self.text_widget.see(tk.END)
+        self.text_widget.update()
 
 class DocConverterApp:
     def __init__(self, master):
@@ -81,10 +57,25 @@ class DocConverterApp:
         master.title("Doc Converter")
         master.geometry("500x400")
         
+        # Initialize output window
+        self.output_window = None
+        self.output_text = None
+        
+        # Create output window immediately
+        self.create_output_window()
+        
         # Configure grid weights for centering
         master.grid_rowconfigure(0, weight=1)
         master.grid_rowconfigure(4, weight=1)
         master.grid_columnconfigure(0, weight=1)
+        
+        # Configure logging to use our GUI handler
+        root_logger = logging.getLogger()
+        root_logger.setLevel(logging.INFO)
+        gui_handler = GUILogHandler(self.output_text)
+        gui_handler.setFormatter(logging.Formatter('%(message)s'))
+        root_logger.handlers = []  # Remove any existing handlers
+        root_logger.addHandler(gui_handler)
         
         # Main container frame
         self.main_frame = tk.Frame(master)
@@ -93,9 +84,23 @@ class DocConverterApp:
         # Configure main frame grid
         self.main_frame.grid_columnconfigure(0, weight=1)
         
+        # Instructions frame with border
+        self.instructions_frame = tk.LabelFrame(self.main_frame, text="Instructions", padx=10, pady=5)
+        self.instructions_frame.grid(row=0, column=0, pady=10, padx=20, sticky="ew")
+        
+        # Instructions text
+        instructions = [
+            "1. Click 'Browse' to select a .doc file",
+            "2. Click 'Convert' to start the conversion process",
+            "3. Use 'Show Output' to view the conversion progress",
+            "4. Click 'Exit' when finished"
+        ]
+        for i, instruction in enumerate(instructions):
+            tk.Label(self.instructions_frame, text=instruction, anchor="w", justify=tk.LEFT).grid(row=i, column=0, sticky="w")
+        
         # File selection frame
         self.file_frame = tk.Frame(self.main_frame)
-        self.file_frame.grid(row=0, column=0, pady=10, padx=20, sticky="ew")
+        self.file_frame.grid(row=1, column=0, pady=10, padx=20, sticky="ew")
         self.file_frame.grid_columnconfigure(0, weight=1)
         
         # File entry and browse button in file frame
@@ -109,21 +114,18 @@ class DocConverterApp:
         # Convert button
         self.convert_button = tk.Button(self.main_frame, text="Convert", command=self.start_conversion, 
                                       state=tk.NORMAL, width=15)
-        self.convert_button.grid(row=1, column=0, pady=10)
+        self.convert_button.grid(row=2, column=0, pady=10)
         
         # Show Output button
         self.show_output_button = tk.Button(self.main_frame, text="Show Output", 
                                           command=self.show_output_window,
                                           state=tk.NORMAL, width=15)
-        self.show_output_button.grid(row=2, column=0, pady=10)
+        self.show_output_button.grid(row=3, column=0, pady=10)
         
-        # Exit button (initially disabled)
+        # Exit button (always enabled)
         self.exit_button = tk.Button(self.main_frame, text="Exit", command=self.exit_app, 
-                                   state=tk.DISABLED, width=15)
-        self.exit_button.grid(row=3, column=0, pady=10)
-        
-        # Output window
-        self.output_window = None
+                                   state=tk.NORMAL, width=15)
+        self.exit_button.grid(row=4, column=0, pady=10)
         
         # Store last output
         self.last_output = []
@@ -138,32 +140,29 @@ class DocConverterApp:
             self.file_path.set(filename)
     
     def show_output_window(self):
-        """Show the output window with previous output"""
-        self.create_output_window()
-        # Replay previous output
-        if not self.last_output:
-            self.output_text.insert(tk.END, "No output available.\n")
-        for message in self.last_output:
-            self.output_text.insert(tk.END, message)
-    
+        """Show the output window"""
+        if self.output_window is None or not self.output_window.winfo_exists():
+            self.create_output_window()
+        self.output_window.deiconify()
+        self.output_window.lift()
+
     def start_conversion(self):
         """Start conversion process in a separate thread"""
         input_file = self.file_path.get()
         
-        # Validate input
         if not input_file:
-            messagebox.showerror("Error", "Please select a .doc file to convert")
+            messagebox.showerror("Error", "Please select a file first")
             return
         
-        if not input_file.lower().endswith('.doc'):
-            messagebox.showerror("Error", "Please select a .doc file")
+        if not os.path.exists(input_file):
+            messagebox.showerror("Error", "Selected file does not exist")
             return
         
         # Clear previous output
         self.last_output = []
         
-        # Create output window
-        self.create_output_window()
+        # Show output window
+        self.show_output_window()
         
         # Disable convert button during conversion
         self.convert_button.config(state=tk.DISABLED)
@@ -177,58 +176,51 @@ class DocConverterApp:
         conversion_thread.start()
     
     def create_output_window(self):
-        """Create a new window to display conversion output"""
-        if self.output_window and self.output_window.winfo_exists():
+        """Create and configure the output window"""
+        if self.output_window is not None and self.output_window.winfo_exists():
             self.output_window.lift()
             return
-        
+
         self.output_window = tk.Toplevel(self.master)
         self.output_window.title("Conversion Output")
         self.output_window.geometry("600x400")
         
-        # Configure grid weights for output window
+        # Configure grid
         self.output_window.grid_rowconfigure(0, weight=1)
         self.output_window.grid_columnconfigure(0, weight=1)
         
-        # Frame for output content
-        output_frame = tk.Frame(self.output_window)
-        output_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
-        output_frame.grid_rowconfigure(0, weight=1)
-        output_frame.grid_columnconfigure(0, weight=1)
+        # Frame for text widget and scrollbar
+        text_frame = tk.Frame(self.output_window)
+        text_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=5)
+        text_frame.grid_rowconfigure(0, weight=1)
+        text_frame.grid_columnconfigure(0, weight=1)
         
-        # Text area for output
-        self.output_text = scrolledtext.ScrolledText(
-            output_frame, 
-            wrap=tk.WORD, 
-            state=tk.NORMAL
-        )
+        # Text widget with scrollbar
+        self.output_text = scrolledtext.ScrolledText(text_frame, wrap=tk.WORD, width=70, height=20)
         self.output_text.grid(row=0, column=0, sticky="nsew")
         
-        # Exit button for output window
-        output_exit_button = tk.Button(output_frame, text="Close", 
-                                     command=self.on_output_window_close, width=15)
-        output_exit_button.grid(row=1, column=0, pady=10)
+        # Button frame
+        button_frame = tk.Frame(self.output_window)
+        button_frame.grid(row=1, column=0, pady=5)
         
-        # Custom stdout redirector that also stores output
-        class StoringRedirectText(RedirectText):
-            def __init__(self, text_widget, output_store):
-                super().__init__(text_widget)
-                self.output_store = output_store
-            
-            def write(self, string):
-                super().write(string)
-                self.output_store.append(string)
+        # Copy button
+        copy_button = tk.Button(button_frame, text="Copy Output", command=self.copy_output)
+        copy_button.pack(side=tk.LEFT, padx=5)
         
-        # Redirect stdout to the text widget and store output
-        sys.stdout = StoringRedirectText(self.output_text, self.last_output)
-        sys.stderr = StoringRedirectText(self.output_text, self.last_output)
+        # Close button
+        close_button = tk.Button(button_frame, text="Close", command=self.hide_output_window)
+        close_button.pack(side=tk.LEFT, padx=5)
+        
+        # Redirect stdout and stderr to the text widget
+        sys.stdout = RedirectText(self.output_text)
+        sys.stderr = RedirectText(self.output_text)
+        
+        # Initially hide the window
+        self.output_window.withdraw()
         
         # Close event handler
-        self.output_window.protocol("WM_DELETE_WINDOW", self.on_output_window_close)
-        
-        # Enable the show output button
-        self.show_output_button.config(state=tk.NORMAL)
-    
+        self.output_window.protocol("WM_DELETE_WINDOW", self.hide_output_window)
+
     def run_conversion(self, input_file):
         """Perform the actual conversion"""
         try:
@@ -342,48 +334,31 @@ class DocConverterApp:
         )
         close_button.pack(pady=20)
     
-    def on_output_window_close(self):
-        """Handle closing of output window"""
-        if self.output_window:
-            self.output_window.destroy()
-            self.output_window = None
-            
-            # Reset stdout and stderr
-            sys.stdout = sys.__stdout__
-            sys.stderr = sys.__stderr__
+    def hide_output_window(self):
+        """Hide the output window instead of destroying it"""
+        if self.output_window and self.output_window.winfo_exists():
+            self.output_window.withdraw()
     
     def exit_app(self):
-        """Handle application exit with output window confirmation"""
-        # Check if output window exists and has content
-        if (self.output_window and self.output_window.winfo_exists() and 
-            hasattr(self, 'output_text') and 
-            self.output_text.get("1.0", tk.END).strip()):
-            
-            # Ask user if they want to close the output window
-            response = messagebox.askyesno(
-                "Close Output Window", 
-                "Do you want to close the output window before exiting?",
-                icon='question'
-            )
-            
-            if response:
-                # User wants to close output window
-                if self.output_window:
-                    self.output_window.destroy()
-                self.master.quit()
-            else:
-                # User wants to keep output window open
-                if self.output_window:
-                    self.output_window.lift()  # Bring output window to front
-                    self.output_window.focus_force()
-        else:
-            # No output window or no content, just exit
-            self.master.quit()
+        """Handle application exit"""
+        if self.output_window and self.output_window.winfo_exists():
+            self.output_window.destroy()
+        self.master.destroy()
+    
+    def copy_output(self):
+        """Copy the contents of the output window to clipboard"""
+        if self.output_text:
+            output_content = self.output_text.get("1.0", tk.END)
+            self.master.clipboard_clear()
+            self.master.clipboard_append(output_content)
+            messagebox.showinfo("Success", "Output copied to clipboard!")
 
 def main():
     root = tk.Tk()
+    root.lift()  # Lift the window
+    root.attributes('-topmost', True)  # Make it topmost
     app = DocConverterApp(root)
-    
+    root.after_idle(root.attributes, '-topmost', False)  # Disable topmost after window appears
     # Center the window on the screen
     root.update_idletasks()
     width = root.winfo_width()
