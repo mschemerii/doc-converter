@@ -46,8 +46,6 @@ def convert_using_windows_com(doc_path: str, output_path: str) -> None:
             # Close the document
             doc.Close()
             
-            logging.info(f"Successfully converted {doc_path} to {output_path}")
-            
         except Exception as e:
             logging.error(f"Error converting document using Windows COM: {e}")
             logging.error(traceback.format_exc())
@@ -60,6 +58,8 @@ def convert_using_windows_com(doc_path: str, output_path: str) -> None:
     finally:
         # Clean up COM
         pythoncom.CoUninitialize()
+
+    logging.info(f"Successfully converted {doc_path} to {output_path}")
 
 def convert_using_pandoc(doc_path: str, output_path: str) -> None:
     """Convert a .doc file to .docx using Pandoc on Linux"""
@@ -77,8 +77,6 @@ def convert_using_pandoc(doc_path: str, output_path: str) -> None:
             outputfile=output_path
         )
         
-        logging.info(f"Successfully converted {doc_path} to {output_path} using Pandoc")
-        
     except ImportError:
         logging.error("Pandoc or pypandoc not installed. Cannot convert using Pandoc.")
         raise
@@ -86,6 +84,8 @@ def convert_using_pandoc(doc_path: str, output_path: str) -> None:
         logging.error(f"Error converting document using Pandoc: {e}")
         logging.error(traceback.format_exc())
         raise
+
+    logging.info(f"Successfully converted {doc_path} to {output_path} using Pandoc")
 
 def convert_using_macos_script(doc_path: str, output_path: str) -> None:
     """Convert a .doc file to .docx using macOS Automation"""
@@ -110,7 +110,6 @@ def convert_using_macos_script(doc_path: str, output_path: str) -> None:
         
         # Execute AppleScript
         subprocess.run(['osascript', '-e', script], check=True, capture_output=True, text=True)
-        logging.info(f"Successfully converted {doc_path} to {output_path} using Microsoft Word")
         
     except subprocess.CalledProcessError as e:
         logging.error(f"Error converting document using Microsoft Word: {e.stderr}")
@@ -120,6 +119,8 @@ def convert_using_macos_script(doc_path: str, output_path: str) -> None:
         logging.error(f"Unexpected error during macOS conversion: {e}")
         logging.error(traceback.format_exc())
         raise
+
+    logging.info(f"Successfully converted {doc_path} to {output_path} using Microsoft Word")
 
 def convert_doc_to_docx(doc_path: str) -> str:
     """
