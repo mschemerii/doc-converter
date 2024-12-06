@@ -96,8 +96,8 @@ def convert_using_macos_script(doc_path: str, output_path: str) -> None:
             set inputFile to POSIX file "{doc_path}" as alias
             open inputFile
             delay 1
-            set outputFile to "{output_path}"
-            export front document to file outputFile as Word
+            set outputFile to POSIX file "{output_path}" as alias
+            export front document to file (outputFile) as Word
             delay 1
             close front document saving no
             quit
