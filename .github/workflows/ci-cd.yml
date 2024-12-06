@@ -137,7 +137,6 @@ jobs:
       
       - name: Sign Application Bundle
         run: |
-          # First, sign all dynamic libraries and extensions
           echo "Signing all binaries in app bundle..."
           find "dist/doc-converter.app/Contents/MacOS" "dist/doc-converter.app/Contents/Resources" -type f \( -name "*.so" -o -name "*.dylib" \) -exec codesign \
             --force \
@@ -147,8 +146,6 @@ jobs:
             --entitlements entitlements.plist \
             --keychain $KEYCHAIN_PATH \
             {} \;
-          
-          # Then sign the main executable
           echo "Signing main executable..."
           codesign \
             --force \
@@ -158,10 +155,13 @@ jobs:
             --entitlements entitlements.plist \
             --keychain $KEYCHAIN_PATH \
             "dist/doc-converter.app"
-          
-          # Verify signature
           echo "Verifying signature..."
           codesign --verify --deep --strict --verbose=2 "dist/doc-converter.app"
+          # Log any errors
+          if [ $? -ne 0 ]; then
+            echo "Code signing failed!"
+            exit 1;
+          fi
         shell: bash
       
       - name: Notarize App

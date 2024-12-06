@@ -16,8 +16,8 @@ jobs:
       MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
       MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
       TEAM_ID: ${{ secrets.TEAM_ID }}
-      CERTIFICATE_PATH: ${{ runner.temp }}/build_certificate.p12
-      KEYCHAIN_PATH: ${{ runner.temp }}/app-signing.keychain-db
+      CERTIFICATE_PATH: ${{ github.workspace }}/build_certificate.p12
+      KEYCHAIN_PATH: ${{ github.workspace }}/app-signing.keychain-db
       
     steps:
     - uses: actions/checkout@v4
@@ -143,7 +143,7 @@ jobs:
           --entitlements entitlements.plist \
           --keychain $KEYCHAIN_PATH \
           {} \;
-
+        
         # Then sign the main executable
         echo "Signing main executable..."
         codesign \
@@ -154,10 +154,17 @@ jobs:
           --entitlements entitlements.plist \
           --keychain $KEYCHAIN_PATH \
           "dist/doc-converter.app"
-
+        
         # Verify signature
         echo "Verifying signature..."
         codesign --verify --deep --strict --verbose=2 "dist/doc-converter.app"
+        
+        # Log any errors
+        if [ $? -ne 0 ]; then
+          echo "Code signing failed!"
+          exit 1;
+        fi
+      shell: bash
     
     - name: Notarize App
       run: |
