@@ -92,9 +92,9 @@ def convert_using_macos_script(doc_path: str, output_path: str) -> None:
     try:
         # AppleScript to convert using Microsoft Word
         filename = os.path.basename(doc_path)
-        filename = filename.replace('+', '').replace('+-+', '_')
+        filename = filename.replace('+', '').replace('+-+', '_').replace(' ', '')
         output_filename = f"{os.path.splitext(filename)[0]}.docx"
-        output_path = os.path.join(os.path.dirname(output_path), output_filename)
+        output_path = os.path.join(os.path.dirname(doc_path), output_filename)
         
         script = f'''
         tell application "Microsoft Word"
