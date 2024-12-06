@@ -90,26 +90,30 @@ def convert_using_pandoc(doc_path: str, output_path: str) -> None:
 def convert_using_macos_script(doc_path: str, output_path: str) -> None:
     """Convert a .doc file to .docx using macOS Automation"""
     try:
-        # AppleScript to convert using Pages
+        # AppleScript to convert using Microsoft Word
+        filename = os.path.basename(doc_path)
+        filename = filename.replace('+', '').replace('+-+', '_')
+        output_filename = f"{os.path.splitext(filename)[0]}.docx"
+        output_path = os.path.join(os.path.dirname(output_path), output_filename)
+        
         script = f'''
-        tell application "Pages"
+        tell application "Microsoft Word"
             set inputFile to POSIX file "{doc_path}" as alias
             open inputFile
             delay 1
-            set outputFile to POSIX file "{output_path}" as alias
-            export front document to file outputFile as Word
-            delay 1
-            close front document saving no
-            quit
+            set outputFile to "{output_path}"
+            save as active document file name outputFile file format format document
+            close active document saving no
+            -- Do not quit the application
         end tell
         '''
         
         # Execute AppleScript
         subprocess.run(['osascript', '-e', script], check=True, capture_output=True, text=True)
-        logging.info(f"Successfully converted {doc_path} to {output_path} using Pages")
+        logging.info(f"Successfully converted {doc_path} to {output_path} using Microsoft Word")
         
     except subprocess.CalledProcessError as e:
-        logging.error(f"Error converting document using Pages: {e.stderr}")
+        logging.error(f"Error converting document using Microsoft Word: {e.stderr}")
         logging.error(traceback.format_exc())
         raise
     except Exception as e:
