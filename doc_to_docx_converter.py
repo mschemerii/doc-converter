@@ -120,7 +120,7 @@ def convert_using_macos_script(doc_path: str, output_path: str) -> None:
         logging.error(traceback.format_exc())
         raise
 
-    logging.info(f"Successfully converted {doc_path} to {output_path}")
+ #   logging.info(f"Successfully converted {doc_path} to {output_path}")
 
 def convert_doc_to_docx(doc_path: str) -> str:
     """
