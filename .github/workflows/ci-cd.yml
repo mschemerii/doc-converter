@@ -121,6 +121,58 @@ jobs:
         cd dist && zip -r doc-converter-macos.zip doc-converter.app
       shell: bash
     
+    - name: Create Entitlements File
+      run: |
+        cat > entitlements.plist << EOF
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>com.apple.security.cs.allow-jit</key>
+            <true/>
+            <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+            <true/>
+            <key>com.apple.security.cs.disable-library-validation</key>
+            <true/>
+            <key>com.apple.security.cs.allow-dyld-environment-variables</key>
+            <true/>
+            <key>com.apple.security.automation.apple-events</key>
+            <true/>
+            <key>com.apple.security.get-task-allow</key>
+            <true/>
+        </dict>
+        </plist>
+        EOF
+
+    - name: Sign Application Bundle
+      env:
+        CERTIFICATE_PATH: ${{ runner.temp }}/build_certificate.p12
+        KEYCHAIN_PATH: ${{ runner.temp }}/app-signing.keychain-db
+      run: |
+        # First, sign all dynamic libraries and extensions
+        echo "Signing all binaries in app bundle..."
+        find "dist/doc-converter.app/Contents/MacOS" "dist/doc-converter.app/Contents/Resources" -type f \( -name "*.so" -o -name "*.dylib" \) -exec codesign \
+          --force \
+          --sign "Developer ID Application: ${{ secrets.TEAM_ID }}" \
+          --options runtime \
+          --timestamp \
+          --entitlements entitlements.plist \
+          {} \;
+
+        # Then sign the main executable
+        echo "Signing main executable..."
+        codesign \
+          --force \
+          --sign "Developer ID Application: ${{ secrets.TEAM_ID }}" \
+          --options runtime \
+          --timestamp \
+          --entitlements entitlements.plist \
+          "dist/doc-converter.app"
+
+        # Verify signature
+        echo "Verifying signature..."
+        codesign --verify --deep --strict --verbose=2 "dist/doc-converter.app"
+
     - name: Install Apple Certificate
       env:
         MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
@@ -143,32 +195,6 @@ jobs:
         security find-identity -v
       shell: bash
 
-    - name: Sign App Bundle
-      run: |
-        # List the contents of dist directory
-        echo "Contents of dist directory:"
-        ls -la dist/
-        
-        # Sign all binaries in the app bundle
-        find "dist/doc-converter.app/Contents/MacOS" -type f -exec codesign --force --options runtime --sign "Developer ID Application" {} \;
-        
-        # Sign the frameworks if they exist
-        if [ -d "dist/doc-converter.app/Contents/Frameworks" ]; then
-          find "dist/doc-converter.app/Contents/Frameworks" -type f -exec codesign --force --options runtime --sign "Developer ID Application" {} \;
-        fi
-        
-        # Finally sign the app bundle
-        codesign --force --options runtime --sign "Developer ID Application" dist/doc-converter.app
-        
-        # Verify signing
-        echo "Verifying code signature..."
-        codesign -vvv --deep --strict dist/doc-converter.app
-        
-        # Check entitlements
-        echo "Checking entitlements..."
-        codesign -d --entitlements :- dist/doc-converter.app
-      shell: bash
-    
     - name: Notarize App
       env:
         APPLE_ID: ${{ secrets.APPLE_ID }}
