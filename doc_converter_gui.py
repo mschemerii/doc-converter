@@ -2,6 +2,35 @@
 # Executable GUI for Doc Converter
 # Last updated: 2024-03-14
 
+import subprocess
+import sys
+import os
+
+def check_requirements(requirements_file='requirements.txt'):
+    with open(requirements_file) as f:
+        required_packages = f.read().splitlines()
+
+    missing_packages = []
+    for package in required_packages:
+        if not package or package.startswith('#'):
+            continue
+        package_name = package.split('==')[0]  # Get the package name without version
+        try:
+            __import__(package_name)  # Import the package
+        except ImportError:
+            missing_packages.append(package)
+
+    if missing_packages:
+        print("The following required packages are missing:")
+        for pkg in missing_packages:
+            print(f"- {pkg}")
+        print("\nPlease install the missing packages using:")
+        print(f"pip install -r {requirements_file}")
+        sys.exit(1)
+
+# Call the check_requirements function at the start of your script
+check_requirements()
+
 import os
 import sys
 import tkinter as tk

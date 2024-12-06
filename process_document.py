@@ -11,15 +11,34 @@ import importlib
 import logging
 import traceback
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s: %(message)s',
-    handlers=[
-        logging.FileHandler('doc_converter.log', mode='a'),
-        logging.StreamHandler(sys.stdout)
-    ]
-)
+def check_requirements(requirements_file='requirements.txt'):
+    with open(requirements_file) as f:
+        required_packages = f.read().splitlines()
+
+    missing_packages = []
+    for package in required_packages:
+        if not package or package.startswith('#'):
+            continue
+        package_name = package.split('==')[0]  # Get the package name without version
+        try:
+            __import__(package_name)  # Import the package
+        except ImportError:
+            missing_packages.append(package)
+
+    if missing_packages:
+        print("The following required packages are missing:")
+        for pkg in missing_packages:
+            print(f"- {pkg}")
+        print("\nPlease install the missing packages using:")
+        print(f"pip install -r {requirements_file}")
+        sys.exit(1)
+
+# Call the check_requirements function at the start of your script
+check_requirements()
+
+import subprocess
+import sys
+import os
 
 def is_venv_activated() -> bool:
     """Check if a virtual environment is already activated"""
@@ -202,6 +221,7 @@ def process_document(doc_path):
         # Get the directory and base filename
         directory = os.path.dirname(doc_path) or '.'
         filename = os.path.basename(doc_path)
+        filename = filename.replace('+', '').replace('+-+', '_').replace(' ', '')
         base_name, ext = os.path.splitext(filename)
         
         if ext.lower() != '.doc':
@@ -330,4 +350,13 @@ def main():
         sys.exit(1)
 
 if __name__ == "__main__":
+    # Configure logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s: %(message)s',
+        handlers=[
+            logging.FileHandler('doc_converter.log', mode='a'),
+            logging.StreamHandler(sys.stdout)
+        ]
+    )
     main()
