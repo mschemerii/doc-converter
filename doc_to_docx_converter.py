@@ -107,6 +107,7 @@ def convert_using_macos_script(doc_path: str, output_path: str) -> None:
             delay 1
             set outputFile to POSIX file "{output_path}"
             save as active document file name outputFile file format format document
+            set savedFile to outputFile
             close active document saving no
             -- Do not quit the application
         end tell
@@ -116,6 +117,8 @@ def convert_using_macos_script(doc_path: str, output_path: str) -> None:
         
         # Execute AppleScript
         subprocess.run(['osascript', '-e', script], check=True, capture_output=True, text=True)
+        
+        logging.info(f"Final output path: {output_path}")
         
     except subprocess.CalledProcessError as e:
         logging.error(f"Error converting document using Microsoft Word: {e.stderr}")
@@ -158,9 +161,12 @@ def convert_doc_to_docx(doc_path: str) -> str:
             convert_using_windows_com(doc_path, output_path)
             logging.info(f"Successfully converted {doc_path} to {output_path} using Windows COM")
         elif os_name == 'darwin':  # macOS
+            filename = os.path.basename(doc_path)
+            filename = filename.replace('+', '').replace('+-+', '_').replace(' ', '')
+            output_filename = f"{os.path.splitext(filename)[0]}.docx"
+            output_path = os.path.join(os.path.dirname(doc_path), output_filename)
             convert_using_macos_script(doc_path, output_path)
             logging.info(f"Successfully converted {doc_path} to {output_path} using macOS Automation and Microsoft Word")
-            logging.info(f"Final output path: {output_path}")
         elif os_name == 'linux':
             convert_using_pandoc(doc_path, output_path)
         else:
