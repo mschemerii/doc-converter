@@ -137,30 +137,58 @@ jobs:
       
       - name: Sign Application Bundle
         run: |
-          echo "Signing all binaries in app bundle..."
-          find "dist/doc-converter.app/Contents/MacOS" "dist/doc-converter.app/Contents/Resources" -type f \( -name "*.so" -o -name "*.dylib" \) -exec codesign \
+          # Get the signing identity
+          SIGNING_IDENTITY="$(/usr/bin/security find-identity -v -p codesigning $KEYCHAIN_PATH | grep "Developer ID Application" | head -1 | awk '{print $2}')"
+          
+          echo "Signing Python framework..."
+          find "dist/doc-converter.app/Contents/Frameworks" -name "Python.framework" -exec codesign \
             --force \
-            --sign "$(/usr/bin/security find-identity -v -p codesigning $KEYCHAIN_PATH | grep "Developer ID Application" | head -1 | awk '{print $2}')" \
+            --sign "$SIGNING_IDENTITY" \
+            --options runtime \
+            --timestamp \
+            --entitlements entitlements.plist \
+            --deep \
+            --keychain $KEYCHAIN_PATH \
+            {} \;
+
+          echo "Signing all dynamic libraries and Python extensions..."
+          find "dist/doc-converter.app" -type f \( -name "*.so" -o -name "*.dylib" \) -exec codesign \
+            --force \
+            --sign "$SIGNING_IDENTITY" \
             --options runtime \
             --timestamp \
             --entitlements entitlements.plist \
             --keychain $KEYCHAIN_PATH \
             {} \;
-          echo "Signing main executable..."
-          codesign \
+
+          echo "Signing embedded binaries..."
+          find "dist/doc-converter.app/Contents/MacOS" -type f -not -name "doc-converter" -exec codesign \
             --force \
-            --sign "$(/usr/bin/security find-identity -v -p codesigning $KEYCHAIN_PATH | grep "Developer ID Application" | head -1 | awk '{print $2}')" \
+            --sign "$SIGNING_IDENTITY" \
             --options runtime \
             --timestamp \
             --entitlements entitlements.plist \
             --keychain $KEYCHAIN_PATH \
+            {} \;
+
+          echo "Signing main executable..."
+          codesign \
+            --force \
+            --sign "$SIGNING_IDENTITY" \
+            --options runtime \
+            --timestamp \
+            --entitlements entitlements.plist \
+            --deep \
+            --keychain $KEYCHAIN_PATH \
             "dist/doc-converter.app"
+
           echo "Verifying signature..."
           codesign --verify --deep --strict --verbose=2 "dist/doc-converter.app"
-          # Log any errors
+          spctl --assess --type execute --verbose=2 "dist/doc-converter.app"
+          
           if [ $? -ne 0 ]; then
-            echo "Code signing failed!"
-            exit 1;
+            echo "Code signing verification failed!"
+            exit 1
           fi
         shell: bash
       
