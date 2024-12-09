@@ -61,7 +61,7 @@ jobs:
         fi
         
         # Build the application as a self-contained binary
-        python3 -m PyInstaller --onefile --add-data "assets/icon.icns;assets" doc_converter_gui.py
+        python3 -m PyInstaller --onefile --add-data="assets/icon.icns:assets" doc_converter_gui.py
         
         # Debug: Verify build artifacts
         echo "Checking build artifacts..."
