@@ -77,6 +77,10 @@ class DocConverterApp:
         root_logger.handlers = []  # Remove any existing handlers
         root_logger.addHandler(gui_handler)
         
+        # Default theme
+        self.is_dark_mode = False
+        self.set_theme()
+        
         # Main container frame
         self.main_frame = tk.Frame(master)
         self.main_frame.grid(row=1, column=0, sticky="nsew")
@@ -126,6 +130,10 @@ class DocConverterApp:
         self.exit_button = tk.Button(self.main_frame, text="Exit", command=self.exit_app, 
                                    state=tk.NORMAL, width=15)
         self.exit_button.grid(row=4, column=0, pady=10)
+        
+        # Toggle button
+        self.toggle_button = tk.Button(self.main_frame, text="Toggle Dark/Light Mode", command=self.toggle_theme)
+        self.toggle_button.grid(row=5, column=0, pady=10)
         
         # Store last output
         self.last_output = []
@@ -352,6 +360,36 @@ class DocConverterApp:
             self.master.clipboard_clear()
             self.master.clipboard_append(output_content)
             messagebox.showinfo("Success", "Output copied to clipboard!")
+    
+    def toggle_theme(self):
+        self.is_dark_mode = not self.is_dark_mode
+        self.set_theme()
+    
+    def set_theme(self):
+        if self.is_dark_mode:
+            # Dark mode colors
+            self.master.config(bg='black')
+            self.main_frame.config(bg='black')
+            self.instructions_frame.config(bg='black', fg='white')
+            self.file_frame.config(bg='black')
+            self.file_entry.config(bg='gray', fg='white')
+            self.browse_button.config(bg='gray', fg='white')
+            self.convert_button.config(bg='gray', fg='white')
+            self.show_output_button.config(bg='gray', fg='white')
+            self.exit_button.config(bg='gray', fg='white')
+            self.toggle_button.config(bg='gray', fg='white')
+        else:
+            # Light mode colors
+            self.master.config(bg='white')
+            self.main_frame.config(bg='white')
+            self.instructions_frame.config(bg='white', fg='black')
+            self.file_frame.config(bg='white')
+            self.file_entry.config(bg='lightgray', fg='black')
+            self.browse_button.config(bg='lightgray', fg='black')
+            self.convert_button.config(bg='lightgray', fg='black')
+            self.show_output_button.config(bg='lightgray', fg='black')
+            self.exit_button.config(bg='lightgray', fg='black')
+            self.toggle_button.config(bg='lightgray', fg='black')
 
 def main():
     root = tk.Tk()
