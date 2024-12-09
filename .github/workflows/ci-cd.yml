@@ -17,12 +17,12 @@ jobs:
       uses: actions/checkout@v4
     - name: Check Python Version
       run: |
-        if python --version | grep -q "Python 3\.10"; then
-          echo "Using existing Python installation."
-        else
+        python_version=$(python --version 2>&1)
+        if [[ $python_version == *"Python 3.1"* || $python_version == *"Python 3.2"* || $python_version == *"Python 3.3"* || $python_version == *"Python 3.4"* || $python_version == *"Python 3.5"* || $python_version == *"Python 3.6"* || $python_version == *"Python 3.7"* || $python_version == *"Python 3.8"* || $python_version == *"Python 3.9"* ]]; then
           echo "Installing Python 3.12..."
           choco install python --version=3.12.0
-        fi
+        else
+          echo "Using existing Python installation: $python_version"
       shell: bash
     - name: Set up Python
       uses: actions/setup-python@v4
