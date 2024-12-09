@@ -136,6 +136,16 @@ jobs:
         # Get the signing identity
         SIGNING_IDENTITY="$(/usr/bin/security find-identity -v -p codesigning $KEYCHAIN_PATH | grep "Developer ID Application" | head -1 | awk '{print $2}')"
         
+        echo "Signing Python lib-dynload modules..."
+        find "dist/doc-converter.app/Contents/Frameworks" -path "*/lib-dynload/*.so" -type f -exec codesign \
+          --force \
+          --sign "$SIGNING_IDENTITY" \
+          --options runtime \
+          --timestamp \
+          --entitlements entitlements.plist \
+          --keychain $KEYCHAIN_PATH \
+          {} \;
+
         echo "Signing Python binary in framework..."
         find "dist/doc-converter.app/Contents/Frameworks/Python.framework" -name "Python" -type f -exec codesign \
           --force \
@@ -157,8 +167,8 @@ jobs:
           --keychain $KEYCHAIN_PATH \
           {} \;
 
-        echo "Signing all dynamic libraries and Python extensions..."
-        find "dist/doc-converter.app" -type f \( -name "*.so" -o -name "*.dylib" \) -exec codesign \
+        echo "Signing all remaining dynamic libraries..."
+        find "dist/doc-converter.app" -type f \( -name "*.so" -o -name "*.dylib" \) -not -path "*/lib-dynload/*" -exec codesign \
           --force \
           --sign "$SIGNING_IDENTITY" \
           --options runtime \
@@ -188,13 +198,16 @@ jobs:
           --keychain $KEYCHAIN_PATH \
           "dist/doc-converter.app"
 
-        echo "Verifying signature..."
+        echo "Verifying signatures..."
+        echo "Verifying lib-dynload modules..."
+        find "dist/doc-converter.app/Contents/Frameworks" -path "*/lib-dynload/*.so" -type f -exec codesign --verify --strict --verbose=2 {} \;
+        
+        echo "Verifying Python framework..."
+        codesign --verify --deep --strict --verbose=2 "dist/doc-converter.app/Contents/Frameworks/Python.framework"
+        
+        echo "Verifying main app bundle..."
         codesign --verify --deep --strict --verbose=2 "dist/doc-converter.app"
         spctl --assess --type execute --verbose=2 "dist/doc-converter.app"
-        
-        # Verify Python framework signing specifically
-        echo "Verifying Python framework signing..."
-        codesign --verify --deep --strict --verbose=2 "dist/doc-converter.app/Contents/Frameworks/Python.framework"
         
         if [ $? -ne 0 ]; then
           echo "Code signing verification failed!"
