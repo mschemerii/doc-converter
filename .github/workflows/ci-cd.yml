@@ -62,7 +62,7 @@ jobs:
           find dist/ -type f
           
           # Create zip for notarization
-          cd dist && zip -r doc-converter-macos.zip doc_converter_gui
+          cd dist && zip -r doc-converter-macos.zip doc_converter_gui.app
         shell: bash
       
       - name: Create Entitlements File
@@ -123,11 +123,11 @@ jobs:
             --timestamp \
             --entitlements entitlements.plist \
             --keychain $KEYCHAIN_PATH \
-            "dist/doc_converter_gui"
+            "dist/doc_converter_gui.app"
           
           echo "Verifying signature..."
-          codesign --verify --strict --verbose=2 "dist/doc_converter_gui"
-          spctl --assess --type execute --verbose=2 "dist/doc_converter_gui"
+          codesign --verify --strict --verbose=2 "dist/doc_converter_gui.app"
+          spctl --assess --type execute --verbose=2 "dist/doc_converter_gui.app"
           
           if [ $? -ne 0 ]; then
             echo "Code signing verification failed!"
@@ -163,11 +163,11 @@ jobs:
             echo "Notarization successful, proceeding to staple..."
             
             # Staple the ticket
-            xcrun stapler staple "doc_converter_gui"
+            xcrun stapler staple "doc_converter_gui.app"
             
             # Verify stapling
             echo "Verifying stapling..."
-            xcrun stapler validate "doc_converter_gui"
+            xcrun stapler validate "doc_converter_gui.app"
           else
             echo "Notarization failed. Fetching detailed logs..."
             xcrun notarytool log "$submission_id" \
