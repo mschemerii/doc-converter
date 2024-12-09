@@ -136,6 +136,16 @@ jobs:
         # Get the signing identity
         SIGNING_IDENTITY="$(/usr/bin/security find-identity -v -p codesigning $KEYCHAIN_PATH | grep "Developer ID Application" | head -1 | awk '{print $2}')"
         
+        echo "Signing Python binary in framework..."
+        find "dist/doc-converter.app/Contents/Frameworks/Python.framework" -name "Python" -type f -exec codesign \
+          --force \
+          --sign "$SIGNING_IDENTITY" \
+          --options runtime \
+          --timestamp \
+          --entitlements entitlements.plist \
+          --keychain $KEYCHAIN_PATH \
+          {} \;
+
         echo "Signing Python framework..."
         find "dist/doc-converter.app/Contents/Frameworks" -name "Python.framework" -exec codesign \
           --force \
@@ -181,6 +191,10 @@ jobs:
         echo "Verifying signature..."
         codesign --verify --deep --strict --verbose=2 "dist/doc-converter.app"
         spctl --assess --type execute --verbose=2 "dist/doc-converter.app"
+        
+        # Verify Python framework signing specifically
+        echo "Verifying Python framework signing..."
+        codesign --verify --deep --strict --verbose=2 "dist/doc-converter.app/Contents/Frameworks/Python.framework"
         
         if [ $? -ne 0 ]; then
           echo "Code signing verification failed!"
