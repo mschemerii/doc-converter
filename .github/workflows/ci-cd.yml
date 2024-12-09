@@ -22,10 +22,11 @@ jobs:
           Write-Host "Python found: $python_version"
           if ($python_version -match "Python 3\.[0-9]") {
             $major_version = [int]$python_version.Split('.')[1]
-            if ($major_version -ge 10) {
+            if ($major_version -ge 9) {
               Write-Host "Using existing Python installation: $python_version"
             } else {
-              Write-Host "Python version is less than 3.10, consider updating manually."
+              Write-Host "Python version is less than 3.9, installing manually..."
+              Start-Process -FilePath "choco" -ArgumentList "install python --version=3.12.0" -Wait
             }
           }
         } else {
