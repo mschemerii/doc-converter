@@ -33,6 +33,15 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           architecture: x64
       
+      - name: Check Architecture
+        run: |
+          echo "Running on architecture: $(uname -m)"
+          if [[ $(uname -m) != "x86_64" ]]; then
+            echo "Switching to x86_64 architecture..."
+            # Add commands to set up for x86_64 if necessary
+          fi
+        shell: bash
+      
       - name: Install Dependencies
         run: |
           python3 -m pip install --upgrade pip
