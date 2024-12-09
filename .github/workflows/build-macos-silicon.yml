@@ -100,10 +100,12 @@ jobs:
         </plist>
         EOF
 
-    - name: Debug Keychain Password
+    - name: Debug Keychain Passwords
       run: |
         echo "KEYCHAIN_PASSWORD length: ${#KEYCHAIN_PASSWORD}"
+        echo "MACOS_CERTIFICATE_PASSWORD length: ${#MACOS_CERTIFICATE_PASSWORD}"
         echo "KEYCHAIN_PASSWORD: $KEYCHAIN_PASSWORD"  # WARNING: Do not print this in production!
+        echo "MACOS_CERTIFICATE_PASSWORD: $MACOS_CERTIFICATE_PASSWORD"  # WARNING: Do not print this in production!
 
     - name: Debug Keychain Setup
       run: |
