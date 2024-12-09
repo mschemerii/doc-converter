@@ -60,31 +60,23 @@ jobs:
           cp /System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/GenericApplicationIcon.icns assets/icon.icns
         fi
         
-        # Build the application
-        python3 -m PyInstaller \
-          --clean \
-          --windowed \
-          --name doc-converter \
-          --icon assets/icon.icns \
-          --target-arch arm64 \
-          --osx-bundle-identifier "com.docconverter.app" \
-          doc_converter_gui.py
+        # Build the application as a self-contained binary
+        python3 -m PyInstaller --onefile --add-data "assets/icon.icns;assets" doc_converter_gui.py
         
         # Debug: Verify build artifacts
         echo "Checking build artifacts..."
-        ls -la dist/doc-converter.app/Contents/MacOS/
-        otool -L dist/doc-converter.app/Contents/MacOS/doc-converter
+        ls -la dist/
         
         # Debug: Check app bundle structure
         echo "App bundle structure:"
-        find dist/doc-converter.app -type f
+        find dist/ -type f
         
         # Debug: Check Info.plist
         echo "Info.plist contents:"
-        cat dist/doc-converter.app/Contents/Info.plist
+        cat dist/doc_converter_gui.app/Contents/Info.plist
         
         # Create zip for notarization
-        cd dist && zip -r doc-converter-macos.zip doc-converter.app
+        cd dist && zip -r doc-converter-macos.zip doc_converter_gui.app
       shell: bash
     
     - name: Create Entitlements File
@@ -137,7 +129,7 @@ jobs:
         SIGNING_IDENTITY="$(/usr/bin/security find-identity -v -p codesigning $KEYCHAIN_PATH | grep "Developer ID Application" | head -1 | awk '{print $2}')"
         
         echo "Signing Python lib-dynload modules..."
-        find "dist/doc-converter.app/Contents/Frameworks" -path "*/lib-dynload/*.so" -type f -exec codesign \
+        find "dist/doc_converter_gui.app/Contents/Frameworks" -path "*/lib-dynload/*.so" -type f -exec codesign \
           --force \
           --sign "$SIGNING_IDENTITY" \
           --options runtime \
@@ -147,7 +139,7 @@ jobs:
           {} \;
 
         echo "Signing Python binary in framework..."
-        find "dist/doc-converter.app/Contents/Frameworks/Python.framework" -name "Python" -type f -exec codesign \
+        find "dist/doc_converter_gui.app/Contents/Frameworks/Python.framework" -name "Python" -type f -exec codesign \
           --force \
           --sign "$SIGNING_IDENTITY" \
           --options runtime \
@@ -157,7 +149,7 @@ jobs:
           {} \;
 
         echo "Signing Python framework..."
-        find "dist/doc-converter.app/Contents/Frameworks" -name "Python.framework" -exec codesign \
+        find "dist/doc_converter_gui.app/Contents/Frameworks" -name "Python.framework" -exec codesign \
           --force \
           --sign "$SIGNING_IDENTITY" \
           --options runtime \
@@ -168,7 +160,7 @@ jobs:
           {} \;
 
         echo "Signing all remaining dynamic libraries..."
-        find "dist/doc-converter.app" -type f \( -name "*.so" -o -name "*.dylib" \) -not -path "*/lib-dynload/*" -exec codesign \
+        find "dist/doc_converter_gui.app" -type f \( -name "*.so" -o -name "*.dylib" \) -not -path "*/lib-dynload/*" -exec codesign \
           --force \
           --sign "$SIGNING_IDENTITY" \
           --options runtime \
@@ -178,7 +170,7 @@ jobs:
           {} \;
 
         echo "Signing embedded binaries..."
-        find "dist/doc-converter.app/Contents/MacOS" -type f -not -name "doc-converter" -exec codesign \
+        find "dist/doc_converter_gui.app/Contents/MacOS" -type f -not -name "doc_converter_gui" -exec codesign \
           --force \
           --sign "$SIGNING_IDENTITY" \
           --options runtime \
@@ -196,18 +188,18 @@ jobs:
           --entitlements entitlements.plist \
           --deep \
           --keychain $KEYCHAIN_PATH \
-          "dist/doc-converter.app"
+          "dist/doc_converter_gui.app"
 
         echo "Verifying signatures..."
         echo "Verifying lib-dynload modules..."
-        find "dist/doc-converter.app/Contents/Frameworks" -path "*/lib-dynload/*.so" -type f -exec codesign --verify --strict --verbose=2 {} \;
+        find "dist/doc_converter_gui.app/Contents/Frameworks" -path "*/lib-dynload/*.so" -type f -exec codesign --verify --strict --verbose=2 {} \;
         
         echo "Verifying Python framework..."
-        codesign --verify --deep --strict --verbose=2 "dist/doc-converter.app/Contents/Frameworks/Python.framework"
+        codesign --verify --deep --strict --verbose=2 "dist/doc_converter_gui.app/Contents/Frameworks/Python.framework"
         
         echo "Verifying main app bundle..."
-        codesign --verify --deep --strict --verbose=2 "dist/doc-converter.app"
-        spctl --assess --type execute --verbose=2 "dist/doc-converter.app"
+        codesign --verify --deep --strict --verbose=2 "dist/doc_converter_gui.app"
+        spctl --assess --type execute --verbose=2 "dist/doc_converter_gui.app"
         
         if [ $? -ne 0 ]; then
           echo "Code signing verification failed!"
@@ -243,11 +235,11 @@ jobs:
           echo "Notarization successful, proceeding to staple..."
           
           # Staple the ticket
-          xcrun stapler staple "doc-converter.app"
+          xcrun stapler staple "doc_converter_gui.app"
           
           # Verify stapling
           echo "Verifying stapling..."
-          xcrun stapler validate "doc-converter.app"
+          xcrun stapler validate "doc_converter_gui.app"
         else
           echo "Notarization failed. Fetching detailed logs..."
           xcrun notarytool log "$submission_id" \
@@ -262,4 +254,4 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: doc-converter-silicon
-        path: dist/doc-converter.app
+        path: dist/doc_converter_gui.app

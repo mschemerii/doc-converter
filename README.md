@@ -175,6 +175,21 @@ python doc_converter_gui.py
 - Cross-platform compatibility
 - Robust error handling
 
+## Self-Contained Binaries
+
+The application is packaged as a self-contained binary. This means that it includes the Python interpreter and all necessary dependencies, allowing you to run it without needing to install Python separately.
+
+### Building the Application
+
+To build the application, use the following command:
+```bash
+python3 -m PyInstaller --onefile --add-data "assets/icon.icns;assets" doc_converter_gui.py
+```
+
+### Running the Application
+
+Simply download the executable and run it directly. No additional installations are required.
+
 ## Troubleshooting
 
 If you encounter any issues:

@@ -49,45 +49,20 @@ jobs:
         run: |
           # Clean previous builds
           rm -rf build dist
-          
-          # Debug: Print Python and PyInstaller versions
-          echo "Python version:"
-          python3 --version
-          echo "PyInstaller version:"
-          python3 -m PyInstaller --version
-          
-          # Create a default icon if it doesn't exist
-          mkdir -p assets
-          if [ ! -f assets/icon.icns ]; then
-            echo "Creating default icon..."
-            cp /System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/GenericApplicationIcon.icns assets/icon.icns
-          fi
-          
-          # Build the application
-          arch -x86_64 python3 -m PyInstaller \
-            --clean \
-            --windowed \
-            --name doc-converter \
-            --icon assets/icon.icns \
-            --target-arch x86_64 \
-            --osx-bundle-identifier "com.docconverter.app" \
-            doc_converter_gui.py
+        
+          # Build the application as a self-contained binary
+          python3 -m PyInstaller --onefile --add-data "assets/icon.icns;assets" doc_converter_gui.py
           
           # Debug: Verify build artifacts
           echo "Checking build artifacts..."
-          ls -la dist/doc-converter.app/Contents/MacOS/
-          otool -L dist/doc-converter.app/Contents/MacOS/doc-converter
+          ls -la dist/
           
           # Debug: Check app bundle structure
           echo "App bundle structure:"
-          find dist/doc-converter.app -type f
-          
-          # Debug: Check Info.plist
-          echo "Info.plist contents:"
-          cat dist/doc-converter.app/Contents/Info.plist
+          find dist/ -type f
           
           # Create zip for notarization
-          cd dist && zip -r doc-converter-macos.zip doc-converter.app
+          cd dist && zip -r doc-converter-macos.zip doc-converter
         shell: bash
       
       - name: Create Entitlements File
@@ -140,78 +115,19 @@ jobs:
           # Get the signing identity
           SIGNING_IDENTITY="$(/usr/bin/security find-identity -v -p codesigning $KEYCHAIN_PATH | grep "Developer ID Application" | head -1 | awk '{print $2}')"
           
-          echo "Signing Python lib-dynload modules..."
-          find "dist/doc-converter.app/Contents/Frameworks" -path "*/lib-dynload/*.so" -type f -exec codesign \
-            --force \
-            --sign "$SIGNING_IDENTITY" \
-            --options runtime \
-            --timestamp \
-            --entitlements entitlements.plist \
-            --keychain $KEYCHAIN_PATH \
-            {} \;
-
-          echo "Signing Python binary in framework..."
-          find "dist/doc-converter.app/Contents/Frameworks/Python.framework" -name "Python" -type f -exec codesign \
-            --force \
-            --sign "$SIGNING_IDENTITY" \
-            --options runtime \
-            --timestamp \
-            --entitlements entitlements.plist \
-            --keychain $KEYCHAIN_PATH \
-            {} \;
-
-          echo "Signing Python framework..."
-          find "dist/doc-converter.app/Contents/Frameworks" -name "Python.framework" -exec codesign \
-            --force \
-            --sign "$SIGNING_IDENTITY" \
-            --options runtime \
-            --timestamp \
-            --entitlements entitlements.plist \
-            --deep \
-            --keychain $KEYCHAIN_PATH \
-            {} \;
-
-          echo "Signing all remaining dynamic libraries..."
-          find "dist/doc-converter.app" -type f \( -name "*.so" -o -name "*.dylib" \) -not -path "*/lib-dynload/*" -exec codesign \
-            --force \
-            --sign "$SIGNING_IDENTITY" \
-            --options runtime \
-            --timestamp \
-            --entitlements entitlements.plist \
-            --keychain $KEYCHAIN_PATH \
-            {} \;
-
-          echo "Signing embedded binaries..."
-          find "dist/doc-converter.app/Contents/MacOS" -type f -not -name "doc-converter" -exec codesign \
-            --force \
-            --sign "$SIGNING_IDENTITY" \
-            --options runtime \
-            --timestamp \
-            --entitlements entitlements.plist \
-            --keychain $KEYCHAIN_PATH \
-            {} \;
-
-          echo "Signing main executable..."
+          echo "Signing application..."
           codesign \
             --force \
             --sign "$SIGNING_IDENTITY" \
             --options runtime \
             --timestamp \
             --entitlements entitlements.plist \
-            --deep \
             --keychain $KEYCHAIN_PATH \
-            "dist/doc-converter.app"
-
-          echo "Verifying signatures..."
-          echo "Verifying lib-dynload modules..."
-          find "dist/doc-converter.app/Contents/Frameworks" -path "*/lib-dynload/*.so" -type f -exec codesign --verify --strict --verbose=2 {} \;
+            "dist/doc-converter"
           
-          echo "Verifying Python framework..."
-          codesign --verify --deep --strict --verbose=2 "dist/doc-converter.app/Contents/Frameworks/Python.framework"
-          
-          echo "Verifying main app bundle..."
-          codesign --verify --deep --strict --verbose=2 "dist/doc-converter.app"
-          spctl --assess --type execute --verbose=2 "dist/doc-converter.app"
+          echo "Verifying signature..."
+          codesign --verify --strict --verbose=2 "dist/doc-converter"
+          spctl --assess --type execute --verbose=2 "dist/doc-converter"
           
           if [ $? -ne 0 ]; then
             echo "Code signing verification failed!"
@@ -247,11 +163,11 @@ jobs:
             echo "Notarization successful, proceeding to staple..."
             
             # Staple the ticket
-            xcrun stapler staple "doc-converter.app"
+            xcrun stapler staple "doc-converter"
             
             # Verify stapling
             echo "Verifying stapling..."
-            xcrun stapler validate "doc-converter.app"
+            xcrun stapler validate "doc-converter"
           else
             echo "Notarization failed. Fetching detailed logs..."
             xcrun notarytool log "$submission_id" \
@@ -266,7 +182,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: doc-converter-intel
-          path: dist/doc-converter.app
+          path: dist/doc-converter-macos.zip
 
   build-windows:
     runs-on: windows-latest
