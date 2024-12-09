@@ -22,18 +22,14 @@ jobs:
           Write-Host "Python found: $python_version"
           if ($python_version -match "Python 3\.[0-9]") {
             $major_version = [int]$python_version.Split('.')[1]
-            if ($major_version -lt 10) {
-              Write-Host "Installing Python 3.12..."
-              choco install python --version=3.12.0
-            } else {
+            if ($major_version -ge 10) {
               Write-Host "Using existing Python installation: $python_version"
+            } else {
+              Write-Host "Python version is less than 3.10, consider updating manually."
             }
-          } else {
-            Write-Host "Using existing Python installation: $python_version"
           }
         } else {
-          Write-Host "Python not found. Installing Python 3.12..."
-          choco install python --version=3.12.0
+          Write-Host "Python not found. Please install Python manually."
         }
       shell: pwsh
     - name: Set up Python
