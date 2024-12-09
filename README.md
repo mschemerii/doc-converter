@@ -183,7 +183,7 @@ The application is packaged as a self-contained binary. This means that it inclu
 
 To build the application, use the following command:
 ```bash
-python3 -m PyInstaller --onefile --add-data "assets/icon.icns;assets" doc_converter_gui.py
+python3 -m PyInstaller --onefile --add-data "assets/file_conversion_icon.icns;assets" doc_converter_gui.py
 ```
 
 ### Running the Application

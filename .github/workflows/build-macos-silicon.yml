@@ -54,10 +54,8 @@ jobs:
         
         # Create a default icon if it doesn't exist
         mkdir -p assets
-        if [ ! -f assets/icon.icns ]; then
-          echo "Creating default icon..."
-          # Convert the default macOS app icon to icns
-          cp /System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/GenericApplicationIcon.icns assets/icon.icns
+        if [ ! -f assets/file_conversion_icon.icns ]; then
+          cp /System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/GenericApplicationIcon.icns assets/file_conversion_icon.icns
         fi
         
         # Build the application as a self-contained binary
