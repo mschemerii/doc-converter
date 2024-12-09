@@ -76,7 +76,7 @@ jobs:
         cat dist/doc_converter_gui.app/Contents/Info.plist
         
         # Create zip for notarization
-        cd dist && zip -r doc-converter-macos.zip doc_converter_gui.app
+        cd dist && zip -r doc-converter-macos.zip doc_converter_gui
       shell: bash
     
     - name: Create Entitlements File
