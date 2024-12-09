@@ -123,8 +123,8 @@ jobs:
 
     - name: Sign Application Bundle
       run: |
-        # Get the signing identity
-        SIGNING_IDENTITY="$(/usr/bin/security find-identity -v -p codesigning $KEYCHAIN_PATH | grep "Developer ID Application" | head -1 | awk '{print $2}')"
+        # Hardcoded Developer ID Application
+        SIGNING_IDENTITY="3EED14E78719547FCCBA10706A23B5F947730908"
         
         echo "Signing Python lib-dynload modules..."
         find "dist/doc_converter_gui.app/Contents/Frameworks" -path "*/lib-dynload/*.so" -type f -exec codesign \
