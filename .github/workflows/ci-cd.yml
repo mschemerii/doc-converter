@@ -113,7 +113,7 @@ jobs:
       - name: Sign Application Bundle
         run: |
           # Get the signing identity
-          SIGNING_IDENTITY="$(/usr/bin/security find-identity -v -p codesigning $KEYCHAIN_PATH | grep "Developer ID Application" | head -1 | awk '{print $2}')"
+          SIGNING_IDENTITY="3EED14E78719547FCCBA10706A23B5F947730908"  # Hardcoded Developer ID Application
           
           echo "Signing application..."
           codesign \
