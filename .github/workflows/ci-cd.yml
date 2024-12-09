@@ -52,6 +52,25 @@ jobs:
           echo "KEYCHAIN_PASSWORD: $KEYCHAIN_PASSWORD"  # WARNING: Do not print this in production!
         shell: bash
       
+      - name: Debug Keychain Setup
+        run: |
+          echo "Creating keychain..."
+          security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain || { echo 'Failed to create keychain'; exit 1; }
+          echo "Unlocking keychain..."
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain || { echo 'Failed to unlock keychain'; exit 1; }
+          echo "Setting keychain settings..."
+          security set-keychain-setting -t 3600 -l build.keychain
+          echo "Listing keychains..."
+          security list-keychains -s build.keychain
+          echo "Setting keychain access..."
+          security set-keychain-settings -t 3600 -l build.keychain
+          echo "Decoding and importing certificate..."
+          echo "$MACOS_CERTIFICATE" | base64 --decode > certificate.p12
+          security import certificate.p12 -k build.keychain -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign || { echo 'Failed to import certificate'; exit 1; }
+          echo "Setting key partition list..."
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$MACOS_CERTIFICATE_PASSWORD" build.keychain || { echo 'Failed to set key partition list'; exit 1; }
+        shell: bash
+      
       - name: Set up keychain
         run: |
           security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
