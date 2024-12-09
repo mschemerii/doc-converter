@@ -29,7 +29,8 @@ jobs:
             }
           }
         } else {
-          Write-Host "Python not found. Please install Python manually."
+          Write-Host "Python not found. Installing Python 3.12..."
+          Start-Process -FilePath "choco" -ArgumentList "install python --version=3.12.0" -Wait
         }
       shell: pwsh
     - name: Set up Python
