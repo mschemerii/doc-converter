@@ -10,229 +10,6 @@ permissions:
   contents: write
 
 jobs:
-  build-macos-intel:
-    runs-on: macos-latest
-    
-    env:
-      PYTHON_VERSION: "3.12.0"
-      MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
-      MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
-      APPLE_ID: ${{ secrets.APPLE_ID }}
-      APP_SPECIFIC_PASSWORD: ${{ secrets.APP_SPECIFIC_PASSWORD }}
-      TEAM_ID: ${{ secrets.TEAM_ID }}
-      CERTIFICATE_PATH: ${{ github.workspace }}/build_certificate.p12
-      KEYCHAIN_PATH: ${{ github.workspace }}/app-signing.keychain-db
-      KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
-    
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          architecture: x64
-      
-      - name: Check Architecture
-        run: |
-          echo "Running on architecture: $(uname -m)"
-          if [[ $(uname -m) != "x86_64" ]]; then
-            echo "Switching to x86_64 architecture..."
-            # Add commands to set up for x86_64 if necessary
-          fi
-        shell: bash
-      
-      - name: Install Dependencies
-        run: |
-          python3 -m pip install --upgrade pip
-          python3 -m pip install -r requirements.txt
-          python3 -m pip install pyinstaller
-        shell: bash
-      
-      - name: Verify Python Architecture
-        run: |
-          echo "Python path: $(which python3)"
-          python3 -c "import platform; print(f'Python architecture: {platform.machine()}')"
-        shell: bash
-      
-      - name: Debug Keychain Passwords
-        run: |
-          echo "KEYCHAIN_PASSWORD length: ${#KEYCHAIN_PASSWORD}"
-          echo "MACOS_CERTIFICATE_PASSWORD length: ${#MACOS_CERTIFICATE_PASSWORD}"
-          echo "KEYCHAIN_PASSWORD: $KEYCHAIN_PASSWORD"  # WARNING: Do not print this in production!
-          echo "MACOS_CERTIFICATE_PASSWORD: $MACOS_CERTIFICATE_PASSWORD"  # WARNING: Do not print this in production!
-        shell: bash
-      
-      - name: Debug Keychain Setup
-        run: |
-          echo "Creating keychain..."
-          security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain || { echo 'Failed to create keychain'; exit 1; }
-          echo "Unlocking keychain..."
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain || { echo 'Failed to unlock keychain'; exit 1; }
-          echo "Setting keychain settings..."
-          security set-keychain-setting -t 3600 -l build.keychain
-          echo "Listing keychains..."
-          security list-keychains -s build.keychain
-          echo "Setting keychain access..."
-          security set-keychain-settings -t 3600 -l build.keychain
-          echo "Decoding and importing certificate..."
-          echo "$MACOS_CERTIFICATE" | base64 --decode > certificate.p12
-          security import certificate.p12 -k build.keychain -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign || { echo 'Failed to import certificate'; exit 1; }
-          echo "Setting key partition list..."
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$MACOS_CERTIFICATE_PASSWORD" build.keychain || { echo 'Failed to set key partition list'; exit 1; }
-        shell: bash
-      
-      - name: Set up keychain
-        run: |
-          security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
-          security set-keychain-setting -t 3600 -l build.keychain
-          security list-keychains -s build.keychain
-          security set-keychain-settings -t 3600 -l build.keychain
-          echo "$MACOS_CERTIFICATE" | base64 --decode > certificate.p12
-          security import certificate.p12 -k build.keychain -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$MACOS_CERTIFICATE_PASSWORD" build.keychain
-        shell: bash
-      
-      - name: Build macOS Application
-        run: |
-          # Clean previous builds
-          rm -rf build dist
-        
-          # Build the application as a self-contained binary
-          python3 -m PyInstaller --onefile --windowed --name doc_converter_gui --add-data="assets/file_conversion_icon.icns:assets" doc_converter_gui.py
-          
-          # Debug: Verify build artifacts
-          echo "Checking build artifacts..."
-          ls -la dist/
-          
-          # Debug: Check app bundle structure
-          echo "App bundle structure:"
-          find dist/ -type f
-          
-          # Create zip for notarization
-          cd dist && zip -r doc-converter-macos.zip doc_converter_gui.app
-        shell: bash
-      
-      - name: Create Entitlements File
-        run: |
-          cat > entitlements.plist << EOF
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-              <key>com.apple.security.cs.allow-jit</key>
-              <true/>
-              <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
-              <true/>
-              <key>com.apple.security.cs.disable-library-validation</key>
-              <true/>
-              <key>com.apple.security.cs.allow-dyld-environment-variables</key>
-              <true/>
-              <key>com.apple.security.automation.apple-events</key>
-              <true/>
-              <key>com.apple.security.get-task-allow</key>
-              <true/>
-          </dict>
-          </plist>
-          EOF
-        shell: bash
-      
-      - name: Install Apple Certificate
-        run: |
-          # import certificate from secrets
-          echo -n "$MACOS_CERTIFICATE" | base64 --decode > $CERTIFICATE_PATH
-          
-          # create temporary keychain
-          security create-keychain -p "$MACOS_CERTIFICATE_PASSWORD" $KEYCHAIN_PATH
-          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
-          security unlock-keychain -p "$MACOS_CERTIFICATE_PASSWORD" $KEYCHAIN_PATH
-          
-          # import certificate to keychain
-          security import $CERTIFICATE_PATH -P "$MACOS_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
-          security list-keychain -d user -s $KEYCHAIN_PATH
-          
-          # verify certificate import
-          security find-identity -v
-          
-          # Allow codesign to access the certificate
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$MACOS_CERTIFICATE_PASSWORD" $KEYCHAIN_PATH
-        shell: bash
-      
-      - name: Sign Application Bundle
-        run: |
-          # Get the signing identity
-          SIGNING_IDENTITY="3EED14E78719547FCCBA10706A23B5F947730908"  # Hardcoded Developer ID Application
-          
-          echo "Signing application..."
-          codesign \
-            --force \
-            --sign "$SIGNING_IDENTITY" \
-            --options runtime \
-            --timestamp \
-            --entitlements entitlements.plist \
-            --keychain $KEYCHAIN_PATH \
-            "dist/doc_converter_gui.app"
-          
-          echo "Verifying signature..."
-          codesign --verify --strict --verbose=2 "dist/doc_converter_gui.app"
-          spctl --assess --type execute --verbose=2 "dist/doc_converter_gui.app"
-          
-          if [ $? -ne 0 ]; then
-            echo "Code signing verification failed!"
-            exit 1
-          fi
-        shell: bash
-      
-      - name: Notarize App
-        run: |
-          cd dist
-          
-          # Submit for notarization
-          echo "Submitting for notarization..."
-          submission_id=$(xcrun notarytool submit doc-converter-macos.zip \
-            --apple-id "$APPLE_ID" \
-            --password "$APP_SPECIFIC_PASSWORD" \
-            --team-id "$TEAM_ID" \
-            --wait | grep 'id:' | head -n1 | awk '{print $2}')
-          echo "Submission ID: $submission_id"
-          
-          # Wait for notarization to complete
-          echo "Waiting for notarization to complete..."
-          xcrun notarytool wait "$submission_id" \
-            --apple-id "$APPLE_ID" \
-            --password "$APP_SPECIFIC_PASSWORD" \
-            --team-id "$TEAM_ID"
-          
-          # Check if notarization was successful
-          if xcrun notarytool info "$submission_id" \
-            --apple-id "$APPLE_ID" \
-            --password "$APP_SPECIFIC_PASSWORD" \
-            --team-id "$TEAM_ID" | grep -q "status: Accepted"; then
-            echo "Notarization successful, proceeding to staple..."
-            
-            # Staple the ticket
-            xcrun stapler staple "doc_converter_gui.app"
-            
-            # Verify stapling
-            echo "Verifying stapling..."
-            xcrun stapler validate "doc_converter_gui.app"
-          else
-            echo "Notarization failed. Fetching detailed logs..."
-            xcrun notarytool log "$submission_id" \
-              --apple-id "$APPLE_ID" \
-              --password "$APP_SPECIFIC_PASSWORD" \
-              --team-id "$TEAM_ID"
-            exit 1
-          fi
-        shell: bash
-      
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: doc-converter-intel
-          path: dist/doc-converter-macos.zip
-
   build-windows:
     runs-on: windows-latest
     steps:
@@ -263,7 +40,7 @@ jobs:
         path: dist/doc-converter.exe
 
   release:
-    needs: [build-windows, build-macos-intel]
+    needs: [build-windows]
     runs-on: ubuntu-latest
     steps:
     - name: Download Windows Artifact
@@ -272,12 +49,6 @@ jobs:
         name: doc-converter-windows
         path: windows-build
     
-    - name: Download macOS Intel Artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: doc-converter-intel
-        path: macos-build
-    
     - name: Create Release
       if: github.event_name == 'push'
       uses: softprops/action-gh-release@v2
@@ -285,6 +56,5 @@ jobs:
         tag_name: v1.0.0
         files: |
           windows-build/doc-converter.exe
-          macos-build/doc-converter-macos.zip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
