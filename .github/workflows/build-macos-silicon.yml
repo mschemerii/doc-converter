@@ -100,6 +100,11 @@ jobs:
         </plist>
         EOF
 
+    - name: Debug Keychain Password
+      run: |
+        echo "KEYCHAIN_PASSWORD length: ${#KEYCHAIN_PASSWORD}"
+        echo "KEYCHAIN_PASSWORD: $KEYCHAIN_PASSWORD"  # WARNING: Do not print this in production!
+
     - name: Set up keychain
       run: |
         security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
