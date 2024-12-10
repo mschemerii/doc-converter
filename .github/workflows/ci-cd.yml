@@ -15,28 +15,12 @@ jobs:
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
-    - name: Check Python Installation
-      id: check_python
-      run: |
-        if command -v python &>/dev/null; then
-          echo "python_installed=true" >> $GITHUB_ENV
-          PYTHON_VERSION=$(python --version 2>&1)
-          if [[ $PYTHON_VERSION == "Python 3.12"* ]]; then
-            echo "python_312_installed=true" >> $GITHUB_ENV
-          else
-            echo "python_312_installed=false" >> $GITHUB_ENV
-          fi
-        else
-          echo "python_installed=false" >> $GITHUB_ENV
-          echo "python_312_installed=false" >> $GITHUB_ENV
-        fi
-      shell: bash
     - name: Set up Python
       if: env.python_installed == 'false' || env.python_312_installed == 'false'
       uses: actions/setup-python@v4
       with:
-        python-version: '3.12'
-        check-latest: true
+        python-version: '3.12.7'
+        check-latest: false
     - name: Install Dependencies
       run: |
         python3 -m pip install --upgrade pip
