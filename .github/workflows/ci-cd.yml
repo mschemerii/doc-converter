@@ -55,18 +55,13 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Debug - List Available Artifacts
+      # Debug step to inspect available fields in JSON
+      - name: Debug - List Available Fields
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "Listing available artifacts in the current workflow:"
-          gh run view ${{ github.run_id }} --json artifacts -q '.artifacts[].name'
-
-      - name: Debug - List Workspace Contents
-        shell: pwsh
-        run: |
-          Write-Host "Listing contents of workspace directory:"
-          Get-ChildItem -Path $GITHUB_WORKSPACE -Recurse
+          echo "Fetching available fields:"
+          gh run view ${{ github.run_id }} --json '*' | jq
 
       - name: Download Windows Artifact
         uses: actions/download-artifact@v4
@@ -88,3 +83,5 @@ jobs:
           files: dist/doc-converter.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
