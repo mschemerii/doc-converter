@@ -16,7 +16,6 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
     - name: Set up Python
-      if: env.python_installed == 'false' || env.python_312_installed == 'false'
       uses: actions/setup-python@v4
       with:
         python-version: '3.12.7'
@@ -40,12 +39,11 @@ jobs:
       with:
         name: doc-converter-windows
         path: dist/doc-converter.exe
-        if-no-files-found: warn
-    - name: Verify Dist Directory
+        if-no-files-found: warn  
+    - name: Debug Build Directory
       run: |
         echo "Listing contents of dist directory:"
-        Get-ChildItem -Path dist
-      shell: pwsh
+        ls -la dist
     - name: Verify Artifact Upload
       run: |
         echo "Verifying uploaded artifacts..."
@@ -57,23 +55,15 @@ jobs:
     needs: [build-windows]
     runs-on: windows-latest
     steps:
-    - name: Verify Artifact Upload
+    - name: Debug Download Directory
       run: |
-        echo "Verifying uploaded artifacts..."
-        echo "Listing uploaded artifacts:"
-        ls -la $GITHUB_WORKSPACE/dist
-      shell: bash
+        echo "Listing contents of downloaded dist directory:"
+        ls -la dist
     - name: Download Windows Artifact
       uses: actions/download-artifact@v4
       with:
         name: doc-converter-windows
-        path: dist
-        merge-multiple: false
-    - name: Verify Downloaded Contents
-      run: |
-        echo "Verifying downloaded contents:"
-        Get-ChildItem -Path dist -Recurse -File
-      shell: pwsh
+        path: $GITHUB_WORKSPACE/dist
     - name: Create Release
       if: github.event_name == 'push'
       uses: softprops/action-gh-release@v2
