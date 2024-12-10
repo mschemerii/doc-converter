@@ -68,6 +68,7 @@ jobs:
       with:
         name: doc-converter-windows
         path: windows-build
+        merge-multiple: false
     - name: Create Release
       if: github.event_name == 'push'
       uses: softprops/action-gh-release@v2
