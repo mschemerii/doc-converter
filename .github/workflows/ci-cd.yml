@@ -48,8 +48,8 @@ jobs:
           path: dist/doc-converter.exe
           if-no-files-found: error
 
-      - name: Verify Artifact Upload
-        run: echo "Uploaded artifact name of doc-converter-windows"
+      - name: Confirm Artifact Upload
+        run: echo "Artifact 'doc-converter-windows' uploaded successfully."
 
   release:
     needs: build-windows
@@ -58,8 +58,10 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Debug - Confirm Artifact Upload
-        run: echo "Attempting to download artifact- doc-converter-windows"
+      - name: List Available Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: invalid-name  # Triggers artifact listing
 
       - name: Download Windows Artifact
         uses: actions/download-artifact@v4
