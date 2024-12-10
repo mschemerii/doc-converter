@@ -72,9 +72,7 @@ jobs:
       with:
         name: doc-converter-windows
         path: windows-build
-        workflow: ${{ github.workflow }}
-        run-attempt: ${{ github.run_attempt }}
-        run-id: ${{ github.run_id }}
+        merge-multiple: false
     - name: Create Release
       if: github.event_name == 'push'
       uses: softprops/action-gh-release@v2
