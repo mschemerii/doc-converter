@@ -18,6 +18,8 @@ December 9, 2024
 ## Prerequisites
 - Operating System: Windows - binaries are provided for Windows
 - Python 3.11 or newer - All systems that can install Python 3.11+ are supported, including Linux
+- Dependencies: `pip install -r requirements.txt`
+- Tested on Python 3.9.13, 3.10.8, 3.11.4, 3.12.0, 3.13.0
 
 ## Installation and Usage
 
