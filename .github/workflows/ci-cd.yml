@@ -51,37 +51,33 @@ jobs:
       - name: Verify Artifact Upload
         run: echo "Uploaded artifact name of doc-converter-windows"
 
-  release:
-    needs: build-windows
-    runs-on: windows-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+release:
+  needs: build-windows
+  runs-on: windows-latest
+  steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
 
-      - name: Debug - List Available Artifacts
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "Listing artifacts:"
-          gh run view ${{ github.run_id }} --json artifacts -q '.artifacts[] | .name'
+    - name: Debug - Confirm Artifact Upload
+      run: echo "Attempting to download artifact: doc-converter-windows"
 
-      - name: Download Windows Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: doc-converter-windows
-          path: dist
+    - name: Download Windows Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: doc-converter-windows
+        path: dist
 
-      - name: Debug - List Download Directory
-        shell: pwsh
-        run: |
-          Write-Host "Listing contents of downloaded dist directory:"
-          Get-ChildItem -Path dist -Recurse
+    - name: Debug - List Download Directory
+      shell: pwsh
+      run: |
+        Write-Host "Listing contents of downloaded dist directory:"
+        Get-ChildItem -Path dist -Recurse
 
-      - name: Create Release
-        if: github.event_name == 'push'
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v1.0.0
-          files: dist/doc-converter.exe
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Create Release
+      if: github.event_name == 'push'
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: v1.0.0
+        files: dist/doc-converter.exe
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
