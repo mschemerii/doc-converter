@@ -48,16 +48,16 @@ jobs:
         # Clean previous builds
         Remove-Item -Recurse -Force build, dist -ErrorAction SilentlyContinue
         # Build the application as a self-contained binary
-        python -m PyInstaller --onefile --windowed --name doc_converter_gui doc_converter_gui.py
+        python -m PyInstaller --onefile --windowed --name doc-converter doc_converter_gui.py
         # Debug: Verify build artifacts
-        Write-Host "Checking build artifacts..."
         Get-ChildItem -Path dist
       shell: pwsh
-    - name: Upload Artifact
+    - name: Upload Windows Build
       uses: actions/upload-artifact@v3
       with:
         name: doc-converter-windows
         path: dist/doc-converter.exe
+        if-no-files-found: warn
 
   release:
     needs: [build-windows]
