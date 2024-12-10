@@ -76,14 +76,31 @@ jobs:
 
         '
       shell: pwsh
-    - env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Read Current Version
+      id: get_version
+      run: |
+        VERSION=$(cat VERSION.txt)
+        echo "Current version: $VERSION"
+        echo "::set-output name=version::$VERSION"
+    - name: Increment Version
+      id: increment_version
+      run: |
+        IFS='.' read -r major minor patch <<< "${{ steps.get_version.outputs.version }}"
+        patch=$((patch + 1))
+        new_version="$major.$minor.$patch"
+        echo "New version: $new_version"
+        echo "$new_version" > VERSION.txt
+        echo "::set-output name=new_version::$new_version"
+    - name: Create Release
       if: github.event_name == 'push'
-      name: Create Release
       uses: softprops/action-gh-release@v2
       with:
-        files: dist/doc-converter.exe
-        tag_name: v1.0.0
+        tag_name: ${{ steps.increment_version.outputs.new_version }}
+        files: |
+          dist/doc-converter.exe
+          README.pdf
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 name: CI/CD Pipeline
 'on':
   pull_request:
