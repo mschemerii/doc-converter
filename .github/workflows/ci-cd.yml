@@ -13,60 +13,65 @@ jobs:
   build-windows:
     runs-on: windows-latest
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.12.7'
-        check-latest: false
-    - name: Install Dependencies
-      run: |
-        python3 -m pip install --upgrade pip
-        python3 -m pip install -r requirements.txt
-        python3 -m pip install pyinstaller
-    - name: Clean and Build Windows Application
-      run: |
-        echo "Cleaning previous builds..."
-        Remove-Item -Recurse -Force build, dist -ErrorAction SilentlyContinue
-        echo "Building the application..."
-        python -m PyInstaller --onefile --windowed --name doc-converter doc_converter_gui.py
-        echo "Verifying build artifacts..."
-        Get-ChildItem -Path dist
-      shell: pwsh
-    - name: Upload Windows Build
-      uses: actions/upload-artifact@v3
-      with:
-        name: doc-converter-windows
-        path: dist/doc-converter.exe
-        if-no-files-found: warn  
-    - name: Debug Build Directory
-      shell: pwsh
-      run: |
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+      
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
+      
+      - name: Clean and Build Windows Application
+        shell: pwsh
+        run: |
+          Write-Host "Cleaning previous builds..."
+          Remove-Item -Recurse -Force build, dist -ErrorAction SilentlyContinue
+          Write-Host "Building the application..."
+          python -m PyInstaller --onefile --windowed --name doc-converter doc_converter_gui.py
+          Write-Host "Verifying build artifacts..."
+          Get-ChildItem -Path dist -Recurse
+
+      - name: Debug Build Directory
+        shell: pwsh
+        run: |
           Write-Host "Listing contents of dist directory:"
           Get-ChildItem -Path dist -Recurse
-    - name: Verify Artifact Upload
-      run: |
-        echo "Verifying uploaded artifacts..."
-        echo "Listing uploaded artifacts:"
-        ls -la $GITHUB_WORKSPACE/dist
-      shell: bash
+      
+      - name: Upload Windows Build
+        uses: actions/upload-artifact@v3
+        with:
+          name: doc-converter-windows
+          path: dist/doc-converter.exe
+          if-no-files-found: error
 
   release:
-    needs: [build-windows]
+    needs: build-windows
     runs-on: windows-latest
     steps:
-    - name: Download Windows Artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: doc-converter-windows
-        path: $GITHUB_WORKSPACE/dist
-    - name: Create Release
-      if: github.event_name == 'push'
-      uses: softprops/action-gh-release@v2
-      with:
-        tag_name: v1.0.0
-        files: |
-          dist/doc-converter.exe
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download Windows Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: doc-converter-windows
+          path: dist
+
+      - name: Debug Download Directory
+        shell: pwsh
+        run: |
+          Write-Host "Listing contents of downloaded dist directory:"
+          Get-ChildItem -Path dist -Recurse
+
+      - name: Create Release
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.0
+          files: dist/doc-converter.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
