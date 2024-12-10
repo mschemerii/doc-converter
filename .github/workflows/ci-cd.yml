@@ -49,16 +49,11 @@ jobs:
     needs: [build-windows]
     runs-on: windows-latest
     steps:
-    - name: Verify Windows-Build Directory
-      run: |
-        echo "Listing contents of windows-build directory:"
-        Get-ChildItem -Path windows-build
-      shell: pwsh
     - name: Download Windows Artifact
       uses: actions/download-artifact@v4
       with:
         name: doc-converter-windows
-        path: windows-build
+        path: dist
         merge-multiple: false
     - name: Create Release
       if: github.event_name == 'push'
