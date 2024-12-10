@@ -94,3 +94,10 @@ jobs:
       with:
         files: dist/doc-converter.exe
         tag_name: v1.0.0
+'on':
+  pull_request:
+    branches:
+    - main
+  push:
+    branches:
+    - main
