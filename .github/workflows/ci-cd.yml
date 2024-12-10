@@ -15,10 +15,27 @@ jobs:
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
+    - name: Check Python Installation
+      id: check_python
+      run: |
+        if command -v python &>/dev/null; then
+          echo "python_installed=true" >> $GITHUB_ENV
+          PYTHON_VERSION=$(python --version 2>&1)
+          if [[ $PYTHON_VERSION == "Python 3.12"* ]]; then
+            echo "python_312_installed=true" >> $GITHUB_ENV
+          else
+            echo "python_312_installed=false" >> $GITHUB_ENV
+          fi
+        else
+          echo "python_installed=false" >> $GITHUB_ENV
+          echo "python_312_installed=false" >> $GITHUB_ENV
+      shell: bash
     - name: Set up Python
+      if: env.python_installed == 'false' || env.python_312_installed == 'false'
       uses: actions/setup-python@v4
       with:
-        python-version: '3.12.7'
+        python-version: '3.12'
+        check-latest: true
     - name: Install Dependencies
       run: |
         python3 -m pip install --upgrade pip
@@ -49,17 +66,22 @@ jobs:
     needs: [build-windows]
     runs-on: windows-latest
     steps:
-    - name: Verify Dist Directory
-      run: |
-        echo "Listing contents of dist directory:"
-        Get-ChildItem -Path ${{ github.workspace }}/dist
-      shell: pwsh
     - name: Download Windows Artifact
       uses: actions/download-artifact@v4
       with:
         name: doc-converter-windows
-        path: ${{ github.workspace }}/dist
+        path: dist
         merge-multiple: false
+    - name: Verify Downloaded Dist Directory
+      run: |
+        echo "Listing contents of downloaded dist directory:"
+        Get-ChildItem -Path dist
+      shell: pwsh
+    - name: Verify Downloaded Contents
+      run: |
+        echo "Verifying downloaded contents:"
+        Get-ChildItem -Path dist -Recurse -File
+      shell: pwsh
     - name: Create Release
       if: github.event_name == 'push'
       uses: softprops/action-gh-release@v2
