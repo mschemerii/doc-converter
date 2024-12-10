@@ -48,6 +48,9 @@ jobs:
           path: dist/doc-converter.exe
           if-no-files-found: error
 
+      - name: Verify Artifact Upload
+        run: echo "Uploaded artifact name of doc-converter-windows"
+
   release:
     needs: build-windows
     runs-on: windows-latest
@@ -55,13 +58,12 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # Debug step to inspect available fields in JSON
-      - name: Debug - List Available Fields
+      - name: Debug - List Available Artifacts
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "Fetching available fields:"
-          gh run view ${{ github.run_id }} --json '*' | jq
+          echo "Listing artifacts:"
+          gh run view ${{ github.run_id }} --json artifacts -q '.artifacts[] | .name'
 
       - name: Download Windows Artifact
         uses: actions/download-artifact@v4
@@ -83,5 +85,3 @@ jobs:
           files: dist/doc-converter.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-
