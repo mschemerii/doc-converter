@@ -52,26 +52,31 @@ jobs:
     needs: build-windows
     runs-on: windows-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+    - name: Checkout Code
+      uses: actions/checkout@v4
 
-      - name: Download Windows Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: doc-converter-windows
-          path: dist
+    - name: List Available Artifacts
+      run: |
+        echo "Listing available artifacts in the current workflow:"
+        gh run view ${{ github.run_id }} --log-level debug --json artifacts | jq '.artifacts[] | .name'
 
-      - name: Debug Download Directory
-        shell: pwsh
-        run: |
-          Write-Host "Listing contents of downloaded dist directory:"
-          Get-ChildItem -Path dist -Recurse
+    - name: Download Windows Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: doc-converter-windows
+        path: dist
 
-      - name: Create Release
-        if: github.event_name == 'push'
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v1.0.0
-          files: dist/doc-converter.exe
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Debug Download Directory
+      shell: pwsh
+      run: |
+        Write-Host "Listing contents of downloaded dist directory:"
+        Get-ChildItem -Path dist -Recurse
+
+    - name: Create Release
+      if: github.event_name == 'push'
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: v1.0.0
+        files: dist/doc-converter.exe
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
