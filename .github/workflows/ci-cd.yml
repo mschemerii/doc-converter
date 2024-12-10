@@ -46,22 +46,29 @@ jobs:
         echo "Listing contents of dist directory:"
         Get-ChildItem -Path dist
       shell: pwsh
+    - name: Verify Artifact Upload
+      run: |
+        echo "Verifying uploaded artifacts..."
+        echo "Listing uploaded artifacts:"
+        ls -la $GITHUB_WORKSPACE/dist
+      shell: bash
 
   release:
     needs: [build-windows]
     runs-on: windows-latest
     steps:
+    - name: Verify Artifact Upload
+      run: |
+        echo "Verifying uploaded artifacts..."
+        echo "Listing uploaded artifacts:"
+        ls -la $GITHUB_WORKSPACE/dist
+      shell: bash
     - name: Download Windows Artifact
       uses: actions/download-artifact@v4
       with:
         name: doc-converter-windows
         path: dist
         merge-multiple: false
-    - name: Verify Downloaded Dist Directory
-      run: |
-        echo "Listing contents of downloaded dist directory:"
-        Get-ChildItem -Path dist
-      shell: pwsh
     - name: Verify Downloaded Contents
       run: |
         echo "Verifying downloaded contents:"
