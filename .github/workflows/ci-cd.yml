@@ -46,7 +46,7 @@ jobs:
     - name: Clean and Build Windows Application
       run: |
         # Clean previous builds
-        Remove-Item -Recurse -Force build, dist
+        Remove-Item -Recurse -Force build, dist -ErrorAction SilentlyContinue
         # Build the application as a self-contained binary
         python -m PyInstaller --onefile --windowed --name doc_converter_gui doc_converter_gui.py
         # Debug: Verify build artifacts
