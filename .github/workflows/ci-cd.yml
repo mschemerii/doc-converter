@@ -1,98 +1,67 @@
+name: CI/CD Pipeline
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
 jobs:
   build-windows:
     runs-on: windows-latest
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.12'
-    - name: Install Dependencies
-      run: 'pip install -r requirements.txt
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+      - name: Install Dependencies
+        run: 'pip install -r requirements.txt'
+      - name: Clean and Build Windows Application
+        run: |
+          Write-Host "Cleaning previous builds..."
+          Remove-Item -Recurse -Force build, dist -ErrorAction SilentlyContinue
+          Write-Host "Building the application..."
+          python -m PyInstaller --onefile --windowed --name doc-converter doc_converter_gui.py
+          Write-Host "Verifying build artifacts..."
+          Get-ChildItem -Path dist -Recurse
+        shell: pwsh
+      - name: Debug Build Directory
+        run: 'Write-Host "Listing contents of dist directory:"; Get-ChildItem -Path dist -Recurse'
+        shell: pwsh
+      - name: Upload Windows Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: doc-converter-windows
+          path: dist/doc-converter.exe
 
-        '
-    - name: Clean and Build Windows Application
-      run: 'Write-Host "Cleaning previous builds..."
-
-        Remove-Item -Recurse -Force build, dist -ErrorAction SilentlyContinue
-
-        Write-Host "Building the application..."
-
-        python -m PyInstaller --onefile --windowed --name doc-converter doc_converter_gui.py
-
-        Write-Host "Verifying build artifacts..."
-
-        Get-ChildItem -Path dist -Recurse
-
-        '
-      shell: pwsh
-    - name: Debug Build Directory
-      run: 'Write-Host "Listing contents of dist directory:"
-
-        Get-ChildItem -Path dist -Recurse
-
-        '
-      shell: pwsh
-    - name: Upload Windows Build
-      uses: actions/upload-artifact@v4
-      with:
-        if-no-files-found: error
-        name: doc-converter-windows
-        path: dist/doc-converter.exe
-    - name: Confirm Artifact Upload
-      run: echo "Artifact 'doc-converter-windows' uploaded successfully."
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: doc-converter-windows
-        path: dist/
   release:
     needs: build-windows
     runs-on: windows-latest
     steps:
-    - name: Download Artifact
-      uses: actions/download-artifact@v3
-      with:
-        name: doc-converter-windows
-    - name: Checkout Code
-      uses: actions/checkout@v4
-    - name: Debug - Workspace Contents
-      run: 'Write-Host "Listing all contents in workspace:"
-
-        Get-ChildItem -Path $GITHUB_WORKSPACE -Recurse
-
-        '
-      shell: pwsh
-    - name: Download Windows Artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: doc-converter-windows
-        path: dist
-    - name: Debug - List Download Directory
-      run: 'Write-Host "Listing contents of downloaded dist directory:"
-
-        Get-ChildItem -Path dist -Recurse
-
-        '
-      shell: pwsh
-    - name: Create Release
-      if: github.event_name == 'push'
-      uses: softprops/action-gh-release@v2
-      with:
-        tag_name: v1.0.0
-        files: |
-          dist/doc-converter.exe
-          README.pdf
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-name: CI/CD Pipeline
-'on':
-  pull_request:
-    branches:
-    - main
-  push:
-    branches:
-    - main
-permissions:
-  contents: write
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      - name: Download Windows Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: doc-converter-windows
+          path: dist
+      - name: Debug - List Download Directory
+        run: 'Write-Host "Listing contents of downloaded dist directory:"; Get-ChildItem -Path dist -Recurse'
+        shell: pwsh
+      - name: Create Release
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.0
+          files: |
+            dist/doc-converter.exe
+            README.pdf
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
