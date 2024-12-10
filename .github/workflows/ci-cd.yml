@@ -55,10 +55,11 @@ jobs:
     needs: [build-windows]
     runs-on: windows-latest
     steps:
-    - name: Debug Download Directory
+    - name: Debug Build Directory
+      shell: pwsh
       run: |
-        echo "Listing contents of downloaded dist directory:"
-        ls -la dist
+        Write-Host "Listing contents of dist directory:"
+        Get-ChildItem -Path dist -Recurse
     - name: Download Windows Artifact
       uses: actions/download-artifact@v4
       with:
