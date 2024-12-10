@@ -49,6 +49,11 @@ jobs:
     needs: [build-windows]
     runs-on: windows-latest
     steps:
+    - name: Verify Dist Directory
+      run: |
+        echo "Listing contents of dist directory:"
+        Get-ChildItem -Path dist
+      shell: pwsh
     - name: Download Windows Artifact
       uses: actions/download-artifact@v4
       with:
