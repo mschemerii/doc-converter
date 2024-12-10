@@ -20,11 +20,11 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.12'
-      
+
       - name: Install Dependencies
         run: |
           pip install -r requirements.txt
-      
+
       - name: Clean and Build Windows Application
         shell: pwsh
         run: |
@@ -40,7 +40,7 @@ jobs:
         run: |
           Write-Host "Listing contents of dist directory:"
           Get-ChildItem -Path dist -Recurse
-      
+
       - name: Upload Windows Build
         uses: actions/upload-artifact@v3
         with:
@@ -52,50 +52,39 @@ jobs:
     needs: build-windows
     runs-on: windows-latest
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-    - name: Debug - List Available Artifacts
-      run: |
-        echo "Listing available artifacts in the current workflow:"
-        gh run view ${{ github.run_id }} --json artifacts -q '.artifacts[].name'
-  
-    - name: Debug - List Workspace Contents
-      shell: pwsh
-      run: |
-        Write-Host "Listing contents of workspace directory:"
-        Get-ChildItem -Path $GITHUB_WORKSPACE -Recurse
-  
-    - name: Debug - List Download Directory
-      shell: pwsh
-      run: |
-        Write-Host "Listing contents of downloaded dist directory:"
-        Get-ChildItem -Path dist -Recurse
-  
-    - name: Download Windows Artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: doc-converter-windows
-        path: dist
+      - name: Debug - List Available Artifacts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Listing available artifacts in the current workflow:"
+          gh run view ${{ github.run_id }} --json artifacts -q '.artifacts[].name'
 
-    - name: Debug Download Directory
-      shell: pwsh
-      run: |
-        Write-Host "Listing contents of downloaded dist directory:"
-        Get-ChildItem -Path dist -Recurse
+      - name: Debug - List Workspace Contents
+        shell: pwsh
+        run: |
+          Write-Host "Listing contents of workspace directory:"
+          Get-ChildItem -Path $GITHUB_WORKSPACE -Recurse
 
-    - name: Debug - Check File Before Release
-      shell: pwsh
-      run: |
-        Write-Host "Checking dist directory for the release file:"
-        Get-ChildItem -Path dist -Recurse
-  
-    - name: Create Release
-      if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-      uses: softprops/action-gh-release@v2
-      with:
-        tag_name: v1.0.0
-        files: dist/doc-converter.exe
-      env:
+      - name: Download Windows Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: doc-converter-windows
+          path: dist
+
+      - name: Debug - List Download Directory
+        shell: pwsh
+        run: |
+          Write-Host "Listing contents of downloaded dist directory:"
+          Get-ChildItem -Path dist -Recurse
+
+      - name: Create Release
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.0
+          files: dist/doc-converter.exe
+        env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  
