@@ -1,4 +1,4 @@
-name: CI/CD
+name: CI/CD Pipeline
 
 on:
   push:
@@ -15,30 +15,7 @@ jobs:
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
-    - name: Check Python Version
-      id: check-python
-      run: |
-        if (Get-Command python -ErrorAction SilentlyContinue) {
-          $python_version = python --version 2>&1
-          Write-Host "Python found: $python_version"
-          if ($python_version -match "Python 3\.[0-9]") {
-            $major_version = [int]$python_version.Split('.')[1]
-            if ($major_version -ge 9) {
-              Write-Host "Using existing Python installation: $python_version"
-              echo "python_version=$python_version" >> $env:GITHUB_OUTPUT
-              echo "needs_install=false" >> $env:GITHUB_OUTPUT
-            } else {
-              Write-Host "Python version is less than 3.9, will install Python 3.12..."
-              echo "needs_install=true" >> $env:GITHUB_OUTPUT
-            }
-          }
-        } else {
-          Write-Host "Python not found. Will install Python 3.12..."
-          echo "needs_install=true" >> $env:GITHUB_OUTPUT
-        }
-      shell: pwsh
     - name: Set up Python
-      if: steps.check-python.outputs.needs_install == 'true'
       uses: actions/setup-python@v4
       with:
         python-version: '3.12.0'
