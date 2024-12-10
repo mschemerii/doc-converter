@@ -66,6 +66,6 @@ jobs:
       with:
         tag_name: v1.0.0
         files: |
-          windows-build/doc-converter.exe
+          dist/doc-converter.exe
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
