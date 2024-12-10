@@ -39,11 +39,21 @@ jobs:
         name: doc-converter-windows
         path: dist/doc-converter.exe
         if-no-files-found: warn
+    - name: Verify Dist Directory
+      run: |
+        echo "Listing contents of dist directory:"
+        Get-ChildItem -Path dist
+      shell: pwsh
 
   release:
     needs: [build-windows]
     runs-on: windows-latest
     steps:
+    - name: Verify Windows-Build Directory
+      run: |
+        echo "Listing contents of windows-build directory:"
+        Get-ChildItem -Path windows-build
+      shell: pwsh
     - name: Download Windows Artifact
       uses: actions/download-artifact@v4
       with:
