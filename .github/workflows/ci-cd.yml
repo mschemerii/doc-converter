@@ -58,10 +58,11 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Debug Artifact Availability
+      - name: Debug - Workspace Contents
+        shell: pwsh
         run: |
-          echo "Verifying artifact availability:"
-          ls -l $GITHUB_WORKSPACE
+          Write-Host "Listing all contents in workspace:"
+          Get-ChildItem -Path $GITHUB_WORKSPACE -Recurse
 
       - name: Download Windows Artifact
         uses: actions/download-artifact@v4
@@ -81,5 +82,6 @@ jobs:
         with:
           tag_name: v1.0.0
           files: dist/doc-converter.exe
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
