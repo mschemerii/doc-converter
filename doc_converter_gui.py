@@ -8,45 +8,72 @@ import traceback
 import datetime
 
 def log_debug(message):
-    with open(os.path.expanduser('~/Desktop/doc_converter_debug.log'), 'a') as f:
-        f.write(f"{message}\n")
-
-# Ensure we're in the right directory when launched from Finder
-if getattr(sys, 'frozen', False):
-    # Running in a bundle
-    bundle_dir = os.path.dirname(sys.executable)
-    # Go up to Contents
-    contents_dir = os.path.dirname(os.path.dirname(bundle_dir))
-    # Set working directory to Resources
-    os.chdir(os.path.join(contents_dir, 'Resources'))
+    try:
+        with open(os.path.expanduser('~/Desktop/doc_converter_debug.log'), 'a') as f:
+            f.write(f"{message}\n")
+    except Exception as e:
+        print(f"Logging error: {e}")
 
 try:
-    log_debug("=== Starting Doc Converter ===")
+    log_debug("\n=== New Launch Attempt ===")
     log_debug(f"Time: {datetime.datetime.now()}")
-    log_debug(f"Python Version: {sys.version}")
-    log_debug(f"Executable Path: {sys.executable}")
-    log_debug(f"Working Directory: {os.getcwd()}")
-    log_debug(f"sys.path: {sys.path}")
+    log_debug(f"Initial working directory: {os.getcwd()}")
     
-    # Your existing imports
+    # Handle frozen state and directory setup
+    if getattr(sys, 'frozen', False):
+        # We're running in a bundle
+        bundle_dir = os.path.dirname(sys.executable)
+        log_debug(f"Bundle directory: {bundle_dir}")
+        
+        # Navigate up to Contents
+        contents_dir = os.path.dirname(os.path.dirname(bundle_dir))
+        log_debug(f"Contents directory: {contents_dir}")
+        
+        # Set working directory to Resources
+        resources_dir = os.path.join(contents_dir, 'Resources')
+        log_debug(f"Resources directory: {resources_dir}")
+        
+        if os.path.exists(resources_dir):
+            os.chdir(resources_dir)
+            log_debug(f"Changed working directory to: {os.getcwd()}")
+        else:
+            log_debug(f"Resources directory does not exist: {resources_dir}")
+    
+    # Add the Resources directory to Python path
+    if getattr(sys, 'frozen', False):
+        resources_path = os.getcwd()
+        if resources_path not in sys.path:
+            sys.path.insert(0, resources_path)
+            log_debug(f"Added to sys.path: {resources_path}")
+    
+    log_debug(f"Final working directory: {os.getcwd()}")
+    log_debug(f"Final sys.path: {sys.path}")
+    
+    # Import required modules
     import subprocess
     import tkinter as tk
     from tkinter import filedialog, messagebox, scrolledtext, ttk
     import logging
     import threading
     
-    print("Successfully imported basic modules")
     log_debug("Successfully imported basic modules")
     
+    # Try importing process_document
+    try:
+        import process_document
+        log_debug("Successfully imported process_document")
+    except Exception as e:
+        log_debug(f"Error importing process_document: {str(e)}")
+        log_debug(traceback.format_exc())
+        raise
+    
 except Exception as e:
-    print(f"Import Error: {str(e)}")
-    print("Traceback:")
-    traceback.print_exc()
-    log_debug(f"Import Error: {str(e)}")
+    log_debug(f"Startup Error: {str(e)}")
     log_debug(traceback.format_exc())
     # Keep the log file open for a few seconds to ensure writing
     import time
     time.sleep(5)
+    raise
 
 # Debugging
 print(f"Python version: {sys.version}")

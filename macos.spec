@@ -6,7 +6,9 @@ a = Analysis(
     ['doc_converter_gui.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=[
+        ('process_document.py', '.'),
+    ],
     hiddenimports=[
         'tkinter',
         'process_document',
