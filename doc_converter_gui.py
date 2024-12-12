@@ -5,21 +5,29 @@
 import os
 import sys
 import traceback
+import datetime
 
-# Create a log file in a known location
-debug_log = os.path.expanduser('~/Desktop/doc_converter_debug.log')
-with open(debug_log, 'w') as f:
-    f.write(f"Starting Doc Converter\n")
-    f.write(f"Python Version: {sys.version}\n")
-    f.write(f"Executable Path: {sys.executable}\n")
-    f.write(f"Working Directory: {os.getcwd()}\n")
-    f.write(f"sys.path: {sys.path}\n\n")
+def log_debug(message):
+    with open(os.path.expanduser('~/Desktop/doc_converter_debug.log'), 'a') as f:
+        f.write(f"{message}\n")
 
-# Redirect stdout and stderr to the log file
-sys.stdout = open(debug_log, 'a')
-sys.stderr = sys.stdout
+# Ensure we're in the right directory when launched from Finder
+if getattr(sys, 'frozen', False):
+    # Running in a bundle
+    bundle_dir = os.path.dirname(sys.executable)
+    # Go up to Contents
+    contents_dir = os.path.dirname(os.path.dirname(bundle_dir))
+    # Set working directory to Resources
+    os.chdir(os.path.join(contents_dir, 'Resources'))
 
 try:
+    log_debug("=== Starting Doc Converter ===")
+    log_debug(f"Time: {datetime.datetime.now()}")
+    log_debug(f"Python Version: {sys.version}")
+    log_debug(f"Executable Path: {sys.executable}")
+    log_debug(f"Working Directory: {os.getcwd()}")
+    log_debug(f"sys.path: {sys.path}")
+    
     # Your existing imports
     import subprocess
     import tkinter as tk

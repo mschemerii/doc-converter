@@ -73,7 +73,9 @@ app = BUNDLE(
     bundle_identifier='com.yourcompany.docconverter',
     info_plist={
         'LSEnvironment': {
-            'PYTHONPATH': '@executable_path/../Resources:@executable_path/../Frameworks'
+            'PYTHONPATH': '@executable_path/../Resources:@executable_path/../Frameworks',
+            'PYTHONHOME': '@executable_path/../Frameworks',
+            'PATH': '@executable_path/../MacOS'
         },
         'CFBundleDisplayName': 'Doc Converter',
         'CFBundleName': 'Doc Converter',
@@ -82,5 +84,10 @@ app = BUNDLE(
         'CFBundleShortVersionString': '1.0.0',
         'NSHighResolutionCapable': True,
         'NSPrincipalClass': 'NSApplication',
+        'LSMinimumSystemVersion': '10.13.0',
+        'NSAppleEventsUsageDescription': 'App requires permissions to run',
+        'CFBundleDocumentTypes': [],
+        'CFBundleTypeMIMETypes': [],
+        'CFBundleTypeExtensions': [],
     }
 ) 
