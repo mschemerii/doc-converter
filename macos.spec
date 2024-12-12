@@ -9,6 +9,9 @@ a = Analysis(
     datas=[
         ('process_document.py', '.'),
         ('doc_to_docx_converter.py', '.'),
+        ('python_version_check.py', '.'),
+        ('modify_docx_tables.py', '.'),
+        ('requirements.txt', '.'),
     ],
     hiddenimports=[
         'tkinter',
@@ -17,6 +20,8 @@ a = Analysis(
         'threading',
         'logging',
         'pypandoc',
+        'docx',
+        'lxml',
     ],
     hookspath=[],
     hooksconfig={},

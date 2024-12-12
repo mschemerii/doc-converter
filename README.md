@@ -23,12 +23,14 @@ A comprehensive Python-based utility for converting, modifying, and preparing do
 ## Python Version Management
 
 The application now includes an intelligent Python version check:
+
 - Automatically detects your current Python version
 - Recommends upgrading to Python 3.10
 - Provides OS-specific download links
 - Prevents application launch with incompatible Python versions
 
 ### Version Check Behavior
+
 - If Python version is below 3.10, a dialog will appear
 - Users can choose to download the recommended version
 - Application will not start with unsupported Python versions
@@ -36,13 +38,16 @@ The application now includes an intelligent Python version check:
 ## Installation and Usage
 
 ### Windows
+
 1. Download `doc_converter-windows.exe` from the [latest release](https://github.com/mschemer/doc-converter/releases)
 2. Double-click the `.exe` file to launch the application
    - If Windows Defender or antivirus warns you, click "More info" and then "Run anyway"
 3. The application will start with the Document Converter interface
 
 ### macOS
+
 1. Download `Doc-Converter-Intel.app` (for Intel Macs) or `Doc-Converter-Silicon.app` (for Apple Silicon Macs) from the [latest release](https://github.com/mschemer/doc-converter/releases)
+
 2. Running the App for the First Time:
    - Right-click (or Control-click) the `.app` and select "Open"
    - If macOS displays a security warning saying the app is from an unidentified developer:
@@ -52,37 +57,48 @@ The application now includes an intelligent Python version check:
 ### Running from Source
 
 #### Prerequisites
+
 - Python 3.10
 - pip
 - virtualenv (recommended)
 
 #### Setup Steps
+
 1. Clone the repository:
-   ```bash
-   git clone https://github.com/mschemer/doc-converter.git
-   cd doc-converter
-   ```
+
+```bash
+git clone https://github.com/mschemer/doc-converter.git
+cd doc-converter
+```
+
 2. Create a virtual environment:
-   ```bash
-   python3.10 -m venv venv
-   source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
-   ```
+
+```bash
+python3.10 -m venv venv
+source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
+```
+
 3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+
+```bash
+pip install -r requirements.txt
+```
+
 4. Run the application:
-   ```bash
-   python doc_converter_gui.py
-   ```
+
+```bash
+python doc_converter_gui.py
+```
 
 ## Troubleshooting
 
 ### Permission Issues
+
 - On Windows, right-click and choose "Run as administrator"
 - On macOS, ensure you have the necessary permissions to run applications
 
 ### Python Version Compatibility
+
 - Ensure you have Python 3.10 installed
 - The application will guide you through version-specific requirements
 - Visit [python.org](https://www.python.org/downloads/) for the latest Python version
@@ -90,12 +106,14 @@ The application now includes an intelligent Python version check:
 ## Continuous Integration
 
 ### Build Workflow
+
 - Supports macOS (Intel and Apple Silicon) and Windows
 - Uses GitHub Actions for automated builds
 - Builds executable for each platform
 - Automatic artifact and release generation
 
 ### Supported Platforms
+
 - macOS 13 (Intel)
 - macOS 14 (Apple Silicon)
 - Windows 10/11 (64-bit)
