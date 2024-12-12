@@ -7,7 +7,7 @@ a = Analysis(
     pathex=[],
     binaries=[],
     datas=[
-        ('process_document.py', '.'),
+        ('process_document.py', 'Frameworks'),
     ],
     hiddenimports=[
         'tkinter',
