@@ -23,6 +23,7 @@ Thumbs.db
 *.tmp
 *.temp
 *.scpt
+*.log
 
 # Generated documents
 *.docx
