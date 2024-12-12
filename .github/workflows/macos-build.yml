@@ -1,1 +1,54 @@
- 
+name: macOS Build Test
+
+on:
+  workflow_dispatch:  # Manual trigger only
+  
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+          
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+          
+      - name: Build macOS Application
+        run: |
+          # Clean previous builds
+          rm -rf build dist
+          
+          # Build app using spec file
+          python -m PyInstaller macos.spec
+            
+      - name: Add Entitlements
+        run: |
+          # Apply entitlements
+          codesign --force --options runtime \
+            --entitlements macos_entitlements.xml \
+            --sign - \
+            "dist/Doc Converter.app"
+            
+      - name: Create DMG
+        run: |
+          hdiutil create -volname "Doc Converter" \
+            -srcfolder "dist/Doc Converter.app" \
+            -ov -format UDZO \
+            "dist/Doc-Converter.dmg"
+            
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-build
+          path: |
+            dist/*.app
+            dist/*.dmg 
