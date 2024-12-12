@@ -43,18 +43,18 @@ jobs:
           echo "Contents of dist directory before codesign:"
           ls -la "dist/"
           
-          # Apply entitlements (with escaped spaces)
+          # Apply entitlements
           codesign --force --options runtime \
             --entitlements macos_entitlements.xml \
             --sign - \
-            "dist/Doc\ Converter.app"
+            "dist/doc-converter.app"
             
       - name: Create DMG
         run: |
           hdiutil create -volname "Doc Converter" \
-            -srcfolder "dist/Doc\ Converter.app" \
+            -srcfolder "dist/doc-converter.app" \
             -ov -format UDZO \
-            "dist/Doc-Converter.dmg"
+            "dist/doc-converter.dmg"
             
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
