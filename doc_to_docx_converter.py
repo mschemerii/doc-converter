@@ -22,14 +22,47 @@ logging.basicConfig(
 def check_macos_requirements():
     """Check if Microsoft Word is installed on macOS"""
     try:
-        result = subprocess.run(
-            ['osascript', '-e', 'tell application "System Events" to exists application "Microsoft Word"'],
-            capture_output=True,
-            text=True,
-            check=True
-        )
-        return result.stdout.strip().lower() == 'true'
-    except Exception:
+        # Check the known Word location first
+        word_path = '/Applications/Microsoft Word.app'
+        if os.path.exists(word_path):
+            logging.info(f"Found Word at: {word_path}")
+            
+            # Verify we can communicate with Word
+            check_script = '''
+                try
+                    tell application "Microsoft Word"
+                        if not running then
+                            launch
+                            delay 1
+                        end if
+                        quit
+                        return true
+                    end tell
+                on error errMsg
+                    log errMsg
+                    return false
+                end try
+            '''
+            
+            result = subprocess.run(
+                ['osascript', '-e', check_script],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            
+            if result.stdout.strip().lower() == 'true':
+                logging.info("Successfully verified Word installation")
+                return True
+            else:
+                logging.warning(f"Word found at {word_path} but communication failed")
+        
+        logging.error("Microsoft Word not found or not accessible")
+        return False
+        
+    except Exception as e:
+        logging.error(f"Error checking Word availability: {str(e)}")
+        logging.error(traceback.format_exc())
         return False
 
 def convert_using_windows_com(doc_path, output_path):
@@ -138,17 +171,51 @@ def convert_using_pandoc(doc_path, output_path):
 def convert_using_macos_word(doc_path, output_path):
     """Convert a .doc file to .docx using Microsoft Word via AppleScript on macOS"""
     try:
-        # Create AppleScript command
+        # Ensure paths are absolute and properly escaped for AppleScript
+        doc_path = os.path.abspath(doc_path).replace('"', '\\"')
+        output_path = os.path.abspath(output_path).replace('"', '\\"')
+        
+        logging.info(f"Attempting to convert: {doc_path} to {output_path}")
+        
+        # Create AppleScript command with correct Word syntax
         applescript = f'''
-            tell application "Microsoft Word"
-                set wordDoc to open "{doc_path}"
-                save as wordDoc file name "{output_path}" file format format document
-                close wordDoc saving no
-                quit
-            end tell
+            try
+                tell application "Microsoft Word"
+                    set isRunning to running
+                    if not isRunning then
+                        launch
+                        delay 2
+                    end if
+                    
+                    -- Open the document
+                    set docPath to POSIX file "{doc_path}"
+                    set doc to open docPath
+                    
+                    -- Wait for document to load
+                    delay 2
+                    
+                    -- Save as docx
+                    set outputPath to POSIX file "{output_path}"
+                    save as active document file name outputPath file format format XML document
+                    
+                    -- Close document
+                    close active document saving no
+                    
+                    -- Quit if we launched it
+                    if not isRunning then
+                        quit
+                    end if
+                    
+                    return "success"
+                end tell
+            on error errMsg
+                log errMsg
+                error errMsg
+            end try
         '''
         
         # Run AppleScript command
+        logging.info("Executing AppleScript...")
         result = subprocess.run(
             ['osascript', '-e', applescript],
             capture_output=True,
@@ -156,11 +223,21 @@ def convert_using_macos_word(doc_path, output_path):
             check=True
         )
         
+        if result.stderr:
+            logging.warning(f"AppleScript warnings: {result.stderr}")
+        
+        logging.info(f"AppleScript output: {result.stdout}")
+        
+        # Verify the file was created
+        if not os.path.exists(output_path):
+            raise RuntimeError(f"Output file not created at {output_path}")
+        
         logging.info(f"Successfully converted {doc_path} to {output_path}")
         return True
         
     except subprocess.CalledProcessError as e:
-        logging.error(f"Error running AppleScript: {e.stderr}")
+        logging.error(f"AppleScript error: {e.stderr}")
+        logging.error(traceback.format_exc())
         raise
     except Exception as e:
         logging.error(f"Error converting document using macOS Word: {e}")
