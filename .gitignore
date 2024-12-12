@@ -29,8 +29,3 @@ Thumbs.db
 
 # workspace files
 *.code-workspace
-
-# special scripts
-setup_python_env.sh
-setup_env.sh
-doc_converter.log

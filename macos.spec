@@ -7,7 +7,8 @@ a = Analysis(
     pathex=[],
     binaries=[],
     datas=[
-        ('process_document.py', 'Frameworks'),
+        ('process_document.py', '.'),
+        ('doc_to_docx_converter.py', '.'),
     ],
     hiddenimports=[
         'tkinter',
@@ -15,6 +16,7 @@ a = Analysis(
         'subprocess',
         'threading',
         'logging',
+        'pypandoc',
     ],
     hookspath=[],
     hooksconfig={},
@@ -45,13 +47,13 @@ exe = EXE(
     [],
     exclude_binaries=True,
     name='doc-converter',
-    debug=True,
+    debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=True,
+    console=False,
     disable_windowed_traceback=False,
-    argv_emulation=True,
+    argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
@@ -76,8 +78,7 @@ app = BUNDLE(
     info_plist={
         'LSEnvironment': {
             'PYTHONPATH': '@executable_path/../Resources:@executable_path/../Frameworks',
-            'PYTHONHOME': '@executable_path/../Frameworks',
-            'PATH': '@executable_path/../MacOS:/usr/local/bin:/usr/bin:/bin'
+            'PATH': '/usr/local/bin:/usr/bin:/bin:@executable_path/../Resources'
         },
         'CFBundleDisplayName': 'Doc Converter',
         'CFBundleName': 'Doc Converter',
@@ -86,10 +87,5 @@ app = BUNDLE(
         'CFBundleShortVersionString': '1.0.0',
         'NSHighResolutionCapable': True,
         'NSPrincipalClass': 'NSApplication',
-        'LSMinimumSystemVersion': '10.13.0',
-        'NSAppleEventsUsageDescription': 'App requires permissions to run',
-        'CFBundleDocumentTypes': [],
-        'CFBundleTypeMIMETypes': [],
-        'CFBundleTypeExtensions': [],
     }
 ) 

@@ -1,0 +1,17 @@
+2024-12-12 12:16:21,479 - INFO: Starting document processing for /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc
+2024-12-12 12:16:21,630 - WARNING: macOS conversion not fully implemented
+2024-12-12 12:16:21,631 - CRITICAL: Conversion failed for /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc: macOS conversion not yet supported
+2024-12-12 12:16:21,637 - CRITICAL: Traceback (most recent call last):
+  File "/Users/mschemer/Downloads/doc-converter-1.0.0/doc_to_docx_converter.py", line 112, in convert_doc_to_docx
+    raise NotImplementedError("macOS conversion not yet supported")
+NotImplementedError: macOS conversion not yet supported
+
+2024-12-12 12:16:21,649 - CRITICAL: Document processing failed: Command '['python3', 'doc_to_docx_converter.py', '/Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc']' returned non-zero exit status 1.
+2024-12-12 12:16:21,653 - CRITICAL: Traceback (most recent call last):
+  File "/Users/mschemer/Downloads/doc-converter-1.0.0/process_document.py", line 203, in process_document
+    result = subprocess.run(
+             ^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['python3', 'doc_to_docx_converter.py', '/Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc']' returned non-zero exit status 1.
+
