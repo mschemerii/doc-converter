@@ -15,3 +15,19 @@ NotImplementedError: macOS conversion not yet supported
     raise CalledProcessError(retcode, process.args,
 subprocess.CalledProcessError: Command '['python3', 'doc_to_docx_converter.py', '/Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc']' returned non-zero exit status 1.
 
+2024-12-12 13:11:57,607 - INFO: Starting document processing for /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc
+2024-12-12 13:11:57,721 - WARNING: macOS conversion not fully implemented
+2024-12-12 13:11:57,721 - CRITICAL: Conversion failed for /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc: macOS conversion not yet supported
+2024-12-12 13:11:57,721 - CRITICAL: Traceback (most recent call last):
+  File "/Users/mschemer/my-repos/doc-converter/doc_to_docx_converter.py", line 112, in convert_doc_to_docx
+    raise NotImplementedError("macOS conversion not yet supported")
+NotImplementedError: macOS conversion not yet supported
+
+2024-12-12 13:11:57,728 - CRITICAL: Document processing failed: Command '['python3', 'doc_to_docx_converter.py', '/Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc']' returned non-zero exit status 1.
+2024-12-12 13:11:57,730 - CRITICAL: Traceback (most recent call last):
+  File "/Users/mschemer/my-repos/doc-converter/process_document.py", line 203, in process_document
+    result = subprocess.run(
+  File "/usr/local/Cellar/python@3.10/3.10.16/Frameworks/Python.framework/Versions/3.10/lib/python3.10/subprocess.py", line 526, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['python3', 'doc_to_docx_converter.py', '/Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc']' returned non-zero exit status 1.
+

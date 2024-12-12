@@ -1,7 +1,0 @@
-[MASTER]
-# Ignore import errors for platform-specific modules
-ignored-modules=win32com.client,pythoncom,Foundation,AppKit,pypandoc
-
-[MESSAGES CONTROL]
-# Disable specific warnings
-disable=import-error 
