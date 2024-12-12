@@ -181,9 +181,6 @@ def convert_using_macos_word(doc_path, output_path):
         applescript = f'''
             try
                 tell application "Microsoft Word"
-                    -- Get Word version for proper format handling
-                    set wordVersion to version
-                    
                     set isRunning to running
                     if not isRunning then
                         launch
@@ -199,11 +196,9 @@ def convert_using_macos_word(doc_path, output_path):
                     
                     -- Save as docx
                     set savePath to POSIX file "{output_path}"
-                    if wordVersion ≥ "16.0" then
-                        save as theDoc file name savePath file format format docx
-                    else
-                        save as theDoc file name savePath file format format document
-                    end if
+                    tell theDoc
+                        save as savePath file format format docx
+                    end tell
                     
                     -- Close without saving changes
                     close theDoc saving no
