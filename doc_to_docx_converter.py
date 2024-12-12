@@ -177,10 +177,13 @@ def convert_using_macos_word(doc_path, output_path):
         
         logging.info(f"Attempting to convert: {doc_path} to {output_path}")
         
-        # Create AppleScript command with correct Word syntax
+        # Create AppleScript command with simpler Word syntax
         applescript = f'''
             try
                 tell application "Microsoft Word"
+                    -- Get Word version for proper format handling
+                    set wordVersion to version
+                    
                     set isRunning to running
                     if not isRunning then
                         launch
@@ -189,21 +192,25 @@ def convert_using_macos_word(doc_path, output_path):
                     
                     -- Open the document
                     set docPath to POSIX file "{doc_path}"
-                    set doc to open docPath
+                    set theDoc to open docPath
                     
                     -- Wait for document to load
                     delay 2
                     
                     -- Save as docx
-                    set outputPath to POSIX file "{output_path}"
-                    save as active document file name outputPath file format document format
+                    set savePath to POSIX file "{output_path}"
+                    if wordVersion ≥ "16.0" then
+                        save as theDoc file name savePath file format format docx
+                    else
+                        save as theDoc file name savePath file format format document
+                    end if
                     
-                    -- Close document
-                    close active document saving no
+                    -- Close without saving changes
+                    close theDoc saving no
                     
                     -- Quit if we launched it
                     if not isRunning then
-                        quit
+                        quit saving no
                     end if
                     
                     return "success"
@@ -228,7 +235,8 @@ def convert_using_macos_word(doc_path, output_path):
         
         logging.info(f"AppleScript output: {result.stdout}")
         
-        # Verify the file was created
+        # Verify the file was created with a small delay
+        time.sleep(1)  # Give filesystem time to update
         if not os.path.exists(output_path):
             raise RuntimeError(f"Output file not created at {output_path}")
         

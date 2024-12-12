@@ -88,9 +88,9 @@ class DocConverterApp:
                                           state=tk.NORMAL, width=15)
         self.show_output_button.grid(row=2, column=0, pady=10)
         
-        # Exit button (initially disabled)
+        # Exit button (always enabled)
         self.exit_button = tk.Button(self.main_frame, text="Exit", command=self.exit_app, 
-                                   state=tk.DISABLED, width=15)
+                                   state=tk.NORMAL, width=15)
         self.exit_button.grid(row=3, column=0, pady=10)
         
         # Output window
@@ -220,9 +220,6 @@ class DocConverterApp:
             
             # Re-enable convert button
             self.master.after(0, self.convert_button.config, {"state": tk.NORMAL})
-            
-            # Enable exit button
-            self.master.after(0, self.exit_button.config, {"state": tk.NORMAL})
         
         except Exception as e:
             print(f"Document Processing Error: {str(e)}")
