@@ -15,7 +15,7 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.12'
-          architecture: 'x64'  # Force Intel architecture
+          architecture: 'x64'
           
       - name: Install Dependencies
         run: |
@@ -32,23 +32,27 @@ jobs:
           python -m PyInstaller macos.spec
           
           # Debug output
+          echo "Contents of dist directory:"
           ls -la dist/
+          echo "Contents of build directory:"
+          ls -la build/
             
       - name: Add Entitlements
         run: |
           # Debug output
-          ls -la dist/
+          echo "Contents of dist directory before codesign:"
+          ls -la "dist/"
           
-          # Apply entitlements
+          # Apply entitlements (with escaped spaces)
           codesign --force --options runtime \
             --entitlements macos_entitlements.xml \
             --sign - \
-            "dist/Doc Converter.app"
+            "dist/Doc\ Converter.app"
             
       - name: Create DMG
         run: |
           hdiutil create -volname "Doc Converter" \
-            -srcfolder "dist/Doc Converter.app" \
+            -srcfolder "dist/Doc\ Converter.app" \
             -ov -format UDZO \
             "dist/Doc-Converter.dmg"
             
@@ -57,5 +61,4 @@ jobs:
         with:
           name: macos-build
           path: |
-            dist/*.app/**/*
-            dist/*.dmg 
+            dist/ 
