@@ -360,17 +360,22 @@ class DocConverterApp:
 
 def main():
     root = tk.Tk()
-    root.lift()  # Lift the window
-    root.attributes('-topmost', True)  # Make it topmost
+    
+    # Force window to front on macOS
+    root.lift()
+    root.attributes('-topmost', True)
     app = DocConverterApp(root)
-    root.after_idle(root.attributes, '-topmost', False)  # Disable topmost after window appears
-    # Center the window on the screen
+    
+    # Center the window
     root.update_idletasks()
     width = root.winfo_width()
     height = root.winfo_height()
     x = (root.winfo_screenwidth() // 2) - (width // 2)
     y = (root.winfo_screenheight() // 2) - (height // 2)
     root.geometry(f'+{x}+{y}')
+    
+    # Disable topmost after window appears
+    root.after_idle(root.attributes, '-topmost', False)
     
     root.mainloop()
 
