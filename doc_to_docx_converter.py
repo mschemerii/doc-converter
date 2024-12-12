@@ -19,14 +19,34 @@ logging.basicConfig(
     ]
 )
 
-def convert_using_windows_com(doc_path: str, output_path: str) -> None:
-    """Convert a .doc file to .docx using Microsoft Word COM interface on Windows"""
+# Platform-specific imports
+PLATFORM = platform.system().lower()
+
+if PLATFORM == 'windows':
     try:
         import win32com.client
         import pythoncom
     except ImportError:
-        logging.error("pywin32 not installed. Cannot convert using Windows COM.")
-        raise
+        logging.warning("win32com not available - Windows COM conversion disabled")
+elif PLATFORM == 'darwin':
+    try:
+        from Foundation import NSURL
+        import AppKit
+    except ImportError:
+        logging.warning("macOS specific libraries not available")
+elif PLATFORM == 'linux':
+    try:
+        import pypandoc
+    except ImportError:
+        logging.warning("pypandoc not available - Linux conversion disabled")
+
+def convert_using_windows_com(doc_path: str, output_path: str) -> None:
+    """Convert a .doc file to .docx using Microsoft Word COM interface on Windows"""
+    if PLATFORM != 'windows':
+        raise OSError("Windows COM conversion only available on Windows")
+    
+    if 'win32com.client' not in sys.modules:
+        raise ImportError("win32com.client not available")
 
     # Initialize COM in the current thread
     pythoncom.CoInitialize()
@@ -58,7 +78,6 @@ def convert_using_windows_com(doc_path: str, output_path: str) -> None:
     finally:
         # Clean up COM
         pythoncom.CoUninitialize()
-
 
 def convert_using_pandoc(doc_path: str, output_path: str) -> None:
     """Convert a .doc file to .docx using Pandoc on Linux"""
