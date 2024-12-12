@@ -60,7 +60,7 @@ jobs:
         if: github.event_name == 'push'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.0
+          tag_name: v1.0.1
           files: |
             dist/doc-converter.exe
             README.pdf
