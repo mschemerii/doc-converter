@@ -148,57 +148,99 @@ class DocConverterApp:
         conversion_thread.start()
     
     def create_output_window(self):
-        """Create a new window to display conversion output"""
-        if self.output_window and self.output_window.winfo_exists():
-            self.output_window.lift()
-            return
-        
-        self.output_window = tk.Toplevel(self.master)
-        self.output_window.title("Conversion Output")
-        self.output_window.geometry("600x400")
-        
-        # Configure grid weights for output window
-        self.output_window.grid_rowconfigure(0, weight=1)
-        self.output_window.grid_columnconfigure(0, weight=1)
-        
-        # Frame for output content
-        output_frame = tk.Frame(self.output_window)
-        output_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
-        output_frame.grid_rowconfigure(0, weight=1)
-        output_frame.grid_columnconfigure(0, weight=1)
-        
-        # Text area for output
-        self.output_text = scrolledtext.ScrolledText(
-            output_frame, 
-            wrap=tk.WORD, 
-            state=tk.NORMAL
-        )
-        self.output_text.grid(row=0, column=0, sticky="nsew")
-        
-        # Exit button for output window
-        output_exit_button = tk.Button(output_frame, text="Close", 
-                                     command=self.on_output_window_close, width=15)
-        output_exit_button.grid(row=1, column=0, pady=10)
-        
-        # Custom stdout redirector that also stores output
-        class StoringRedirectText(RedirectText):
-            def __init__(self, text_widget, output_store):
-                super().__init__(text_widget)
-                self.output_store = output_store
+        """Create or show output window"""
+        if self.output_window is None or not self.output_window.winfo_exists():
+            # Create new window
+            self.output_window = tk.Toplevel(self.master)
+            self.output_window.title("Conversion Output")
+            self.output_window.geometry("600x400")
             
-            def write(self, string):
-                super().write(string)
-                self.output_store.append(string)
+            # Configure grid
+            self.output_window.grid_rowconfigure(0, weight=1)
+            self.output_window.grid_columnconfigure(0, weight=1)
+            
+            # Create frame for text and scrollbar
+            text_frame = tk.Frame(self.output_window)
+            text_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=(10,0))
+            text_frame.grid_rowconfigure(0, weight=1)
+            text_frame.grid_columnconfigure(0, weight=1)
+            
+            # Add text widget with scrollbar
+            self.output_text = scrolledtext.ScrolledText(text_frame, wrap=tk.WORD)
+            self.output_text.grid(row=0, column=0, sticky="nsew")
+            
+            # Create button frame
+            button_frame = tk.Frame(self.output_window)
+            button_frame.grid(row=1, column=0, pady=10)
+            
+            # Add Copy button
+            copy_button = tk.Button(
+                button_frame,
+                text="Copy Output",
+                command=self.copy_output_to_clipboard,
+                width=15
+            )
+            copy_button.pack(side=tk.LEFT, padx=5)
+            
+            # Add Close button
+            close_button = tk.Button(
+                button_frame,
+                text="Close",
+                command=self.output_window.destroy,
+                width=15
+            )
+            close_button.pack(side=tk.LEFT, padx=5)
+            
+            # Custom stdout redirector that also stores output
+            class StoringRedirectText:
+                def __init__(self, text_widget, output_store):
+                    self.text_widget = text_widget
+                    self.output_store = output_store
+                
+                def write(self, string):
+                    self.text_widget.insert(tk.END, string)
+                    self.text_widget.see(tk.END)
+                    self.output_store.append(string)
+                
+                def flush(self):
+                    pass
+            
+            # Redirect stdout and stderr to the text widget and store output
+            sys.stdout = StoringRedirectText(self.output_text, self.last_output)
+            sys.stderr = StoringRedirectText(self.output_text, self.last_output)
+            
+            # Set up window close handler
+            self.output_window.protocol("WM_DELETE_WINDOW", self.on_output_window_close)
+    
+    def copy_output_to_clipboard(self):
+        """Copy output text to clipboard"""
+        if hasattr(self, 'output_text'):
+            output_content = self.output_text.get("1.0", tk.END).strip()
+            self.master.clipboard_clear()
+            self.master.clipboard_append(output_content)
+            
+            # Show brief confirmation
+            self.show_copy_confirmation()
+    
+    def show_copy_confirmation(self):
+        """Show a small popup confirming the copy action"""
+        popup = tk.Toplevel(self.master)
+        popup.title("")
         
-        # Redirect stdout to the text widget and store output
-        sys.stdout = StoringRedirectText(self.output_text, self.last_output)
-        sys.stderr = StoringRedirectText(self.output_text, self.last_output)
+        # Position near the cursor
+        x = self.master.winfo_pointerx()
+        y = self.master.winfo_pointery()
+        popup.geometry(f"+{x+10}+{y+10}")
         
-        # Close event handler
-        self.output_window.protocol("WM_DELETE_WINDOW", self.on_output_window_close)
+        # Remove window decorations
+        popup.overrideredirect(True)
         
-        # Enable the show output button
-        self.show_output_button.config(state=tk.NORMAL)
+        # Add label
+        label = tk.Label(popup, text="Copied to clipboard!", padx=10, pady=5)
+        label.pack()
+        
+        # Auto-close after 1 second
+        popup.after(1000, popup.destroy)
     
     def run_conversion(self, input_file):
         """Perform the actual conversion"""
@@ -310,43 +352,19 @@ class DocConverterApp:
         )
         close_button.pack(pady=20)
     
+    def exit_app(self):
+        """Handle application exit"""
+        # Just close any output window and quit
+        if self.output_window and self.output_window.winfo_exists():
+            self.output_window.destroy()
+        self.master.quit()
+    
     def on_output_window_close(self):
         """Handle closing of output window"""
-        if self.output_window:
-            self.output_window.destroy()
-            self.output_window = None
-            
-            # Reset stdout and stderr
-            sys.stdout = sys.__stdout__
-            sys.stderr = sys.__stderr__
-    
-    def exit_app(self):
-        """Handle application exit with output window confirmation"""
-        # Check if output window exists and has content
-        if (self.output_window and self.output_window.winfo_exists() and 
-            hasattr(self, 'output_text') and 
-            self.output_text.get("1.0", tk.END).strip()):
-            
-            # Ask user if they want to close the output window
-            response = messagebox.askyesno(
-                "Close Output Window", 
-                "Do you want to close the output window before exiting?",
-                icon='question'
-            )
-            
-            if response:
-                # User wants to close output window
-                if self.output_window:
-                    self.output_window.destroy()
-                self.master.quit()
-            else:
-                # User wants to keep output window open
-                if self.output_window:
-                    self.output_window.lift()  # Bring output window to front
-                    self.output_window.focus_force()
-        else:
-            # No output window or no content, just exit
-            self.master.quit()
+        # Reset stdout and stderr
+        sys.stdout = sys.__stdout__
+        sys.stderr = sys.__stderr__
+        self.output_window.destroy()
 
 def main():
     root = tk.Tk()
