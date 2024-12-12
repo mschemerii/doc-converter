@@ -196,7 +196,7 @@ def convert_using_macos_word(doc_path, output_path):
                     
                     -- Save as docx
                     set outputPath to POSIX file "{output_path}"
-                    save as active document file name outputPath file format format XML document
+                    save as active document file name outputPath file format document format
                     
                     -- Close document
                     close active document saving no
