@@ -14,6 +14,11 @@ import logging
 import threading
 import traceback
 
+# Debugging
+print(f"Python version: {sys.version}")
+print(f"Current working directory: {os.getcwd()}")
+print(f"Sys path: {sys.path}")
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
