@@ -75,7 +75,7 @@ app = BUNDLE(
         'LSEnvironment': {
             'PYTHONPATH': '@executable_path/../Resources:@executable_path/../Frameworks',
             'PYTHONHOME': '@executable_path/../Frameworks',
-            'PATH': '@executable_path/../MacOS'
+            'PATH': '@executable_path/../MacOS:/usr/local/bin:/usr/bin:/bin'
         },
         'CFBundleDisplayName': 'Doc Converter',
         'CFBundleName': 'Doc Converter',

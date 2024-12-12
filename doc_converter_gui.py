@@ -36,11 +36,14 @@ try:
     import threading
     
     print("Successfully imported basic modules")
+    log_debug("Successfully imported basic modules")
     
 except Exception as e:
     print(f"Import Error: {str(e)}")
     print("Traceback:")
     traceback.print_exc()
+    log_debug(f"Import Error: {str(e)}")
+    log_debug(traceback.format_exc())
     # Keep the log file open for a few seconds to ensure writing
     import time
     time.sleep(5)
