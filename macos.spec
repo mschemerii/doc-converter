@@ -6,12 +6,13 @@ a = Analysis(
     ['doc_converter_gui.py'],
     pathex=[],
     binaries=[],
-    datas=[
-        ('process_document.py', '.'),
-    ],
+    datas=[],
     hiddenimports=[
         'tkinter',
         'process_document',
+        'subprocess',
+        'threading',
+        'logging',
     ],
     hookspath=[],
     hooksconfig={},
@@ -22,6 +23,13 @@ a = Analysis(
     cipher=block_cipher,
     noarchive=False
 )
+
+def remove_duplicates(list_of_tuples):
+    seen = set()
+    return [x for x in list_of_tuples if not (x[0] in seen or seen.add(x[0]))]
+
+a.datas = remove_duplicates(a.datas)
+a.binaries = remove_duplicates(a.binaries)
 
 pyz = PYZ(
     a.pure,
@@ -39,7 +47,7 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=False,
+    console=True,
     disable_windowed_traceback=False,
     argv_emulation=True,
     target_arch=None,
@@ -65,7 +73,7 @@ app = BUNDLE(
     bundle_identifier='com.yourcompany.docconverter',
     info_plist={
         'LSEnvironment': {
-            'PYTHONPATH': '@executable_path/../Resources'
+            'PYTHONPATH': '@executable_path/../Resources:@executable_path/../Frameworks'
         },
         'CFBundleDisplayName': 'Doc Converter',
         'CFBundleName': 'Doc Converter',
@@ -73,5 +81,6 @@ app = BUNDLE(
         'CFBundleIdentifier': 'com.yourcompany.docconverter',
         'CFBundleShortVersionString': '1.0.0',
         'NSHighResolutionCapable': True,
+        'NSPrincipalClass': 'NSApplication',
     }
 ) 
