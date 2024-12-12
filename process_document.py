@@ -179,83 +179,95 @@ def process_document(doc_path):
             logging.error(f"Input file not found: {doc_path}")
             raise FileNotFoundError(f"Input file not found: {doc_path}")
         
-        # Check platform-specific dependencies
-        if not check_linux_dependencies():
-            sys.exit(1)
+        # Get absolute paths
+        doc_path = os.path.abspath(doc_path)
+        docx_path = os.path.splitext(doc_path)[0] + '.docx'
         
-        # Get the directory and base filename
-        directory = os.path.dirname(doc_path) or '.'
-        filename = os.path.basename(doc_path)
-        base_name, ext = os.path.splitext(filename)
+        # Get the current script directory
+        script_dir = os.path.dirname(os.path.abspath(__file__))
         
-        if ext.lower() != '.doc':
-            logging.error("Error: Input file must be a .doc file")
-            return False
-        
-        # Define the intermediate docx filename
-        docx_path = os.path.join(directory, f"{base_name}.docx")
-        
-        # Step 1: Convert .doc to .docx
-        python_cmd = str(Path('.venv') / ('Scripts' if sys.platform == 'win32' else 'bin') / 'python')
-        if not os.path.exists(python_cmd):
+        # Get the Python executable path
+        if hasattr(sys, 'real_prefix') or (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix):
+            python_cmd = sys.executable
+        else:
             python_cmd = 'python3'
         
-        result = subprocess.run(
-            [python_cmd, 'doc_to_docx_converter.py', doc_path],
-            capture_output=True,
-            text=True,
-            check=True,
-            env=os.environ
-        )
-        logging.info(result.stdout)
-        if result.stderr:
-            logging.warning("Warnings: " + result.stderr)
+        logging.info(f"Using Python executable: {python_cmd}")
         
-        # Small delay to ensure file is ready
-        time.sleep(1)
+        # Change to script directory
+        original_dir = os.getcwd()
+        os.chdir(script_dir)
         
-        # Step 2: Modify table properties
-        result = subprocess.run(
-            [python_cmd, 'modify_docx_tables.py', docx_path],
-            capture_output=True,
-            text=True,
-            check=True,
-            env=os.environ
-        )
-        logging.info(result.stdout)
-        if result.stderr:
-            logging.warning("Warnings: " + result.stderr)
+        try:
+            # Step 1: Convert .doc to .docx
+            logging.info("Starting .doc to .docx conversion...")
+            result = subprocess.run(
+                [python_cmd, 'doc_to_docx_converter.py', doc_path],
+                capture_output=True,
+                text=True,
+                check=True,
+                env=os.environ
+            )
+            logging.info(result.stdout)
+            if result.stderr:
+                logging.warning("Conversion warnings: " + result.stderr)
+            
+            # Small delay to ensure file is ready
+            time.sleep(1)
+            
+            # Step 2: Modify table properties
+            result = subprocess.run(
+                [python_cmd, 'modify_docx_tables.py', docx_path],
+                capture_output=True,
+                text=True,
+                check=True,
+                env=os.environ
+            )
+            logging.info(result.stdout)
+            if result.stderr:
+                logging.warning("Warnings: " + result.stderr)
+            
+            # Step 3: Add table rows
+            result = subprocess.run(
+                [python_cmd, 'add_table_rows.py', docx_path],
+                capture_output=True,
+                text=True,
+                check=True,
+                env=os.environ
+            )
+            logging.info(result.stdout)
+            if result.stderr:
+                logging.warning("Warnings: " + result.stderr)
+            
+            # Step 4: Create renamed copies with headers
+            result = subprocess.run(
+                [python_cmd, 'rename_docx.py', docx_path],
+                capture_output=True,
+                text=True,
+                check=True,
+                env=os.environ
+            )
+            logging.info(result.stdout)
+            if result.stderr:
+                logging.warning("Warnings: " + result.stderr)
+            
+            logging.info("\n=== Processing Complete ===")
+            logging.info(f"Original .doc file: {doc_path}")
+            logging.info(f"Intermediate .docx file: {docx_path}")
+            logging.info("Final files created with appropriate headers and content modifications.")
+            return True
         
-        # Step 3: Add table rows
-        result = subprocess.run(
-            [python_cmd, 'add_table_rows.py', docx_path],
-            capture_output=True,
-            text=True,
-            check=True,
-            env=os.environ
-        )
-        logging.info(result.stdout)
-        if result.stderr:
-            logging.warning("Warnings: " + result.stderr)
-        
-        # Step 4: Create renamed copies with headers
-        result = subprocess.run(
-            [python_cmd, 'rename_docx.py', docx_path],
-            capture_output=True,
-            text=True,
-            check=True,
-            env=os.environ
-        )
-        logging.info(result.stdout)
-        if result.stderr:
-            logging.warning("Warnings: " + result.stderr)
-        
-        logging.info("\n=== Processing Complete ===")
-        logging.info(f"Original .doc file: {doc_path}")
-        logging.info(f"Intermediate .docx file: {docx_path}")
-        logging.info("Final files created with appropriate headers and content modifications.")
+        finally:
+            # Restore original directory
+            os.chdir(original_dir)
+            
         return True
     
+    except subprocess.CalledProcessError as e:
+        logging.critical(f"Command failed with exit status {e.returncode}")
+        logging.critical(f"Command output: {e.stdout}")
+        logging.critical(f"Command error: {e.stderr}")
+        raise
     except Exception as e:
         logging.critical(f"Document processing failed: {e}")
         logging.critical(traceback.format_exc())

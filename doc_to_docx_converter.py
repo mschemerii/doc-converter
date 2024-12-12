@@ -19,6 +19,19 @@ logging.basicConfig(
     ]
 )
 
+def check_macos_requirements():
+    """Check if Microsoft Word is installed on macOS"""
+    try:
+        result = subprocess.run(
+            ['osascript', '-e', 'tell application "System Events" to exists application "Microsoft Word"'],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        return result.stdout.strip().lower() == 'true'
+    except Exception:
+        return False
+
 def convert_using_windows_com(doc_path, output_path):
     """Convert a .doc file to .docx using Microsoft Word COM interface on Windows"""
     try:
@@ -26,6 +39,7 @@ def convert_using_windows_com(doc_path, output_path):
         import pythoncom
     except ImportError:
         logging.error("pywin32 not installed. Cannot convert using Windows COM.")
+        logging.error("Please install with: pip install pywin32")
         raise
 
     # Initialize COM in the current thread
@@ -34,32 +48,66 @@ def convert_using_windows_com(doc_path, output_path):
     try:
         # Create Word application instance
         word = win32com.client.Dispatch("Word.Application")
-        word.Visible = False
+        word.Visible = False  # Run in background
         
         try:
+            # Convert paths to absolute and normalize for Windows
+            doc_path = os.path.abspath(doc_path).replace('/', '\\')
+            output_path = os.path.abspath(output_path).replace('/', '\\')
+            
+            logging.info(f"Opening document: {doc_path}")
+            
             # Open the document
             doc = word.Documents.Open(doc_path)
             
+            # Constants for Word file formats
+            wdFormatDocumentDefault = 16  # .docx
+            
+            logging.info(f"Saving as .docx: {output_path}")
+            
             # Save as DOCX
-            doc.SaveAs2(output_path, FileFormat=16)  # wdFormatDocumentDefault = 16
+            doc.SaveAs2(
+                FileName=output_path,
+                FileFormat=wdFormatDocumentDefault,
+                AddToRecentFiles=False,
+                ReadOnlyRecommended=False
+            )
             
             # Close the document
-            doc.Close()
+            doc.Close(SaveChanges=False)
             
             logging.info(f"Successfully converted {doc_path} to {output_path}")
+            return True
             
         except Exception as e:
-            logging.error(f"Error converting document using Windows COM: {e}")
+            logging.error(f"Error during Word COM conversion: {str(e)}")
             logging.error(traceback.format_exc())
             raise
             
         finally:
-            # Quit Word application
-            word.Quit()
+            # Always quit Word and release COM objects
+            try:
+                word.Quit()
+                del word
+            except:
+                pass
             
     finally:
         # Clean up COM
         pythoncom.CoUninitialize()
+
+def check_windows_requirements():
+    """Check if Microsoft Word is available on Windows"""
+    try:
+        import win32com.client
+        
+        # Try to create Word application instance
+        word = win32com.client.Dispatch("Word.Application")
+        word.Quit()
+        return True
+    except Exception as e:
+        logging.error(f"Microsoft Word not available on Windows: {str(e)}")
+        return False
 
 def convert_using_pandoc(doc_path, output_path):
     """Convert a .doc file to .docx using Pandoc on Linux"""
@@ -87,17 +135,47 @@ def convert_using_pandoc(doc_path, output_path):
         logging.error(traceback.format_exc())
         raise
 
+def convert_using_macos_word(doc_path, output_path):
+    """Convert a .doc file to .docx using Microsoft Word via AppleScript on macOS"""
+    try:
+        # Create AppleScript command
+        applescript = f'''
+            tell application "Microsoft Word"
+                set wordDoc to open "{doc_path}"
+                save as wordDoc file name "{output_path}" file format format document
+                close wordDoc saving no
+                quit
+            end tell
+        '''
+        
+        # Run AppleScript command
+        result = subprocess.run(
+            ['osascript', '-e', applescript],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        
+        logging.info(f"Successfully converted {doc_path} to {output_path}")
+        return True
+        
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Error running AppleScript: {e.stderr}")
+        raise
+    except Exception as e:
+        logging.error(f"Error converting document using macOS Word: {e}")
+        logging.error(traceback.format_exc())
+        raise
+
 def convert_doc_to_docx(doc_path):
-    """
-    Convert a .doc file to .docx using available methods
-    Supports Windows, macOS, and Linux
-    """
+    """Convert a .doc file to .docx using available methods"""
     # Validate input file
     if not os.path.exists(doc_path):
         logging.error(f"Input file not found: {doc_path}")
         raise FileNotFoundError(f"Input file not found: {doc_path}")
     
-    # Determine output path
+    # Get absolute paths
+    doc_path = os.path.abspath(doc_path)
     output_path = os.path.splitext(doc_path)[0] + '.docx'
     
     # Determine conversion method based on platform
@@ -105,16 +183,26 @@ def convert_doc_to_docx(doc_path):
     
     try:
         if os_name == 'windows':
+            if not check_windows_requirements():
+                raise RuntimeError("Microsoft Word not available on Windows")
+            
+            logging.info("Using Microsoft Word COM interface for Windows conversion")
             convert_using_windows_com(doc_path, output_path)
         elif os_name == 'darwin':  # macOS
-            # Implement macOS-specific conversion (e.g., AppleScript)
-            logging.warning("macOS conversion not fully implemented")
-            raise NotImplementedError("macOS conversion not yet supported")
+            if not check_macos_requirements():
+                raise RuntimeError("Microsoft Word not found on macOS")
+            
+            logging.info("Using Microsoft Word via AppleScript for macOS conversion")
+            convert_using_macos_word(doc_path, output_path)
         elif os_name == 'linux':
             convert_using_pandoc(doc_path, output_path)
         else:
             logging.error(f"Unsupported operating system: {os_name}")
             raise OSError(f"Conversion not supported on {os_name}")
+        
+        # Verify the output file was created
+        if not os.path.exists(output_path):
+            raise RuntimeError(f"Conversion failed: Output file not created at {output_path}")
         
         return output_path
     
