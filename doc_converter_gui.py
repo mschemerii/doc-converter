@@ -229,9 +229,15 @@ class DocConverterApp:
     def run_conversion(self, input_file):
         """Perform the actual conversion"""
         try:
-            # Import the full document processing function
-            from process_document import process_document
-            
+            # Add error handling for module import
+            try:
+                from process_document import process_document
+            except ImportError as e:
+                print(f"Failed to import process_document: {e}")
+                self.master.after(0, self.show_error_popup, 
+                    "Could not load document processing module. Please reinstall the application.")
+                return
+
             # Perform full document processing
             success = process_document(input_file)
             

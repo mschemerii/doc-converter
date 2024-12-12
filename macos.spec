@@ -7,25 +7,16 @@ a = Analysis(
     pathex=[],
     binaries=[],
     datas=[
-        ('*.py', '.'),
-        ('README.md', '.'),
-        ('README.pdf', '.')
+        ('process_document.py', '.'),
     ],
     hiddenimports=[
-        'docx',
         'tkinter',
-        'Foundation',
-        'AppKit',
-        'ScriptingBridge'
+        'process_document',
     ],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[
-        'win32com',
-        'pythoncom',
-        'pypandoc'
-    ],
+    excludes=[],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=block_cipher,
@@ -44,15 +35,16 @@ exe = EXE(
     [],
     exclude_binaries=True,
     name='doc-converter',
-    debug=False,
+    debug=True,
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
     console=False,
     disable_windowed_traceback=False,
-    target_arch='x86_64',
+    argv_emulation=True,
+    target_arch=None,
     codesign_identity=None,
-    entitlements_file='macos_entitlements.xml'
+    entitlements_file=None,
 )
 
 coll = COLLECT(
@@ -70,12 +62,16 @@ app = BUNDLE(
     coll,
     name='doc-converter.app',
     icon=None,
-    bundle_identifier='com.oracle.doc-converter',
+    bundle_identifier='com.yourcompany.docconverter',
     info_plist={
-        'NSHighResolutionCapable': 'True',
-        'LSMinimumSystemVersion': '10.15',
-        'NSAppleEventsUsageDescription': 'This app needs to control Microsoft Word to convert documents.',
+        'LSEnvironment': {
+            'PYTHONPATH': '@executable_path/../Resources'
+        },
+        'CFBundleDisplayName': 'Doc Converter',
+        'CFBundleName': 'Doc Converter',
+        'CFBundleExecutable': 'doc-converter',
+        'CFBundleIdentifier': 'com.yourcompany.docconverter',
         'CFBundleShortVersionString': '1.0.0',
-        'CFBundleVersion': '1.0.0'
+        'NSHighResolutionCapable': True,
     }
 ) 
