@@ -1,20 +1,26 @@
-# Core dependencies
-python-docx==1.0.1
-lxml==4.9.3
-tk==0.1.0  # Tkinter GUI support
+# Core requirements (all platforms)
+python-docx>=0.8.11
+python-dateutil>=2.8.2
 
-# Windows-specific dependencies
-pywin32==306; platform_system == "Windows"
+# Windows-specific requirements
+pywin32>=306; platform_system == "Windows"
 
-# macOS-specific dependencies
-pyobjc-framework-Cocoa==10.2; platform_system == "Darwin"
-pyobjc-framework-CoreServices==10.2; platform_system == "Darwin"
-pyobjc-framework-ScriptingBridge==10.2; platform_system == "Darwin"
+# macOS-specific requirements
+# No additional packages required - uses built-in osascript for Word automation
 
-# Linux-specific dependencies (Oracle Linux 7/8/9, Ubuntu LTS)
-pypandoc==1.11; platform_system == "Linux"  # Python interface for Pandoc
+# Linux-specific requirements
+# Note: Requires system packages: libreoffice, pandoc
+# Install on Ubuntu/Debian: sudo apt-get install libreoffice pandoc
+# Install on RHEL/CentOS: sudo yum install libreoffice pandoc
+pypandoc>=1.11; platform_system == "Linux"
+python-uno>=1.8; platform_system == "Linux"  # For LibreOffice automation
 
-# Build and packaging dependencies
-pyinstaller==6.11.1
-setuptools==70.0.0
-wheel==0.43.0
+# Development requirements (optional)
+pylint>=2.17.0
+black>=23.3.0
+pytest>=7.3.1
+
+# Note: On Linux systems, ensure these system packages are installed:
+# - libreoffice (for document conversion)
+# - pandoc (for document format conversion)
+# - python3-uno (for LibreOffice automation)
