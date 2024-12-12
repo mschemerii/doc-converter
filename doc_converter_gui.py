@@ -2,17 +2,40 @@
 # Executable GUI for Doc Converter
 # Last updated: 2024-03-14
 
-import subprocess
-import sys
-import os
-
 import os
 import sys
-import tkinter as tk
-from tkinter import filedialog, messagebox, scrolledtext, ttk
-import logging
-import threading
 import traceback
+
+# Create a log file in a known location
+debug_log = os.path.expanduser('~/Desktop/doc_converter_debug.log')
+with open(debug_log, 'w') as f:
+    f.write(f"Starting Doc Converter\n")
+    f.write(f"Python Version: {sys.version}\n")
+    f.write(f"Executable Path: {sys.executable}\n")
+    f.write(f"Working Directory: {os.getcwd()}\n")
+    f.write(f"sys.path: {sys.path}\n\n")
+
+# Redirect stdout and stderr to the log file
+sys.stdout = open(debug_log, 'a')
+sys.stderr = sys.stdout
+
+try:
+    # Your existing imports
+    import subprocess
+    import tkinter as tk
+    from tkinter import filedialog, messagebox, scrolledtext, ttk
+    import logging
+    import threading
+    
+    print("Successfully imported basic modules")
+    
+except Exception as e:
+    print(f"Import Error: {str(e)}")
+    print("Traceback:")
+    traceback.print_exc()
+    # Keep the log file open for a few seconds to ensure writing
+    import time
+    time.sleep(5)
 
 # Debugging
 print(f"Python version: {sys.version}")
