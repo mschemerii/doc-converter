@@ -81,7 +81,7 @@ class DocConverterApp:
             justify=tk.LEFT,
             anchor="w",
             padx=20,
-            pady=(0, 5)
+            pady=5
         )
         self.status_label.grid(row=1, column=0, sticky="w")
         
@@ -92,7 +92,7 @@ class DocConverterApp:
             length=460,
             mode="determinate"
         )
-        self.progress.grid(row=2, column=0, padx=20, pady=(0, 10), sticky="ew")
+        self.progress.grid(row=2, column=0, padx=20, pady=10, sticky="ew")
         
         # Main container frame
         self.main_frame = tk.Frame(master)
