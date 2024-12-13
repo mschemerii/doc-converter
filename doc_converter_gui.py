@@ -9,6 +9,7 @@ from tkinter import filedialog, messagebox, scrolledtext, ttk
 import logging
 import threading
 import traceback
+import queue
 
 # Configure logging
 logging.basicConfig(
@@ -96,7 +97,10 @@ class DocConverterApp:
         
         # Store last output
         self.last_output = []
-    
+        
+        # Create a message queue
+        self.message_queue = queue.Queue()
+
     def browse_file(self):
         """Open file browser to select .doc file"""
         filename = filedialog.askopenfilename(
@@ -138,12 +142,8 @@ class DocConverterApp:
         self.convert_button.config(state=tk.DISABLED)
         
         # Start conversion in a separate thread
-        conversion_thread = threading.Thread(
-            target=self.run_conversion, 
-            args=(input_file,), 
-            daemon=True
-        )
-        conversion_thread.start()
+        threading.Thread(target=self.run_conversion, args=(input_file,), daemon=True).start()
+        self.check_queue()  # Start checking the queue
     
     def create_output_window(self):
         """Create or show output window"""
@@ -376,6 +376,16 @@ class DocConverterApp:
         
         if self.output_window is not None:
             self.output_window.destroy()
+    
+    def check_queue(self):
+        try:
+            while True:  # Process all messages in the queue
+                message = self.message_queue.get_nowait()
+                self.last_output.append(message)
+        except queue.Empty:
+            pass
+        self.update_output_window()  # Update the GUI with new messages
+        self.master.after(100, self.check_queue)  # Check again after 100 ms
 
 def main():
     root = tk.Tk()
