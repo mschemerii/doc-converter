@@ -77,22 +77,13 @@ class DocConverterApp:
         
         # Convert button
         self.convert_button = tk.Button(self.main_frame, text="Convert", command=self.start_conversion, 
-                                      state=tk.NORMAL, width=15)
+                                    state=tk.NORMAL, width=15)
         self.convert_button.grid(row=1, column=0, pady=10)
-        
-        # Show Output button
-        self.show_output_button = tk.Button(self.main_frame, text="Show Output", 
-                                          command=self.show_output_window,
-                                          state=tk.NORMAL, width=15)
-        self.show_output_button.grid(row=2, column=0, pady=10)
         
         # Exit button (always enabled)
         self.exit_button = tk.Button(self.main_frame, text="Exit", command=self.exit_app, 
                                    state=tk.NORMAL, width=15)
-        self.exit_button.grid(row=3, column=0, pady=10)
-        
-        # Output window
-        self.output_window = None
+        self.exit_button.grid(row=2, column=0, pady=10)
         
         # Store last output
         self.last_output = []
@@ -105,15 +96,6 @@ class DocConverterApp:
         )
         if filename:
             self.file_path.set(filename)
-    
-    def show_output_window(self):
-        """Show the output window with previous output"""
-        self.create_output_window()
-        # Replay previous output
-        if not self.last_output:
-            self.output_text.insert(tk.END, "No output available.\n")
-        for message in self.last_output:
-            self.output_text.insert(tk.END, message)
     
     def start_conversion(self):
         """Start conversion process in a separate thread"""
@@ -131,9 +113,6 @@ class DocConverterApp:
         # Clear previous output
         self.last_output = []
         
-        # Create output window
-        self.create_output_window()
-        
         # Disable convert button during conversion
         self.convert_button.config(state=tk.DISABLED)
         
@@ -144,111 +123,6 @@ class DocConverterApp:
             daemon=True
         )
         conversion_thread.start()
-    
-    def create_output_window(self):
-        """Create or show output window"""
-        if self.output_window is None or not self.output_window.winfo_exists():
-            # Create new window
-            self.output_window = tk.Toplevel(self.master)
-            self.output_window.title("Conversion Output")
-            self.output_window.geometry("600x400")
-            
-            # Configure grid
-            self.output_window.grid_rowconfigure(0, weight=1)
-            self.output_window.grid_columnconfigure(0, weight=1)
-            
-            # Create frame for text and scrollbar
-            text_frame = tk.Frame(self.output_window)
-            text_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=(10,0))
-            text_frame.grid_rowconfigure(0, weight=1)
-            text_frame.grid_columnconfigure(0, weight=1)
-            
-            # Add text widget with scrollbar
-            self.output_text = scrolledtext.ScrolledText(text_frame, wrap=tk.WORD)
-            self.output_text.grid(row=0, column=0, sticky="nsew")
-            
-            # Create button frame
-            button_frame = tk.Frame(self.output_window)
-            button_frame.grid(row=1, column=0, pady=10)
-            
-            # Add Copy button
-            copy_button = tk.Button(
-                button_frame,
-                text="Copy Output",
-                command=self.copy_output_to_clipboard,
-                width=15
-            )
-            copy_button.pack(side=tk.LEFT, padx=5)
-            
-            # Add Close button
-            close_button = tk.Button(
-                button_frame,
-                text="Close",
-                command=self.output_window.destroy,
-                width=15
-            )
-            close_button.pack(side=tk.LEFT, padx=5)
-            
-            # Custom stdout redirector that also stores output
-            class StoringRedirectText:
-                def __init__(self, text_widget, output_store):
-                    self.text_widget = text_widget
-                    self.output_store = output_store
-                
-                def write(self, string):
-                    self.text_widget.insert(tk.END, string)
-                    self.text_widget.see(tk.END)
-                    # Only append non-empty strings and ensure they end with newline
-                    if string.strip():
-                        if not string.endswith('\n'):
-                            string += '\n'
-                        self.output_store.append(string)
-                
-                def flush(self):
-                    pass
-            
-            # Redirect stdout and stderr to the text widget and store output
-            sys.stdout = StoringRedirectText(self.output_text, self.last_output)
-            sys.stderr = StoringRedirectText(self.output_text, self.last_output)
-            
-            # Set up window close handler
-            self.output_window.protocol("WM_DELETE_WINDOW", self.on_output_window_close)
-            
-            # Bring the output window to the front and focus on it
-            self.output_window.attributes('-topmost', True)  # Ensure the output window is the topmost window
-            self.output_window.attributes('-topmost', False)  # Reset the topmost attribute
-            self.output_window.lift()  # Bring the output window to the front
-            self.output_window.focus_force()  # Focus on the output window
-    
-    def copy_output_to_clipboard(self):
-        """Copy output text to clipboard"""
-        if hasattr(self, 'output_text'):
-            output_content = self.output_text.get("1.0", tk.END).strip()
-            self.master.clipboard_clear()
-            self.master.clipboard_append(output_content)
-            
-            # Show brief confirmation
-            self.show_copy_confirmation()
-    
-    def show_copy_confirmation(self):
-        """Show a small popup confirming the copy action"""
-        popup = tk.Toplevel(self.master)
-        popup.title("")
-        
-        # Position near the cursor
-        x = self.master.winfo_pointerx()
-        y = self.master.winfo_pointery()
-        popup.geometry(f"+{x+10}+{y+10}")
-        
-        # Remove window decorations
-        popup.overrideredirect(True)
-        
-        # Add label
-        label = tk.Label(popup, text="Copied to clipboard!", padx=10, pady=5)
-        label.pack()
-        
-        # Auto-close after 1 second
-        popup.after(1000, popup.destroy)
     
     def run_conversion(self, input_file):
         """Perform the actual conversion"""
@@ -263,37 +137,23 @@ class DocConverterApp:
             success = processor.process_document(input_file)
             
             if success:
-                # Show a clear success popup
-                self.master.after(0, self.show_success_popup, input_file)
-                print(f"Successfully processed document: {input_file}")  # Debugging output
-                self.last_output.append(f"Successfully processed document: {input_file}")
+                # Show success message
+                message = self.format_success_message(input_file)
+                self.master.after(0, lambda: messagebox.showinfo("Success", message))
             else:
-                # Show an error popup if processing failed
-                self.master.after(0, self.show_error_popup, "Document processing failed")
-                print(f"Failed to process document: {input_file}")  # Debugging output
-                self.last_output.append(f"Failed to process document: {input_file}")
+                # Show error message
+                self.master.after(0, lambda: messagebox.showerror("Error", "Document processing failed"))
         except Exception as e:
-            print(f"Error during conversion: {e}")  # Debugging output
-            self.last_output.append(f"Error during conversion: {e}")
-            self.show_error_popup("An unexpected error occurred during processing.")
-        
-        # Update the output window with the latest messages
-        self.master.after(0, self.update_output_window)  # Ensure output window is updated on the main thread
-    
-    def update_output_window(self):
-        if self.output_window and self.output_window.winfo_exists():
-            self.output_text.delete('1.0', tk.END)
-            for message in self.last_output:
-                self.output_text.insert(tk.END, message + "\n")
-        self.convert_button.config(state=tk.NORMAL)
-    
-    def show_success_popup(self, input_file):
-        """Show a clear success popup with details about the processed document"""
-        # Get the directory where the processed files are located
+            error_message = f"Error during conversion: {str(e)}"
+            self.master.after(0, lambda: messagebox.showerror("Error", error_message))
+        finally:
+            self.convert_button.config(state=tk.NORMAL)
+
+    def format_success_message(self, input_file):
+        """Format the success message with file details"""
         directory = os.path.dirname(input_file) or '.'
         base_name = os.path.splitext(os.path.basename(input_file))[0]
         
-        # Construct a message with details
         message = (
             f"Document Processing Complete!\n\n"
             f"Original File: {input_file}\n\n"
@@ -301,85 +161,14 @@ class DocConverterApp:
             f"Files Created:\n"
             f"- {base_name}.docx\n"
             f"- {base_name}_with_headers.docx\n"
-            f"- Other modified copies"
+            f"- {base_name}_final.docx"
         )
-        
-        # Create a custom popup window
-        popup = tk.Toplevel(self.master)
-        popup.title("Processing Successful")
-        popup.geometry("400x300")
-        popup.grab_set()  # Make the popup modal
-        
-        # Success icon (you can customize this)
-        success_label = tk.Label(popup, text="✅", font=("Arial", 48))
-        success_label.pack(pady=(20, 10))
-        
-        # Message text
-        message_label = tk.Label(
-            popup, 
-            text=message, 
-            font=("Arial", 10), 
-            justify=tk.LEFT,
-            wraplength=350
-        )
-        message_label.pack(padx=20, pady=10)
-        
-        # Close button
-        close_button = tk.Button(
-            popup, 
-            text="Close", 
-            command=popup.destroy, 
-            width=15
-        )
-        close_button.pack(pady=20)
-    
-    def show_error_popup(self, error_message):
-        """Show a clear error popup with details about the processing failure"""
-        # Create a custom error popup window
-        popup = tk.Toplevel(self.master)
-        popup.title("Processing Error")
-        popup.geometry("400x250")
-        popup.grab_set()  # Make the popup modal
-        
-        # Error icon (you can customize this)
-        error_label = tk.Label(popup, text="❌", font=("Arial", 48))
-        error_label.pack(pady=(20, 10))
-        
-        # Error message text
-        message_label = tk.Label(
-            popup, 
-            text=f"Document Processing Failed:\n\n{error_message}", 
-            font=("Arial", 10), 
-            fg="red",
-            justify=tk.CENTER,
-            wraplength=350
-        )
-        message_label.pack(padx=20, pady=10)
-        
-        # Close button
-        close_button = tk.Button(
-            popup, 
-            text="Close", 
-            command=popup.destroy, 
-            width=15
-        )
-        close_button.pack(pady=20)
+        return message
     
     def exit_app(self):
         """Handle application exit"""
         # Just close any output window and quit
-        if self.output_window and self.output_window.winfo_exists():
-            self.output_window.destroy()
         self.master.quit()
-    
-    def on_output_window_close(self):
-        """Handle closing of output window"""
-        # Reset stdout and stderr
-        sys.stdout = sys.__stdout__
-        sys.stderr = sys.__stderr__
-        
-        if self.output_window is not None:
-            self.output_window.destroy()
 
 def main():
     root = tk.Tk()
