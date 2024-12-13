@@ -9,7 +9,6 @@ from tkinter import filedialog, messagebox, scrolledtext, ttk
 import logging
 import threading
 import traceback
-import queue
 
 # Configure logging
 logging.basicConfig(
@@ -97,10 +96,7 @@ class DocConverterApp:
         
         # Store last output
         self.last_output = []
-        
-        # Create a message queue
-        self.message_queue = queue.Queue()
-
+    
     def browse_file(self):
         """Open file browser to select .doc file"""
         filename = filedialog.askopenfilename(
@@ -142,8 +138,12 @@ class DocConverterApp:
         self.convert_button.config(state=tk.DISABLED)
         
         # Start conversion in a separate thread
-        threading.Thread(target=self.run_conversion, args=(input_file,), daemon=True).start()
-        self.check_queue()  # Start checking the queue
+        conversion_thread = threading.Thread(
+            target=self.run_conversion, 
+            args=(input_file,), 
+            daemon=True
+        )
+        conversion_thread.start()
     
     def create_output_window(self):
         """Create or show output window"""
@@ -263,14 +263,17 @@ class DocConverterApp:
                 self.master.after(0, self.show_success_popup, input_file)
                 print(f"Successfully processed document: {input_file}")  # Debugging output
                 self.last_output.append(f"Successfully processed document: {input_file}")
+                self.update_output_window()
             else:
                 # Show an error popup if processing failed
                 self.master.after(0, self.show_error_popup, "Document processing failed")
                 print(f"Failed to process document: {input_file}")  # Debugging output
                 self.last_output.append(f"Failed to process document: {input_file}")
+                self.update_output_window()
         except Exception as e:
             print(f"Error during conversion: {e}")  # Debugging output
             self.last_output.append(f"Error during conversion: {e}")
+            self.update_output_window()
             self.show_error_popup("An unexpected error occurred during processing.")
         
         # Update the output window with the latest messages
@@ -376,16 +379,6 @@ class DocConverterApp:
         
         if self.output_window is not None:
             self.output_window.destroy()
-    
-    def check_queue(self):
-        try:
-            while True:  # Process all messages in the queue
-                message = self.message_queue.get_nowait()
-                self.last_output.append(message)
-        except queue.Empty:
-            pass
-        self.update_output_window()  # Update the GUI with new messages
-        self.master.after(100, self.check_queue)  # Check again after 100 ms
 
 def main():
     root = tk.Tk()
