@@ -10,3 +10,5 @@
 2024-12-13 11:21:09,462 - CRITICAL: Command error: ERROR:root:Usage: python doc_converter.py <input_file> <output_file>
 
 2024-12-13 11:21:09,462 - ERROR: Error during conversion: Command '['python3', 'doc_to_docx_converter.py', '/Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc']' returned non-zero exit status 1.
+2024-12-13 11:22:28,588 - INFO: Starting conversion for: /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc
+2024-12-13 11:22:28,588 - ERROR: Error during conversion: process_document() takes 1 positional argument but 2 were given
