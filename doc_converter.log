@@ -1,0 +1,2 @@
+2024-12-13 11:20:11,503 - INFO: Starting conversion for: /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc
+2024-12-13 11:20:11,503 - ERROR: Error during conversion: process_document() takes 1 positional argument but 2 were given
