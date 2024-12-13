@@ -75,6 +75,19 @@ def convert_using_pandoc(doc_path, output_path):
         return False
 
 
+def convert_doc_to_docx(doc_path, output_path):
+    """Convert a .doc file to .docx based on the operating system."""
+    if platform.system() == "Windows":
+        return convert_using_windows_com(doc_path, output_path)
+    elif platform.system() == "Darwin":  # macOS
+        return convert_using_macos_word(doc_path, output_path)
+    elif platform.system() == "Linux":
+        return convert_using_pandoc(doc_path, output_path)
+    else:
+        logging.error("Unsupported operating system.")
+        return False
+
+
 def main():
     if len(sys.argv) != 3:
         logging.error("Usage: python doc_converter.py <input_file> <output_file>")
@@ -83,15 +96,7 @@ def main():
     input_file = sys.argv[1]
     output_file = sys.argv[2]
 
-    if platform.system() == "Windows":
-        convert_using_windows_com(input_file, output_file)
-    elif platform.system() == "Darwin":  # macOS
-        convert_using_macos_word(input_file, output_file)
-    elif platform.system() == "Linux":
-        convert_using_pandoc(input_file, output_file)
-    else:
-        logging.error("Unsupported operating system.")
-        sys.exit(1)
+    convert_doc_to_docx(input_file, output_file)
 
 
 if __name__ == "__main__":
