@@ -263,8 +263,6 @@ class DocConverterApp:
                 self.master.after(0, self.show_success_popup, input_file)
                 print(f"Successfully processed document: {input_file}")  # Debugging output
                 self.last_output.append(f"Successfully processed document: {input_file}")
-                print("Conversion output generated as expected.")  # Debugging output
-                self.last_output.append("Conversion output generated as expected.")
             else:
                 # Show an error popup if processing failed
                 self.master.after(0, self.show_error_popup, "Document processing failed")
