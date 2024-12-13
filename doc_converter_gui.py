@@ -51,9 +51,11 @@ class DocConverterApp:
         master.geometry("500x400")
         
         # Configure grid weights for centering
-        master.grid_rowconfigure(0, weight=0)
-        master.grid_rowconfigure(1, weight=1)
-        master.grid_rowconfigure(5, weight=1)
+        master.grid_rowconfigure(0, weight=0)  # Instructions
+        master.grid_rowconfigure(1, weight=0)  # Status text
+        master.grid_rowconfigure(2, weight=0)  # Progress bar
+        master.grid_rowconfigure(3, weight=1)  # Main frame
+        master.grid_rowconfigure(6, weight=1)
         master.grid_columnconfigure(0, weight=1)
         
         # Instructions label
@@ -71,9 +73,30 @@ class DocConverterApp:
         )
         self.instructions_label.grid(row=0, column=0, sticky="w")
         
+        # Status text
+        self.status_var = tk.StringVar(value="Ready to convert...")
+        self.status_label = tk.Label(
+            master,
+            textvariable=self.status_var,
+            justify=tk.LEFT,
+            anchor="w",
+            padx=20,
+            pady=(0, 5)
+        )
+        self.status_label.grid(row=1, column=0, sticky="w")
+        
+        # Progress bar
+        self.progress = ttk.Progressbar(
+            master,
+            orient="horizontal",
+            length=460,
+            mode="determinate"
+        )
+        self.progress.grid(row=2, column=0, padx=20, pady=(0, 10), sticky="ew")
+        
         # Main container frame
         self.main_frame = tk.Frame(master)
-        self.main_frame.grid(row=2, column=0, sticky="nsew")
+        self.main_frame.grid(row=3, column=0, sticky="nsew")
         
         # Configure main frame grid
         self.main_frame.grid_columnconfigure(0, weight=1)
@@ -143,27 +166,56 @@ class DocConverterApp:
     def run_conversion(self, input_file):
         """Perform the actual conversion"""
         try:
+            # Reset progress bar
+            self.progress["value"] = 0
+            self.status_var.set("Starting conversion process...")
+            self.master.update_idletasks()
+            
             # Import the full document processing function
             from process_document import DocumentProcessor
             
             # Create an instance of DocumentProcessor
             processor = DocumentProcessor()
             
+            # Update progress for initialization
+            self.progress["value"] = 20
+            self.status_var.set("Converting .doc to .docx...")
+            self.master.update_idletasks()
+            
             # Call the process_document method with the input file
             success = processor.process_document(input_file)
             
+            # Update progress for main conversion
+            self.progress["value"] = 60
+            self.status_var.set("Processing document structure...")
+            self.master.update_idletasks()
+            
             if success:
+                # Update progress for completion
+                self.progress["value"] = 100
+                self.status_var.set("Conversion completed successfully!")
+                self.master.update_idletasks()
+                
                 # Show success message
                 message = self.format_success_message(input_file)
                 self.master.after(0, lambda: messagebox.showinfo("Success", message))
             else:
+                self.progress["value"] = 0
+                self.status_var.set("Conversion failed")
+                self.master.update_idletasks()
                 # Show error message
                 self.master.after(0, lambda: messagebox.showerror("Error", "Document processing failed"))
         except Exception as e:
+            self.progress["value"] = 0
+            self.status_var.set("Error occurred during conversion")
+            self.master.update_idletasks()
             error_message = f"Error during conversion: {str(e)}"
             self.master.after(0, lambda: messagebox.showerror("Error", error_message))
         finally:
             self.convert_button.config(state=tk.NORMAL)
+            # Reset progress after a delay if there was an error
+            if self.progress["value"] != 100:
+                self.master.after(2000, self.reset_progress)
 
     def format_success_message(self, input_file):
         """Format the success message with file details"""
@@ -180,6 +232,12 @@ class DocConverterApp:
             f"- {base_name}_final.docx"
         )
         return message
+    
+    def reset_progress(self):
+        """Reset progress bar and status text"""
+        self.progress["value"] = 0
+        self.status_var.set("Ready to convert...")
+        self.master.update_idletasks()
     
     def exit_app(self):
         """Handle application exit"""
