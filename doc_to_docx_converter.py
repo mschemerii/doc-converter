@@ -5,7 +5,7 @@ import subprocess
 import logging
 
 # Set up logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, handlers=[logging.StreamHandler()])
 
 def convert_using_windows_com(doc_path, output_path):
     """Convert a .doc file to .docx using Microsoft Word COM interface on Windows"""
