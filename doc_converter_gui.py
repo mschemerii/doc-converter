@@ -51,13 +51,29 @@ class DocConverterApp:
         master.geometry("500x400")
         
         # Configure grid weights for centering
-        master.grid_rowconfigure(0, weight=1)
-        master.grid_rowconfigure(4, weight=1)
+        master.grid_rowconfigure(0, weight=0)
+        master.grid_rowconfigure(1, weight=1)
+        master.grid_rowconfigure(5, weight=1)
         master.grid_columnconfigure(0, weight=1)
+        
+        # Instructions label
+        instructions = (
+            "1. Click on Browse to select your file.\n"
+            "2. Click on Convert to start the conversion process."
+        )
+        self.instructions_label = tk.Label(
+            master,
+            text=instructions,
+            justify=tk.LEFT,
+            anchor="w",
+            padx=20,
+            pady=10
+        )
+        self.instructions_label.grid(row=0, column=0, sticky="w")
         
         # Main container frame
         self.main_frame = tk.Frame(master)
-        self.main_frame.grid(row=1, column=0, sticky="nsew")
+        self.main_frame.grid(row=2, column=0, sticky="nsew")
         
         # Configure main frame grid
         self.main_frame.grid_columnconfigure(0, weight=1)
