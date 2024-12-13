@@ -8,7 +8,8 @@ a = Analysis(['doc_converter_gui.py'],
              datas=[
                 ('*.py', '.'),
                 ('README.md', '.'),
-                ('README.pdf', '.')
+                ('README.pdf', '.'),
+                ('assets/*', 'assets/')
              ],
              hiddenimports=[
                 'win32com.client',
@@ -46,4 +47,4 @@ exe = EXE(pyz,
           target_arch=None,
           codesign_identity=None,
           entitlements_file=None,
-          icon=None) 
+          icon='assets/file_conversion_icon.ico')
