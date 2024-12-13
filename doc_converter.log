@@ -910,3 +910,10 @@ subprocess.CalledProcessError: Command '['osascript', '-e', '\n            try\n
     raise CalledProcessError(retcode, process.args,
 subprocess.CalledProcessError: Command '['osascript', '-e', '\n            try\n                tell application "Microsoft Word"\n                    set isRunning to running\n                    if not isRunning then\n                        launch\n                        delay 2\n                    end if\n                    \n                    -- Open the document\n                    set docPath to POSIX file "/Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc"\n                    set theDoc to open docPath\n                    \n                    -- Wait for document to load\n                    delay 2\n                    \n                    -- Save as docx\n                    set savePath to POSIX file "/Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx"\n                    save theDoc as savePath file format Word\n                    \n                    -- Close without saving changes\n                    close theDoc saving no\n                    \n                    -- Quit if we launched it\n                    if not isRunning then\n                        quit saving no\n                    end if\n                    \n                    return "success"\n                end tell\n            on error errMsg\n                log errMsg\n                error errMsg\n            end try\n        ']' returned non-zero exit status 1.
 
+2024-12-13 10:58:30,863 - INFO: Starting document processing for /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc
+2024-12-13 10:58:30,864 - INFO: Using Python executable: python3
+2024-12-13 10:58:30,864 - INFO: Starting .doc to .docx conversion...
+2024-12-13 10:58:30,988 - CRITICAL: Command failed with exit status 1
+2024-12-13 10:58:30,989 - CRITICAL: Command output: 
+2024-12-13 10:58:30,989 - CRITICAL: Command error: ERROR:root:Usage: python doc_converter.py <input_file> <output_file>
+
