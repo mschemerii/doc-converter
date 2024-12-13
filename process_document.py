@@ -201,6 +201,7 @@ def process_document(doc_path):
         try:
             # Step 1: Convert .doc to .docx
             logging.info("Starting .doc to .docx conversion...")
+            logging.info(f"Running command: {[python_cmd, 'doc_to_docx_converter.py', doc_path]}")
             result = subprocess.run(
                 [python_cmd, 'doc_to_docx_converter.py', doc_path],
                 capture_output=True,
@@ -208,14 +209,15 @@ def process_document(doc_path):
                 check=True,
                 env=os.environ
             )
-            logging.info(result.stdout)
+            logging.info(f"Command stdout: {result.stdout}")
             if result.stderr:
-                logging.warning("Conversion warnings: " + result.stderr)
+                logging.warning(f"Command stderr: {result.stderr}")
             
             # Small delay to ensure file is ready
             time.sleep(1)
             
             # Step 2: Modify table properties
+            logging.info(f"Running command: {[python_cmd, 'modify_docx_tables.py', docx_path]}")
             result = subprocess.run(
                 [python_cmd, 'modify_docx_tables.py', docx_path],
                 capture_output=True,
@@ -223,11 +225,12 @@ def process_document(doc_path):
                 check=True,
                 env=os.environ
             )
-            logging.info(result.stdout)
+            logging.info(f"Command stdout: {result.stdout}")
             if result.stderr:
-                logging.warning("Warnings: " + result.stderr)
+                logging.warning(f"Command stderr: {result.stderr}")
             
             # Step 3: Add table rows
+            logging.info(f"Running command: {[python_cmd, 'add_table_rows.py', docx_path]}")
             result = subprocess.run(
                 [python_cmd, 'add_table_rows.py', docx_path],
                 capture_output=True,
@@ -235,11 +238,12 @@ def process_document(doc_path):
                 check=True,
                 env=os.environ
             )
-            logging.info(result.stdout)
+            logging.info(f"Command stdout: {result.stdout}")
             if result.stderr:
-                logging.warning("Warnings: " + result.stderr)
+                logging.warning(f"Command stderr: {result.stderr}")
             
             # Step 4: Create renamed copies with headers
+            logging.info(f"Running command: {[python_cmd, 'rename_docx.py', docx_path]}")
             result = subprocess.run(
                 [python_cmd, 'rename_docx.py', docx_path],
                 capture_output=True,
@@ -247,9 +251,9 @@ def process_document(doc_path):
                 check=True,
                 env=os.environ
             )
-            logging.info(result.stdout)
+            logging.info(f"Command stdout: {result.stdout}")
             if result.stderr:
-                logging.warning("Warnings: " + result.stderr)
+                logging.warning(f"Command stderr: {result.stderr}")
             
             logging.info("\n=== Processing Complete ===")
             logging.info(f"Original .doc file: {doc_path}")

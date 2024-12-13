@@ -249,7 +249,9 @@ class DocConverterApp:
             from process_document import process_document
             
             # Perform full document processing
+            logging.info(f"Starting conversion for: {input_file}")
             success = process_document(input_file)
+            logging.info(f"Conversion successful: {success}")
             
             if success:
                 # Show a clear success popup

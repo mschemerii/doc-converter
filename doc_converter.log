@@ -931,3 +931,11 @@ subprocess.CalledProcessError: Command '['osascript', '-e', '\n            try\n
 2024-12-13 11:04:51,186 - CRITICAL: Command output: 
 2024-12-13 11:04:51,186 - CRITICAL: Command error: ERROR:root:Usage: python doc_converter.py <input_file> <output_file>
 
+2024-12-13 11:07:03,553 - INFO: Starting conversion for: /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc
+2024-12-13 11:07:03,553 - INFO: Starting document processing for /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc
+2024-12-13 11:07:03,554 - INFO: Using Python executable: python3
+2024-12-13 11:07:03,554 - INFO: Starting .doc to .docx conversion...
+2024-12-13 11:07:03,663 - CRITICAL: Command failed with exit status 1
+2024-12-13 11:07:03,664 - CRITICAL: Command output: 
+2024-12-13 11:07:03,664 - CRITICAL: Command error: ERROR:root:Usage: python doc_converter.py <input_file> <output_file>
+
