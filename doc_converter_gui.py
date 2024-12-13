@@ -263,17 +263,14 @@ class DocConverterApp:
                 self.master.after(0, self.show_success_popup, input_file)
                 print(f"Successfully processed document: {input_file}")  # Debugging output
                 self.last_output.append(f"Successfully processed document: {input_file}")
-                self.update_output_window()
             else:
                 # Show an error popup if processing failed
                 self.master.after(0, self.show_error_popup, "Document processing failed")
                 print(f"Failed to process document: {input_file}")  # Debugging output
                 self.last_output.append(f"Failed to process document: {input_file}")
-                self.update_output_window()
         except Exception as e:
             print(f"Error during conversion: {e}")  # Debugging output
             self.last_output.append(f"Error during conversion: {e}")
-            self.update_output_window()
             self.show_error_popup("An unexpected error occurred during processing.")
         
         # Update the output window with the latest messages
@@ -283,7 +280,7 @@ class DocConverterApp:
         if self.output_window and self.output_window.winfo_exists():
             self.output_text.delete('1.0', tk.END)
             for message in self.last_output:
-                self.output_text.insert(tk.END, message)
+                self.output_text.insert(tk.END, message + "\n")
         self.convert_button.config(state=tk.NORMAL)
     
     def show_success_popup(self, input_file):
