@@ -1,19 +1,22 @@
-2024-12-13 12:58:29,210 - INFO: Starting conversion for: /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc
-2024-12-13 12:58:29,211 - INFO: Starting document processing for /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc
-2024-12-13 12:58:29,211 - INFO: Using Python executable: python3
-2024-12-13 12:58:29,211 - INFO: Starting .doc to .docx conversion...
-2024-12-13 12:58:29,211 - INFO: Running command: ['python3', 'doc_to_docx_converter.py', '/Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc', '/Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx']
-2024-12-13 12:58:38,281 - INFO: Command stdout: 
-2024-12-13 12:58:38,281 - WARNING: Command stderr: INFO:root:Successfully converted /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc to /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx
+2024-12-13 13:08:15,670 - INFO: Starting document processing for /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc
+2024-12-13 13:08:15,671 - INFO: Conversion has started...
+2024-12-13 13:08:15,671 - INFO: Using Python executable: python3
+2024-12-13 13:08:15,671 - INFO: Starting .doc to .docx conversion...
+2024-12-13 13:08:15,671 - INFO: Running command: ['python3', 'doc_to_docx_converter.py', '/Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc', '/Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx']
+2024-12-13 13:08:22,740 - INFO: Command stdout: 
+2024-12-13 13:08:22,741 - INFO: Conversion completed successfully.
+2024-12-13 13:08:22,741 - INFO: New files created:
+2024-12-13 13:08:22,741 - INFO: - /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx
+2024-12-13 13:08:22,741 - INFO: - /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM_with_headers.docx
+2024-12-13 13:08:22,741 - INFO: Location of new files: {os.path.dirname(docx_path)}
+2024-12-13 13:08:23,742 - INFO: Running command: ['python3', 'modify_docx_tables.py', '/Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx']
+2024-12-13 13:08:23,986 - INFO: Command stdout: Successfully modified table properties in: /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx
 
-2024-12-13 12:58:39,287 - INFO: Running command: ['python3', 'modify_docx_tables.py', '/Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx']
-2024-12-13 12:58:39,612 - INFO: Command stdout: Successfully modified table properties in: /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx
+2024-12-13 13:08:23,987 - INFO: Running command: ['python3', 'add_table_rows.py', '/Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx']
+2024-12-13 13:08:24,335 - INFO: Command stdout: Successfully added rows to tables in: /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx
 
-2024-12-13 12:58:39,612 - INFO: Running command: ['python3', 'add_table_rows.py', '/Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx']
-2024-12-13 12:58:39,888 - INFO: Command stdout: Successfully added rows to tables in: /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx
-
-2024-12-13 12:58:39,888 - INFO: Running command: ['python3', 'rename_docx.py', '/Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx']
-2024-12-13 12:58:40,178 - INFO: Command stdout: Original file: /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx
+2024-12-13 13:08:24,335 - INFO: Running command: ['python3', 'rename_docx.py', '/Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx']
+2024-12-13 13:08:24,623 - INFO: Command stdout: Original file: /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx
 Successfully created renamed copy with header: 2024-12-17_AppConMon_BIM-Stage-Evidence.docx
 Successfully created renamed copy with header: 2024-12-17_AppConMon_BIM-StageDR-Evidence.docx
 Warning: Could not find one or both sections: ['Pre-Deploy Steps', 'Pre Steps'] to ['Rollback']
@@ -24,39 +27,35 @@ Created the following files:
 - 2024-12-17_AppConMon_BIM-StageDR-Evidence.docx
 - 2024-12-17_AppConMon_BIM-Rollback-Evidence.docx
 
-2024-12-13 12:58:40,178 - WARNING: Command stderr: /Users/mschemer/my-repos/doc-converter/rename_docx.py:84: FutureWarning: The behavior of this method will change in future versions. Use specific 'len(elem)' or 'elem is not None' test instead.
+2024-12-13 13:08:24,623 - WARNING: Command stderr: /Users/mschemer/my-repos/doc-converter/rename_docx.py:84: FutureWarning: The behavior of this method will change in future versions. Use specific 'len(elem)' or 'elem is not None' test instead.
   if not section_para:
 /Users/mschemer/my-repos/doc-converter/rename_docx.py:90: FutureWarning: The behavior of this method will change in future versions. Use specific 'len(elem)' or 'elem is not None' test instead.
   if not parent:
 
-2024-12-13 12:58:40,178 - INFO: 
+2024-12-13 13:08:24,623 - INFO: 
 === Processing Complete ===
-2024-12-13 12:58:40,178 - INFO: Original .doc file: /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc
-2024-12-13 12:58:40,179 - INFO: Intermediate .docx file: /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx
-2024-12-13 12:58:40,179 - INFO: Final files created with appropriate headers and content modifications.
-2024-12-13 12:58:40,179 - INFO: Conversion successful: True
-2024-12-13 13:01:55,993 - INFO: Starting conversion for: /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc
-2024-12-13 13:01:55,993 - INFO: Starting document processing for /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc
-2024-12-13 13:01:55,993 - INFO: Conversion has started...
-2024-12-13 13:01:55,993 - INFO: Using Python executable: python3
-2024-12-13 13:01:55,993 - INFO: Starting .doc to .docx conversion...
-2024-12-13 13:01:55,993 - INFO: Running command: ['python3', 'doc_to_docx_converter.py', '/Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc', '/Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx']
-2024-12-13 13:02:03,028 - INFO: Command stdout: 
-2024-12-13 13:02:03,028 - WARNING: Command stderr: INFO:root:Successfully converted /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc to /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx
+2024-12-13 13:08:24,623 - INFO: Original .doc file: /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc
+2024-12-13 13:08:24,623 - INFO: Intermediate .docx file: /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx
+2024-12-13 13:08:24,623 - INFO: Final files created with appropriate headers and content modifications.
+2024-12-13 13:09:48,483 - INFO: Starting document processing for /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc
+2024-12-13 13:09:48,483 - INFO: Conversion has started...
+2024-12-13 13:09:48,484 - INFO: Using Python executable: python3
+2024-12-13 13:09:48,484 - INFO: Starting .doc to .docx conversion...
+2024-12-13 13:09:48,484 - INFO: Running command: ['python3', 'doc_to_docx_converter.py', '/Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc', '/Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx']
+2024-12-13 13:09:55,513 - INFO: Command stdout: 
+2024-12-13 13:09:55,513 - INFO: Conversion completed successfully.
+2024-12-13 13:09:55,513 - INFO: New files created:
+2024-12-13 13:09:55,513 - INFO: - /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx
+2024-12-13 13:09:55,513 - INFO: - /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM_with_headers.docx
+2024-12-13 13:09:55,514 - INFO: Location of new files: /Users/mschemer/Downloads
+2024-12-13 13:09:56,517 - INFO: Running command: ['python3', 'modify_docx_tables.py', '/Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx']
+2024-12-13 13:09:56,750 - INFO: Command stdout: Successfully modified table properties in: /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx
 
-2024-12-13 13:02:03,029 - INFO: Conversion completed successfully.
-2024-12-13 13:02:03,029 - INFO: New files created:
-2024-12-13 13:02:03,029 - INFO: - /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx
-2024-12-13 13:02:03,029 - INFO: - /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM_with_headers.docx
-2024-12-13 13:02:03,029 - INFO: Location of new files: {os.path.dirname(docx_path)}
-2024-12-13 13:02:04,030 - INFO: Running command: ['python3', 'modify_docx_tables.py', '/Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx']
-2024-12-13 13:02:04,252 - INFO: Command stdout: Successfully modified table properties in: /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx
+2024-12-13 13:09:56,751 - INFO: Running command: ['python3', 'add_table_rows.py', '/Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx']
+2024-12-13 13:09:57,088 - INFO: Command stdout: Successfully added rows to tables in: /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx
 
-2024-12-13 13:02:04,252 - INFO: Running command: ['python3', 'add_table_rows.py', '/Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx']
-2024-12-13 13:02:04,518 - INFO: Command stdout: Successfully added rows to tables in: /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx
-
-2024-12-13 13:02:04,518 - INFO: Running command: ['python3', 'rename_docx.py', '/Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx']
-2024-12-13 13:02:04,803 - INFO: Command stdout: Original file: /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx
+2024-12-13 13:09:57,088 - INFO: Running command: ['python3', 'rename_docx.py', '/Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx']
+2024-12-13 13:09:57,377 - INFO: Command stdout: Original file: /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx
 Successfully created renamed copy with header: 2024-12-17_AppConMon_BIM-Stage-Evidence.docx
 Successfully created renamed copy with header: 2024-12-17_AppConMon_BIM-StageDR-Evidence.docx
 Warning: Could not find one or both sections: ['Pre-Deploy Steps', 'Pre Steps'] to ['Rollback']
@@ -67,14 +66,13 @@ Created the following files:
 - 2024-12-17_AppConMon_BIM-StageDR-Evidence.docx
 - 2024-12-17_AppConMon_BIM-Rollback-Evidence.docx
 
-2024-12-13 13:02:04,803 - WARNING: Command stderr: /Users/mschemer/my-repos/doc-converter/rename_docx.py:84: FutureWarning: The behavior of this method will change in future versions. Use specific 'len(elem)' or 'elem is not None' test instead.
+2024-12-13 13:09:57,377 - WARNING: Command stderr: /Users/mschemer/my-repos/doc-converter/rename_docx.py:84: FutureWarning: The behavior of this method will change in future versions. Use specific 'len(elem)' or 'elem is not None' test instead.
   if not section_para:
 /Users/mschemer/my-repos/doc-converter/rename_docx.py:90: FutureWarning: The behavior of this method will change in future versions. Use specific 'len(elem)' or 'elem is not None' test instead.
   if not parent:
 
-2024-12-13 13:02:04,803 - INFO: 
+2024-12-13 13:09:57,378 - INFO: 
 === Processing Complete ===
-2024-12-13 13:02:04,803 - INFO: Original .doc file: /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc
-2024-12-13 13:02:04,804 - INFO: Intermediate .docx file: /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx
-2024-12-13 13:02:04,804 - INFO: Final files created with appropriate headers and content modifications.
-2024-12-13 13:02:04,804 - INFO: Conversion successful: True
+2024-12-13 13:09:57,378 - INFO: Original .doc file: /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc
+2024-12-13 13:09:57,378 - INFO: Intermediate .docx file: /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx
+2024-12-13 13:09:57,378 - INFO: Final files created with appropriate headers and content modifications.

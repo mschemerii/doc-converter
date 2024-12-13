@@ -232,7 +232,7 @@ class DocumentProcessor:
                 self.last_output.append(f"- {docx_path}")
                 logging.info(f"- {docx_path.replace('.docx', '_with_headers.docx')}")
                 self.last_output.append(f"- {docx_path.replace('.docx', '_with_headers.docx')}")
-                logging.info("Location of new files: {os.path.dirname(docx_path)}")
+                logging.info(f"Location of new files: {os.path.dirname(docx_path)}")
                 self.last_output.append(f"Location of new files: {os.path.dirname(docx_path)}")
                 
                 # Small delay to ensure file is ready
@@ -240,6 +240,7 @@ class DocumentProcessor:
                 
                 # Step 2: Modify table properties
                 logging.info(f"Running command: {[python_cmd, 'modify_docx_tables.py', docx_path]}")
+                self.last_output.append(f"Running command: {[python_cmd, 'modify_docx_tables.py', docx_path]}")
                 result = subprocess.run(
                     [python_cmd, 'modify_docx_tables.py', docx_path],
                     capture_output=True,
@@ -248,11 +249,14 @@ class DocumentProcessor:
                     env=os.environ
                 )
                 logging.info(f"Command stdout: {result.stdout}")
+                self.last_output.append(f"Command stdout: {result.stdout}")
                 if result.stderr:
                     logging.warning(f"Command stderr: {result.stderr}")
+                    self.last_output.append(f"Command stderr: {result.stderr}")
                 
                 # Step 3: Add table rows
                 logging.info(f"Running command: {[python_cmd, 'add_table_rows.py', docx_path]}")
+                self.last_output.append(f"Running command: {[python_cmd, 'add_table_rows.py', docx_path]}")
                 result = subprocess.run(
                     [python_cmd, 'add_table_rows.py', docx_path],
                     capture_output=True,
@@ -261,11 +265,14 @@ class DocumentProcessor:
                     env=os.environ
                 )
                 logging.info(f"Command stdout: {result.stdout}")
+                self.last_output.append(f"Command stdout: {result.stdout}")
                 if result.stderr:
                     logging.warning(f"Command stderr: {result.stderr}")
+                    self.last_output.append(f"Command stderr: {result.stderr}")
                 
                 # Step 4: Create renamed copies with headers
                 logging.info(f"Running command: {[python_cmd, 'rename_docx.py', docx_path]}")
+                self.last_output.append(f"Running command: {[python_cmd, 'rename_docx.py', docx_path]}")
                 result = subprocess.run(
                     [python_cmd, 'rename_docx.py', docx_path],
                     capture_output=True,
@@ -274,13 +281,19 @@ class DocumentProcessor:
                     env=os.environ
                 )
                 logging.info(f"Command stdout: {result.stdout}")
+                self.last_output.append(f"Command stdout: {result.stdout}")
                 if result.stderr:
                     logging.warning(f"Command stderr: {result.stderr}")
+                    self.last_output.append(f"Command stderr: {result.stderr}")
                 
                 logging.info("\n=== Processing Complete ===")
+                self.last_output.append("\n=== Processing Complete ===")
                 logging.info(f"Original .doc file: {doc_path}")
+                self.last_output.append(f"Original .doc file: {doc_path}")
                 logging.info(f"Intermediate .docx file: {docx_path}")
+                self.last_output.append(f"Intermediate .docx file: {docx_path}")
                 logging.info("Final files created with appropriate headers and content modifications.")
+                self.last_output.append("Final files created with appropriate headers and content modifications.")
                 return True
             
             finally:
@@ -291,12 +304,17 @@ class DocumentProcessor:
         
         except subprocess.CalledProcessError as e:
             logging.critical(f"Command failed with exit status {e.returncode}")
+            self.last_output.append(f"Command failed with exit status {e.returncode}")
             logging.critical(f"Command output: {e.stdout}")
+            self.last_output.append(f"Command output: {e.stdout}")
             logging.critical(f"Command error: {e.stderr}")
+            self.last_output.append(f"Command error: {e.stderr}")
             raise
         except Exception as e:
             logging.critical(f"Document processing failed: {e}")
+            self.last_output.append(f"Document processing failed: {e}")
             logging.critical(traceback.format_exc())
+            self.last_output.append(traceback.format_exc())
             raise
 
     def deactivate_venv(self):

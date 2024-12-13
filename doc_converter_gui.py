@@ -211,6 +211,12 @@ class DocConverterApp:
             
             # Set up window close handler
             self.output_window.protocol("WM_DELETE_WINDOW", self.on_output_window_close)
+            
+            # Bring the output window to the front and focus on it
+            self.output_window.attributes('-topmost', True)  # Ensure the output window is the topmost window
+            self.output_window.attributes('-topmost', False)  # Reset the topmost attribute
+            self.output_window.lift()  # Bring the output window to the front
+            self.output_window.focus_force()  # Focus on the output window
     
     def copy_output_to_clipboard(self):
         """Copy output text to clipboard"""
@@ -246,14 +252,13 @@ class DocConverterApp:
         """Perform the actual conversion"""
         try:
             # Import the full document processing function
-            from process_document import process_document
+            from process_document import DocumentProcessor
             
-            # Perform full document processing
-            logging.info(f"Starting conversion for: {input_file}")
-            self.last_output.append(f"Starting conversion for: {input_file}")
-            success = process_document(input_file)  # Call with only the input file
-            logging.info(f"Conversion successful: {success}")
-            self.last_output.append(f"Conversion successful: {success}")
+            # Create an instance of DocumentProcessor
+            processor = DocumentProcessor()
+            
+            # Call the process_document method with the input file
+            success = processor.process_document(input_file)
             
             if success:
                 # Show a clear success popup
@@ -375,6 +380,12 @@ def main():
     x = (root.winfo_screenwidth() // 2) - (width // 2)
     y = (root.winfo_screenheight() // 2) - (height // 2)
     root.geometry(f'+{x}+{y}')
+    
+    root.attributes('-topmost', True)  # Ensure the main application window is the topmost window
+    root.attributes('-topmost', False)  # Reset the topmost attribute
+    
+    root.lift()  # Bring the main window to the front
+    root.focus_force()  # Focus on the main window
     
     root.mainloop()
 
