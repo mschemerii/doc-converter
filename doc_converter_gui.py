@@ -261,20 +261,22 @@ class DocConverterApp:
             if success:
                 # Show a clear success popup
                 self.master.after(0, self.show_success_popup, input_file)
-                print(f"Successfully processed document: {input_file}")
+                print(f"Successfully processed document: {input_file}")  # Debugging output
                 self.last_output.append(f"Successfully processed document: {input_file}")
+                print("Conversion output generated as expected.")  # Debugging output
+                self.last_output.append("Conversion output generated as expected.")
             else:
                 # Show an error popup if processing failed
                 self.master.after(0, self.show_error_popup, "Document processing failed")
-                print(f"Failed to process document: {input_file}")
+                print(f"Failed to process document: {input_file}")  # Debugging output
                 self.last_output.append(f"Failed to process document: {input_file}")
         except Exception as e:
-            logging.error(f"Error during conversion: {e}")
+            print(f"Error during conversion: {e}")  # Debugging output
             self.last_output.append(f"Error during conversion: {e}")
             self.show_error_popup("An unexpected error occurred during processing.")
         
         # Update the output window with the latest messages
-        self.master.after(0, self.update_output_window)
+        self.master.after(0, self.update_output_window)  # Ensure output window is updated on the main thread
     
     def update_output_window(self):
         if self.output_window and self.output_window.winfo_exists():
