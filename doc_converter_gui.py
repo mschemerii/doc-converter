@@ -274,7 +274,14 @@ class DocConverterApp:
             self.show_error_popup("An unexpected error occurred during processing.")
         
         # Update the output window with the latest messages
-        self.master.after(0, self.show_output_window)
+        self.master.after(0, self.update_output_window)
+    
+    def update_output_window(self):
+        if self.output_window and self.output_window.winfo_exists():
+            self.output_text.delete('1.0', tk.END)
+            for message in self.last_output:
+                self.output_text.insert(tk.END, message)
+        self.convert_button.config(state=tk.NORMAL)
     
     def show_success_popup(self, input_file):
         """Show a clear success popup with details about the processed document"""
