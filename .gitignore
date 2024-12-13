@@ -30,3 +30,5 @@ Thumbs.db
 
 # workspace files
 *.code-workspace
+
+doc_converter.log

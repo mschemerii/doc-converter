@@ -45,8 +45,7 @@ def convert_using_macos_word(doc_path, output_path):
         
         delay 5
         
-        save as active document file name POSIX file "{output_path}"
-        
+        save as active document file name POSIX file "{output_path}" file format format document
         close active document saving no
         
         if not isRunning then
