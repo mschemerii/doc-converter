@@ -248,9 +248,11 @@ class DocConverterApp:
             # Import the full document processing function
             from process_document import process_document
             
+            output_file = input_file.replace('.doc', '.docx')  # Define output file path
+            
             # Perform full document processing
             logging.info(f"Starting conversion for: {input_file}")
-            success = process_document(input_file)
+            success = process_document(input_file, output_file)
             logging.info(f"Conversion successful: {success}")
             
             if success:
