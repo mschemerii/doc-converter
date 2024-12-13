@@ -198,7 +198,11 @@ class DocConverterApp:
                 def write(self, string):
                     self.text_widget.insert(tk.END, string)
                     self.text_widget.see(tk.END)
-                    self.output_store.append(string)
+                    # Only append non-empty strings and ensure they end with newline
+                    if string.strip():
+                        if not string.endswith('\n'):
+                            string += '\n'
+                        self.output_store.append(string)
                 
                 def flush(self):
                     pass
