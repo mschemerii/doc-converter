@@ -11,6 +11,15 @@ dist/
 build/
 *.egg-info/
 
+# PyInstaller
+build/
+dist/
+*.spec
+!windows-build.spec
+*.manifest
+*.pyc
+__pycache__/
+
 # IDE specific files
 .vscode/
 .idea/
