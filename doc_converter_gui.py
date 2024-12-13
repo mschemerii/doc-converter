@@ -274,6 +274,9 @@ class DocConverterApp:
             logging.error(f"Error during conversion: {e}")
             self.last_output.append(f"Error during conversion: {e}")
             self.show_error_popup("An unexpected error occurred during processing.")
+        
+        # Update the output window with the latest messages
+        self.master.after(0, self.show_output_window)
     
     def show_success_popup(self, input_file):
         """Show a clear success popup with details about the processed document"""
