@@ -247,10 +247,11 @@ class DocConverterApp:
         try:
             # Import the full document processing function
             from process_document import process_document
+            output_file = input_file.replace('.doc', '.docx')  # Define output file path
             
             # Perform full document processing
             logging.info(f"Starting conversion for: {input_file}")
-            success = process_document(input_file)
+            success = process_document(input_file, output_file)
             logging.info(f"Conversion successful: {success}")
             
             if success:
@@ -261,20 +262,9 @@ class DocConverterApp:
                 # Show an error popup if processing failed
                 self.master.after(0, self.show_error_popup, "Document processing failed")
                 print(f"Failed to process document: {input_file}")
-            
-            # Re-enable convert button
-            self.master.after(0, self.convert_button.config, {"state": tk.NORMAL})
-        
         except Exception as e:
-            print(f"Document Processing Error: {str(e)}")
-            import traceback
-            traceback.print_exc()
-            
-            # Show an error popup
-            self.master.after(0, self.show_error_popup, str(e))
-            
-            # Re-enable convert button
-            self.master.after(0, self.convert_button.config, {"state": tk.NORMAL})
+            logging.error(f"Error during conversion: {e}")
+            self.show_error_popup("An unexpected error occurred during processing.")
     
     def show_success_popup(self, input_file):
         """Show a clear success popup with details about the processed document"""
