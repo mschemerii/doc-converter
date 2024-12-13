@@ -7,7 +7,6 @@ import logging
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 
-
 def convert_using_windows_com(doc_path, output_path):
     """Convert a .doc file to .docx using Microsoft Word COM interface on Windows"""
     try:
@@ -15,7 +14,6 @@ def convert_using_windows_com(doc_path, output_path):
         import pythoncom
     except ImportError:
         logging.error("pywin32 not installed. Cannot convert using Windows COM.")
-        logging.error("Please install with: pip install pywin32")
         return False
 
     try:

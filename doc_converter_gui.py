@@ -366,7 +366,9 @@ class DocConverterApp:
         # Reset stdout and stderr
         sys.stdout = sys.__stdout__
         sys.stderr = sys.__stderr__
-        self.output_window.destroy()
+        
+        if self.output_window is not None:
+            self.output_window.destroy()
 
 def main():
     root = tk.Tk()
