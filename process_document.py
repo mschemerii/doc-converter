@@ -173,6 +173,7 @@ def process_document(doc_path):
     """Process a .doc file through all conversion and modification steps"""
     try:
         logging.info(f"Starting document processing for {doc_path}")
+        logging.info("Conversion has started...")
         
         # Validate input file
         if not os.path.exists(doc_path):
@@ -201,9 +202,9 @@ def process_document(doc_path):
         try:
             # Step 1: Convert .doc to .docx
             logging.info("Starting .doc to .docx conversion...")
-            logging.info(f"Running command: {[python_cmd, 'doc_to_docx_converter.py', doc_path]}")
+            logging.info(f"Running command: {[python_cmd, 'doc_to_docx_converter.py', doc_path, docx_path]}")
             result = subprocess.run(
-                [python_cmd, 'doc_to_docx_converter.py', doc_path],
+                [python_cmd, 'doc_to_docx_converter.py', doc_path, docx_path],
                 capture_output=True,
                 text=True,
                 check=True,
@@ -212,6 +213,13 @@ def process_document(doc_path):
             logging.info(f"Command stdout: {result.stdout}")
             if result.stderr:
                 logging.warning(f"Command stderr: {result.stderr}")
+            
+            # Confirm successful conversion
+            logging.info("Conversion completed successfully.")
+            logging.info(f"New files created:")
+            logging.info(f"- {docx_path}")
+            logging.info(f"- {docx_path.replace('.docx', '_with_headers.docx')}")
+            logging.info("Location of new files: {os.path.dirname(docx_path)}")
             
             # Small delay to ensure file is ready
             time.sleep(1)

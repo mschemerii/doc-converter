@@ -1,18 +1,37 @@
-2024-12-13 11:20:11,503 - INFO: Starting conversion for: /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc
-2024-12-13 11:20:11,503 - ERROR: Error during conversion: process_document() takes 1 positional argument but 2 were given
-2024-12-13 11:21:09,355 - INFO: Starting conversion for: /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc
-2024-12-13 11:21:09,356 - INFO: Starting document processing for /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc
-2024-12-13 11:21:09,356 - INFO: Using Python executable: python3
-2024-12-13 11:21:09,356 - INFO: Starting .doc to .docx conversion...
-2024-12-13 11:21:09,357 - INFO: Running command: ['python3', 'doc_to_docx_converter.py', '/Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc']
-2024-12-13 11:21:09,461 - CRITICAL: Command failed with exit status 1
-2024-12-13 11:21:09,462 - CRITICAL: Command output: 
-2024-12-13 11:21:09,462 - CRITICAL: Command error: ERROR:root:Usage: python doc_converter.py <input_file> <output_file>
+2024-12-13 12:58:29,210 - INFO: Starting conversion for: /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc
+2024-12-13 12:58:29,211 - INFO: Starting document processing for /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc
+2024-12-13 12:58:29,211 - INFO: Using Python executable: python3
+2024-12-13 12:58:29,211 - INFO: Starting .doc to .docx conversion...
+2024-12-13 12:58:29,211 - INFO: Running command: ['python3', 'doc_to_docx_converter.py', '/Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc', '/Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx']
+2024-12-13 12:58:38,281 - INFO: Command stdout: 
+2024-12-13 12:58:38,281 - WARNING: Command stderr: INFO:root:Successfully converted /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc to /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx
 
-2024-12-13 11:21:09,462 - ERROR: Error during conversion: Command '['python3', 'doc_to_docx_converter.py', '/Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc']' returned non-zero exit status 1.
-2024-12-13 11:22:28,588 - INFO: Starting conversion for: /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc
-2024-12-13 11:22:28,588 - ERROR: Error during conversion: process_document() takes 1 positional argument but 2 were given
-2024-12-13 11:25:26,086 - INFO: Starting conversion for: /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc
-2024-12-13 11:25:26,086 - ERROR: Error during conversion: process_document() takes 1 positional argument but 2 were given
-2024-12-13 11:26:58,665 - INFO: Starting conversion for: /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc
-2024-12-13 11:26:58,666 - ERROR: Error during conversion: process_document() takes 1 positional argument but 2 were given
+2024-12-13 12:58:39,287 - INFO: Running command: ['python3', 'modify_docx_tables.py', '/Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx']
+2024-12-13 12:58:39,612 - INFO: Command stdout: Successfully modified table properties in: /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx
+
+2024-12-13 12:58:39,612 - INFO: Running command: ['python3', 'add_table_rows.py', '/Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx']
+2024-12-13 12:58:39,888 - INFO: Command stdout: Successfully added rows to tables in: /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx
+
+2024-12-13 12:58:39,888 - INFO: Running command: ['python3', 'rename_docx.py', '/Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx']
+2024-12-13 12:58:40,178 - INFO: Command stdout: Original file: /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx
+Successfully created renamed copy with header: 2024-12-17_AppConMon_BIM-Stage-Evidence.docx
+Successfully created renamed copy with header: 2024-12-17_AppConMon_BIM-StageDR-Evidence.docx
+Warning: Could not find one or both sections: ['Pre-Deploy Steps', 'Pre Steps'] to ['Rollback']
+Successfully created renamed copy with header: 2024-12-17_AppConMon_BIM-Rollback-Evidence.docx
+
+Created the following files:
+- 2024-12-17_AppConMon_BIM-Stage-Evidence.docx
+- 2024-12-17_AppConMon_BIM-StageDR-Evidence.docx
+- 2024-12-17_AppConMon_BIM-Rollback-Evidence.docx
+
+2024-12-13 12:58:40,178 - WARNING: Command stderr: /Users/mschemer/my-repos/doc-converter/rename_docx.py:84: FutureWarning: The behavior of this method will change in future versions. Use specific 'len(elem)' or 'elem is not None' test instead.
+  if not section_para:
+/Users/mschemer/my-repos/doc-converter/rename_docx.py:90: FutureWarning: The behavior of this method will change in future versions. Use specific 'len(elem)' or 'elem is not None' test instead.
+  if not parent:
+
+2024-12-13 12:58:40,178 - INFO: 
+=== Processing Complete ===
+2024-12-13 12:58:40,178 - INFO: Original .doc file: /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.doc
+2024-12-13 12:58:40,179 - INFO: Intermediate .docx file: /Users/mschemer/Downloads/2024-12-17+-+App+ConMon+-+BIM.docx
+2024-12-13 12:58:40,179 - INFO: Final files created with appropriate headers and content modifications.
+2024-12-13 12:58:40,179 - INFO: Conversion successful: True
