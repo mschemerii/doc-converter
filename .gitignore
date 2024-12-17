@@ -41,3 +41,7 @@ Thumbs.db
 *.code-workspace
 
 doc_converter.log
+# Allow specific documents.
+!docs/2024-12-17-AppConMon-Field-Rollback-Evidence.docx
+!docs/2024-12-17-AppConMon-Field-Stage-Evidence.docx
+!docs/2024-12-17-AppConMon-Field-StageDR-Evidence.docx
