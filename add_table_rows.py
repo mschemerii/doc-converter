@@ -83,6 +83,19 @@ def copy_row_formatting(source_row, target_row):
                     target_p.remove(target_p.pPr)
                 target_p.insert(0, new_pPr)
 
+def add_merged_row_after(table, row_index):
+    """Add a new row after a specific row, with all cells merged."""
+    current_row = table.rows[row_index]
+    new_row = table.add_row()  # Add a new row
+
+    # Clear text in the new row
+    for cell in new_row.cells:
+        cell.text = ""
+
+    # Merge all cells in the new row
+    if len(new_row.cells) > 1:
+        new_row.cells[0].merge(new_row.cells[-1])
+
 def add_rows_to_tables(docx_path):
     """
     Add a new empty row after each content row in all tables
