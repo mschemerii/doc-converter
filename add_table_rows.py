@@ -118,6 +118,30 @@ def add_rows_to_tables(docx_path):
     # Save the modifications back to the same file
     doc.save(docx_path)
 
+def process_document(doc):
+    """Process tables to delete empty rows/tables and add merged rows."""
+    tables = doc.tables
+    i = 0
+
+    while i < len(tables):
+        table = tables[i]
+        first_cell_text = table.rows[0].cells[0].text.strip() if table.rows else ""
+
+        # Skip specific tables
+        if "Change request numbers" in first_cell_text or "Manifests" in first_cell_text or "Sync Multi Manifest String" in first_cell_text:
+            i += 1
+            continue
+
+        # Process "Task No." tables without adding a row after the first row
+        rows_added = 0
+        for j in range(len(table.rows)):
+            adjusted_index = j + rows_added
+            if has_content(table.rows[adjusted_index]):
+                add_merged_row_after(table, adjusted_index)
+                rows_added += 1
+
+        i += 1
+
 def main():
     if len(sys.argv) != 2:
         print("Usage: python add_table_rows.py <path_to_docx_file>")
@@ -125,7 +149,9 @@ def main():
     
     try:
         docx_path = sys.argv[1]
-        add_rows_to_tables(docx_path)
+        doc = Document(docx_path)
+        process_document(doc)
+        doc.save(docx_path)
         print(f"Successfully added rows to tables in: {docx_path}")
     except Exception as e:
         print(f"Error: {str(e)}")
