@@ -131,6 +131,15 @@ def add_rows_to_tables(docx_path):
     # Save the modifications back to the same file
     doc.save(docx_path)
 
+def is_single_empty_cell(row):
+    """Check if a row contains a single empty cell"""
+    return len(row.cells) == 1 and not row.cells[0].text.strip()
+
+def delete_first_row_if_empty(table):
+    """Delete the first row of a table if it's empty"""
+    if is_single_empty_cell(table.rows[0]):
+        table._tbl.remove(table.rows[0]._tr)
+
 def process_document(doc):
     """Process tables to delete empty rows/tables and add merged rows."""
     tables = doc.tables
@@ -141,11 +150,15 @@ def process_document(doc):
         first_cell_text = table.rows[0].cells[0].text.strip() if table.rows else ""
 
         # Skip specific tables
-        if "Change request numbers" in first_cell_text or "Manifests" in first_cell_text or "Sync Multi Manifest String" in first_cell_text:
+        if "Change request numbers" in first_cell_text or "Tickets" in first_cell_text or "Trivy Scan Findings Remediation Plan" in first_cell_text:
             i += 1
             continue
 
-        # Process "Task No." tables without adding a row after the first row
+        # Remove first row if it contains a single empty cell
+        if is_single_empty_cell(table.rows[0]):
+            delete_first_row_if_empty(table)
+
+        # Process other tables
         rows_added = 0
         for j in range(len(table.rows)):
             adjusted_index = j + rows_added
