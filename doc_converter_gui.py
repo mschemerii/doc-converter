@@ -52,14 +52,14 @@ class DocConverterGUI:
         input_frame.pack(fill=tk.X, pady=10)
         
         ttk.Entry(input_frame, textvariable=self.input_path, width=50).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
-        ttk.Button(input_frame, text="Browse...", command=self.browse_input).pack(side=tk.RIGHT)
+        ttk.Button(input_frame, text="Browse...", width=10, command=self.browse_input).pack(side=tk.RIGHT)
         
         # Create the output file selection frame
         output_frame = ttk.LabelFrame(main_frame, text="Output .docx File (Optional)", padding="10")
         output_frame.pack(fill=tk.X, pady=10)
         
         ttk.Entry(output_frame, textvariable=self.output_path, width=50).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
-        ttk.Button(output_frame, text="Browse...", command=self.browse_output).pack(side=tk.RIGHT)
+        ttk.Button(output_frame, text="Browse...", width=10, command=self.browse_output).pack(side=tk.RIGHT)
         
         # Create the conversion button
         convert_button = ttk.Button(main_frame, text="Convert", command=self.convert_file)
