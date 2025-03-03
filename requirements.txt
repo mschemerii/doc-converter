@@ -1,0 +1,5 @@
+# Doc Converter Requirements
+# Python 3.6 or higher required
+
+# Required for Windows systems only
+pywin32>=223; platform_system=="Windows"
