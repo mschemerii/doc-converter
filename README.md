@@ -41,6 +41,7 @@ python doc_converter_gui.py
 ```
 
 The GUI provides an easy-to-use interface with the following features:
+
 - File browser to select input .doc files
 - Optional output path selection
 - Progress indication during conversion
@@ -83,6 +84,7 @@ Make sure Microsoft Word is installed and accessible. The script uses AppleScrip
 ### GUI Issues
 
 If the GUI doesn't appear or shows errors:
+
 - Ensure Tkinter is properly installed with your Python installation
 - Try running the command-line version to check if the core conversion works
 - Check console output for any error messages
@@ -90,7 +92,11 @@ If the GUI doesn't appear or shows errors:
 ## Changelog
 
 ### March 3, 2025
+
 - **Initial Release**: Created convertDoc2Docx.py script with support for Windows and macOS
 - **Enhancement**: Improved error handling, added input validation and custom output paths
 - **Feature**: Added separate TKinter GUI application (doc_converter_gui.py)
 - **Documentation**: Created comprehensive README with usage instructions for both CLI and GUI
+- **Update**: Added explicit check for Microsoft Word installation on Windows, consistent with macOS version
+
+<!-- End of README -->

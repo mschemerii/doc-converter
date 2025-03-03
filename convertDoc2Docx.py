@@ -15,11 +15,11 @@ Arguments:
                   with the same name but .docx extension
 """
 
-import os
-import sys
-import platform
-import subprocess
-from pathlib import Path
+import os  # For file path operations and environment variables
+import sys  # For command-line arguments and exit codes
+import platform  # For detecting the operating system
+import subprocess  # For running external commands (AppleScript on macOS)
+from pathlib import Path  # For object-oriented file path manipulation
 
 
 def doc_to_docx_windows(input_path, output_path=None):
@@ -37,7 +37,21 @@ def doc_to_docx_windows(input_path, output_path=None):
     """
     try:
         # Import win32com.client only on Windows
-        import win32com.client
+        import win32com.client # type: ignore
+        import pythoncom # type: ignore
+        
+        # Check if Microsoft Word is installed
+        try:
+            # Try to create a Word application instance just to check if Word is installed
+            word_check = win32com.client.Dispatch("Word.Application")
+            # If we get here, Word is installed, so close the application
+            word_check.Quit()
+            print("Microsoft Word is installed. Proceeding with conversion...")
+        except pythoncom.com_error:
+            print("Error: Microsoft Word is not installed on this system.")
+            return None
+        except Exception as e:
+            print(f"Warning: Could not verify if Microsoft Word is installed: {e}")
         
         # Get absolute paths
         input_abs_path = os.path.abspath(input_path)

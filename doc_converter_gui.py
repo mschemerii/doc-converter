@@ -10,11 +10,11 @@ Usage:
     python doc_converter_gui.py
 """
 
-import os
-import sys
-import tkinter as tk
-from tkinter import filedialog, messagebox, ttk
-from convertDoc2Docx import doc_to_docx
+import os  # For file path operations
+import sys  # For system-level operations
+import tkinter as tk  # For creating the GUI
+from tkinter import filedialog, messagebox, ttk  # For file dialogs, message boxes, and themed widgets
+from convertDoc2Docx import doc_to_docx  # For the document conversion functionality
 
 
 class DocConverterGUI:
